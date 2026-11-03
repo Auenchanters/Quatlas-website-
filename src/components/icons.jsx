@@ -12,4 +12,6 @@ export const Mail = (p) => <Icon {...p}><rect x="3" y="5.5" width="18" height="1
 export const Arrow = (p) => <Icon {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Icon>;
 export const Menu = (p) => <Icon {...p}><path d="M4 7h16M4 12h16M4 17h16" /></Icon>;
 export const Close = (p) => <Icon {...p}><path d="M6 6l12 12M18 6 6 18" /></Icon>;
-export const Chevron = (p) => <Icon {...p}><path d="m9 6 6 6-6 6" /></Icon>;
+export const Sound = (p) => <Icon {...p}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /></Icon>;
+export const Muted = (p) => <Icon {...p}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="m16 9.5 5 5M21 9.5l-5 5" /></Icon>;
+export const Chevron =(p) => <Icon {...p}><path d="m9 6 6 6-6 6" /></Icon>;

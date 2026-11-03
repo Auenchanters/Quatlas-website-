@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Img } from './Img';
 import Particles from './Particles';
+import SoundToggle from './SoundToggle';
 import { Facebook, Instagram, LinkedIn, Mail, Menu, Close, YouTube } from './icons';
 
 const NAV = [
@@ -39,16 +40,19 @@ function Header() {
         <Link to="/" className="shrink-0" aria-label="Quatlas Aeromodelling, home">
           <Img name="quatlas" eager sizes="96px" className="brand-logo h-10 w-auto mix-blend-multiply" />
         </Link>
-        <button className="lg:hidden btn btn-sm" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
-          {open ? <Close /> : <Menu />}<span>Menu</span>
-        </button>
-        <nav id="nav" aria-label="Main"
-          className={`${open ? 'block' : 'hidden'} lg:block absolute lg:static inset-x-0 top-16 bg-paper border-b lg:border-0 border-ink`}>
-          <ul className="wrap lg:p-0 lg:flex items-center gap-7 py-3">
-            {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end className={link}>{label}</NavLink></li>)}
-            <li><NavLink to="/login" className="btn btn-sm mt-2 lg:mt-0">Login</NavLink></li>
-          </ul>
-        </nav>
+        <div className="flex items-center gap-2 lg:gap-4">
+          <nav id="nav" aria-label="Main"
+            className={`${open ? 'block' : 'hidden'} lg:block absolute lg:static inset-x-0 top-16 bg-paper border-b lg:border-0 border-ink`}>
+            <ul className="wrap lg:p-0 lg:flex items-center gap-7 py-3">
+              {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end className={link}>{label}</NavLink></li>)}
+              <li><NavLink to="/login" className="btn btn-sm mt-2 lg:mt-0">Login</NavLink></li>
+            </ul>
+          </nav>
+          <SoundToggle />
+          <button className="lg:hidden btn btn-sm" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
+            {open ? <Close /> : <Menu />}<span>Menu</span>
+          </button>
+        </div>
       </div>
     </header>
   );
