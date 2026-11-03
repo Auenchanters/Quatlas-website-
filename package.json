@@ -1,0 +1,28 @@
+{
+  "name": "quatlas-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/remote-images.mjs && vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "preview": "vite preview",
+    "images": "node scripts/images.mjs",
+    "mock": "node scripts/mock-api.mjs",
+    "dev:mock": "vite --mode mock",
+    "photos": "node scripts/remote-images.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.4",
+    "@vitejs/plugin-react": "^6.2.1",
+    "sharp": "^0.35.5",
+    "tailwindcss": "^4.3.4",
+    "vite": "^8.3.5"
+  }
+}

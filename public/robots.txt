@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /Data
+Disallow: /admin
+Disallow: /forms
+Disallow: /links
+Disallow: /team
+Disallow: /recruitdata
+Disallow: /recruitmentData
