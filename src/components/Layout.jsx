@@ -6,15 +6,15 @@ import SoundToggle from './SoundToggle';
 import { Facebook, Instagram, LinkedIn, Mail, Menu, Close, YouTube } from './icons';
 
 const NAV = [
-  ['/', 'Home'], ['/about', 'About'], ['/contact', 'Contact Us'], ['/achievements', 'Achievements'],
-  ['/sponsors', 'Sponsors'], ['/alumini', 'Alumni'], ['/gallery', 'Gallery'],
+  ['/', 'Home'], ['/about', 'About'], ['/team', 'Team'], ['/achievements', 'Achievements'],
+  ['/events', 'Events'], ['/gallery', 'Gallery'], ['/support', 'Support'], ['/contact', 'Contact'],
 ];
 
 // Every public page is a sheet in the set; the title block names it.
 export const SHEETS = {
-  '/': 'General arrangement', '/about': 'About', '/achievements': 'Achievements', '/sponsors': 'Sponsors',
-  '/crowdfunding': 'Crowdfunding', '/contact': 'Contact', '/alumini': 'Alumni', '/gallery': 'Gallery',
-  '/recruitment': 'Recruitment', '/privacy': 'Privacy policy', '/terms': 'Terms of use',
+  '/': 'General arrangement', '/about': 'About', '/team': 'Team', '/achievements': 'Achievements',
+  '/events': 'Events', '/gallery': 'Gallery', '/support': 'Support', '/contact': 'Contact',
+  '/alumini': 'Alumni', '/recruitment': 'Recruitment', '/terms': 'Terms of use',
 };
 const SHEET_KEYS = Object.keys(SHEETS);
 
@@ -33,23 +33,23 @@ function Header() {
   const { pathname } = useLocation();
   useEffect(() => setOpen(false), [pathname]);
   const link = ({ isActive }) =>
-    `block py-2 lg:py-0 no-underline wide text-[0.9375rem] ${isActive ? 'text-signal' : 'hover:text-signal'}`;
+    `block py-2 xl:py-0 no-underline wide text-[0.9375rem] ${isActive ? 'text-signal' : 'hover:text-signal'}`;
   return (
     <header className="border-b border-ink bg-paper sticky top-0 z-40">
       <div className="wrap flex items-center justify-between gap-6 h-16">
         <Link to="/" className="shrink-0" aria-label="Quatlas Aeromodelling, home">
           <Img name="quatlas" eager sizes="96px" className="brand-logo h-10 w-auto mix-blend-multiply" />
         </Link>
-        <div className="flex items-center gap-2 lg:gap-4">
+        <div className="flex items-center gap-2 xl:gap-4">
           <nav id="nav" aria-label="Main"
-            className={`${open ? 'block' : 'hidden'} lg:block absolute lg:static inset-x-0 top-16 bg-paper border-b lg:border-0 border-ink`}>
-            <ul className="wrap lg:p-0 lg:flex items-center gap-7 py-3">
+            className={`${open ? 'block' : 'hidden'} xl:block absolute xl:static inset-x-0 top-16 bg-paper border-b xl:border-0 border-ink`}>
+            <ul className="wrap xl:p-0 xl:flex items-center gap-7 py-3">
               {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end className={link}>{label}</NavLink></li>)}
-              <li><NavLink to="/login" className="btn btn-sm mt-2 lg:mt-0">Login</NavLink></li>
+              <li><NavLink to="/login" className="btn btn-sm mt-2 xl:mt-0">Login</NavLink></li>
             </ul>
           </nav>
           <SoundToggle />
-          <button className="lg:hidden btn btn-sm" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
+          <button className="xl:hidden btn btn-sm" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
             {open ? <Close /> : <Menu />}<span>Menu</span>
           </button>
         </div>
@@ -59,11 +59,11 @@ function Header() {
 }
 
 const FOOT = [
-  ['Quick links', [['/contact', 'Contact us'], ['/privacy', 'Privacy'], ['/terms', 'Terms of use']]],
-  ['Sponsors', [['/sponsors', 'Sponsors'], ['/contact', 'Query']]],
-  ['About', [['/about', 'About us'], ['https://www.msrit.edu/department/faculty-detail.html?dept=me&ID=44', 'Faculty'], ['/about#team', 'Team']]],
-  ['Crowdfunding', [['/crowdfunding', 'Pay via UPI'], ['/crowdfunding', 'Info']]],
-  ['Events', [['/recruitment', 'Recruitment']]],
+  ['Club', [['/about', 'About us'], ['/about#faculty', 'Faculty'], ['/achievements', 'Achievements']]],
+  ['Team', [['/team', 'Our team'], ['/alumini', 'Alumni'], ['/recruitment', 'Join us']]],
+  ['Support', [['/support', 'Official supporters'], ['/support#crowdfunding', 'Crowdfunding']]],
+  ['Events', [['/events', 'Upcoming'], ['/events#past', 'Past competitions']]],
+  ['Help', [['/contact#faq', 'FAQs'], ['/contact', 'Send a request'], ['/terms', 'Terms of use']]],
 ];
 
 function Footer() {
@@ -121,8 +121,12 @@ function Footer() {
             <dd className="mt-1 data text-ink">{n >= 0 ? `${pad(n + 1)} / ${pad(SHEET_KEYS.length)}` : '—'}</dd>
           </div>
           <div className="py-4 md:pl-4 border-t md:border-t-0 border-rule col-span-2 md:col-span-1">
-            <dt className="data text-ink-2">Drawn by</dt>
-            <dd className="mt-1">Designed and developed by Pavan Reddy · {new Date().getFullYear()} © Quatlas, All Rights Reserved.</dd>
+            <dt className="data text-ink-2">Issued</dt>
+            <dd className="mt-1">
+              {new Date().getFullYear()} © Quatlas · <Link to="/terms" className="hover:text-signal">Terms of use</Link>
+              {/* A small hidden game, findable if you look. */}
+              {' · '}<Link to="/hangar" className="no-underline text-ink-2 hover:text-signal">secret</Link>
+            </dd>
           </div>
         </dl>
       </div>

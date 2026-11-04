@@ -4,10 +4,10 @@ import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
-const ROUTES = ['/', '/about', '/achievements', '/sponsors', '/crowdfunding', '/contact', '/alumini', '/gallery', '/recruitment', '/privacy', '/terms', '/results', '/login'];
-
 const template = await readFile('dist/index.html', 'utf8');
-const { render } = await import(pathToFileURL(path.resolve('dist-ssr/entry-server.js')).href);
+const { render, SUBTEAMS } = await import(pathToFileURL(path.resolve('dist-ssr/entry-server.js')).href);
+
+const ROUTES = ['/', '/about', '/team', ...SUBTEAMS.map((s) => `/team/${s.slug}`), '/achievements', '/events', '/gallery', '/support', '/contact', '/alumini', '/recruitment', '/terms', '/results', '/login'];
 
 await writeFile('dist/app.html', template);
 for (const route of ROUTES) {

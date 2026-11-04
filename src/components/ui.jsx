@@ -56,25 +56,30 @@ export function Failed({ error, retry }) {
 
 const initials = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
-// Team and alumni directory: photo, name, role, LinkedIn.
+// One member card: photo, name, role, LinkedIn. `big` for the captain's row.
+export function Person({ p, big = false, sizes }) {
+  return (
+    <div className="grid gap-2 content-start">
+      <div className="aspect-[4/5] border border-ink bg-sheet overflow-hidden">
+        <RemoteImg src={p.img} width={big ? 640 : 480} sizes={sizes ?? '(min-width: 1280px) 18vw, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 47vw'} alt={p.name} className="size-full object-cover"
+          placeholder={<span aria-hidden="true" className="size-full grid place-items-center display text-4xl text-ink-2">{initials(p.name)}</span>} />
+      </div>
+      <p className={`wide leading-tight mt-1 ${big ? 'text-xl' : ''}`}>{p.name}</p>
+      <p className="text-sm text-ink-2 leading-snug">{p.role}</p>
+      {p.linkedin && p.linkedin.startsWith('http') && (
+        <a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm justify-self-start hover:text-signal">
+          <LinkedIn size={16} /> LinkedIn<span className="sr-only">: {p.name}</span>
+        </a>
+      )}
+    </div>
+  );
+}
+
+// Team and alumni directory.
 export function People({ people }) {
   return (
     <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-5 gap-y-10">
-      {people.map((p) => (
-        <li key={p._id ?? p.name} className="grid gap-2 content-start">
-          <div className="aspect-[4/5] border border-ink bg-sheet overflow-hidden">
-            <RemoteImg src={p.img} width={480} sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 47vw" alt={p.name} className="size-full object-cover"
-              placeholder={<span aria-hidden="true" className="size-full grid place-items-center display text-4xl text-ink-2">{initials(p.name)}</span>} />
-          </div>
-          <p className="wide leading-tight mt-1">{p.name}</p>
-          <p className="text-sm text-ink-2 leading-snug">{p.role}</p>
-          {p.linkedin && p.linkedin.startsWith('http') && (
-            <a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm justify-self-start hover:text-signal">
-              <LinkedIn size={16} /> LinkedIn<span className="sr-only">: {p.name}</span>
-            </a>
-          )}
-        </li>
-      ))}
+      {people.map((p) => <li key={p._id ?? p.name}><Person p={p} /></li>)}
     </ul>
   );
 }

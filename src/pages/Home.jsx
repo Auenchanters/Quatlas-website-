@@ -4,6 +4,8 @@ import Aircraft from '../components/Aircraft';
 import { Img } from '../components/Img';
 import { Arrow } from '../components/icons';
 import { RECORD } from '../content/achievements';
+import { OVERVIEW } from '../content/overview';
+import { UPCOMING, when } from '../content/events';
 
 const QUOTES = [
   'Pioneering the skies with precision and passion',
@@ -27,9 +29,9 @@ function Quotes() {
 }
 
 const PATHS = [
-  ['/about', 'Our Team', 'Embark on an exciting career journey with Quatlas today! Exploring the endless skies, one propeller at a time.'],
-  ['/crowdfunding', 'Crowd Funding', 'Support our mission to innovate and create new possibilities in aerospace modeling. Your contribution will help us push the boundaries of technology and design, shaping the future of the industry.'],
-  ['/sponsors', 'Official Supporters', 'Join us in pioneering the future of aerospace modeling. Sponsor our project and gain access to unique opportunities and advanced technological insights.'],
+  ['/team', 'Our Team', 'Embark on an exciting career journey with Quatlas today! Exploring the endless skies, one propeller at a time.'],
+  ['/support', 'Official Supporters', 'Join us in pioneering the future of aerospace modeling. Sponsor our project and gain access to unique opportunities and advanced technological insights.'],
+  ['/support#crowdfunding', 'Crowd Funding', 'Support our mission to innovate and create new possibilities in aerospace modeling. Your contribution will help us push the boundaries of technology and design, shaping the future of the industry.'],
 ];
 
 export default function Home() {
@@ -46,19 +48,34 @@ export default function Home() {
           <Quotes />
           <div className="flex flex-wrap gap-3">
             <Link to="/recruitment" className="btn btn-signal">Join the team <Arrow size={18} /></Link>
-            <Link to="/crowdfunding" className="btn">Support the build</Link>
+            <Link to="/support" className="btn">Support the build</Link>
           </div>
         </div>
         <Aircraft />
       </section>
 
       <section className="wrap py-14 md:py-20 border-t border-rule grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <h2 className="wide text-3xl md:text-4xl">SAE Overview</h2>
+        <h2 className="wide text-3xl md:text-4xl">Club Overview</h2>
         <div className="copy text-[1.0625rem]">
-          <p>The SAE Aero Design Competition stands as a pinnacle in the aeromodelling world, epitomizing innovation, engineering prowess, and the thrill of flight. Held annually, it serves as a crucible where aspiring engineers, like those of Quatlas at Ramaiah, forge their passion for aviation into reality. The competition unfolds in various locations, often finding its way to the heart of the American aerospace landscape, with destinations including the likes of Texas or Florida.</p>
-          <p>In this high-stakes event, teams are tasked with crafting radio-controlled aircraft to meet precise performance criteria. A symphony of engineering skills is woven into every design: weight optimization, aerodynamic finesse, propulsion efficiency, and structural integrity. Regular, Advanced, and Micro Classes offer distinct challenges, from payload delivery to meeting stringent takeoff and landing requirements. The Design-Build-Fly category adds complexity, with mission profiles evolving each year.</p>
-          <p>Participation isn’t merely about winning; it’s a rite of passage where theoretic blueprints gain wings. Collaboration within teams honest leadership and teamwork skills. Exposure to industry experts cultivates a broader understanding of aerospace trends. The SAE Aero Design Competition isn’t just a competition; it’s an odyssey that transcends academia, igniting the fervor for aviation and illuminating the path to engineering excellence. At Quatlas, we invite you to join us on this remarkable journey to the skies.</p>
+          {OVERVIEW.map((t) => <p key={t}>{t}</p>)}
+          <p><Link to="/about">More about the club</Link></p>
         </div>
+      </section>
+
+      <section aria-labelledby="next" className="wrap pb-14 md:pb-20 grid gap-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-3">
+          <h2 id="next" className="wide text-2xl md:text-3xl">Upcoming</h2>
+          <Link to="/events" className="wide text-sm inline-flex items-center gap-2 hover:text-signal">All events <Arrow size={18} /></Link>
+        </div>
+        <ul className="grid gap-6 md:grid-cols-3">
+          {UPCOMING.map((e) => (
+            <li key={e.title} className="grid gap-1 content-start">
+              <p className="data text-signal">{when(e.date)}</p>
+              <p className="wide text-lg">{e.title}</p>
+              <p className="text-ink-2 text-[0.9375rem]">{e.place}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="border-y border-ink bg-sheet">

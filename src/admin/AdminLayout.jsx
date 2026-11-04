@@ -6,7 +6,7 @@ import SoundToggle from '../components/SoundToggle';
 
 const NAV = [
   ['/Data', 'Home'], ['/recruitdata', 'Recruitment'], ['/forms', 'Forms & Sponsors'],
-  ['/team', 'Team Data'], ['/links', 'Links'], ['/admin', 'Account'],
+  ['/teamData', 'Team Data'], ['/links', 'Links'], ['/admin', 'Account'],
 ];
 
 // Every admin route sits behind this: no token, no dashboard.
@@ -39,7 +39,7 @@ export default function AdminLayout() {
       </header>
       <main id="main" className="wrap py-8 md:py-10 grid gap-12 flex-1 content-start"><Outlet /></main>
       <footer className="border-t border-rule py-4 wrap text-sm text-ink-2">
-        {new Date().getFullYear()} © Quatlas, All Rights Reserved. Designed By Pavan Reddy. Powered By Madhouse
+        {new Date().getFullYear()} © Quatlas, All Rights Reserved.
       </footer>
     </div>
   );

@@ -5,9 +5,47 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [{ "source": "/(.*)", "destination": "/app" }],
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/app"
+    }
+  ],
   "headers": [
-    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
-    { "source": "/img/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000" }] }
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/img/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/sponsors",
+      "destination": "/support",
+      "permanent": true
+    },
+    {
+      "source": "/crowdfunding",
+      "destination": "/support#crowdfunding",
+      "permanent": true
+    },
+    {
+      "source": "/privacy",
+      "destination": "/terms",
+      "permanent": true
+    }
   ]
 }

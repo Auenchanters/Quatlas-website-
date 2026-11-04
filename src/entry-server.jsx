@@ -9,3 +9,5 @@ export async function render(url) {
   for await (const chunk of prelude) html += chunk;
   return html;
 }
+
+export { SUBTEAMS } from './content/teams';

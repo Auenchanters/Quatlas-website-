@@ -19,14 +19,14 @@ export default function Forms() {
           columns={[{ key: 'name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'mobile', label: 'Contact Number' }, { key: 'createdAtIST', label: 'Date' }]} />
       </Panel>
       <Panel title="Sponsor">
-        <AddForm submitLabel="Add sponsor" fields={[{ key: 'img', label: 'Image link' }, { key: 'link', label: 'Website link' }]}
+        <AddForm submitLabel="Add sponsor" fields={[{ key: 'img', label: 'Image link', preview: true }, { key: 'link', label: 'Website link' }]}
           onAdd={async (v) => {
             const res = await api('/spslist/addItems', { method: 'POST', body: v, ...auth });
             await sponsors.reload();
             return res;
           }} />
         <Crud {...sponsors} rows={sponsors.data} empty="No data available!"
-          columns={[{ key: 'img', label: 'Image Link', wrap: true }, { key: 'link', label: 'Link', wrap: true }]}
+          columns={[{ key: 'img', label: 'Image Link', wrap: true, preview: true }, { key: 'link', label: 'Link', wrap: true }]}
           onUpdate={(id, patch) => api(`/spslist/updateItems/${id}`, { method: 'PUT', body: patch, ...auth })}
           onDelete={(id) => api(`/spslist/deleteItems/${id}`, { method: 'DELETE', ...auth })} />
       </Panel>

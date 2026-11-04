@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { SheetHead } from '../components/Layout';
-import { RemoteImg, remoteSrc } from '../components/RemoteImg';
+import { RemoteImg, dims, remoteSrc } from '../components/RemoteImg';
 import { Failed } from '../components/ui';
 import { Chevron, Close } from '../components/icons';
 import { useApi } from '../lib/api';
+import snapshot from '../content/snapshot.json';
 
 // Full-size view in a native <dialog>: focus trap, Esc and backdrop come with it.
 function Viewer({ items, index, onClose, onMove }) {
@@ -33,7 +34,7 @@ function Viewer({ items, index, onClose, onMove }) {
 }
 
 export default function Gallery() {
-  const { data, error, loading, reload } = useApi('/gallery/images', { map: (d) => [...d].reverse() });
+  const { data, error, loading, reload } = useApi('/gallery/images', { initial: snapshot.gallery, map: (d) => [...d].reverse() });
   const [open, setOpen] = useState(null);
   const move = (d) => setOpen((i) => (i + d + data.length) % data.length);
   return (
@@ -47,16 +48,21 @@ export default function Gallery() {
         )}
         {error && <Failed error={error} retry={reload} />}
         {data && (
-          // Fixed-ratio cells: photos arrive from OneDrive with unknown sizes, so nothing reflows as they land.
-          <ul className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-            {data.map((g, i) => (
-              <li key={g._id} className="[content-visibility:auto] [contain-intrinsic-size:auto_12rem]">
-                <button type="button" onClick={() => setOpen(i)} className="block w-full aspect-[4/3] overflow-hidden border border-ink bg-sheet hover:border-signal"
-                  aria-label={`Open photo ${i + 1} of ${data.length}`}>
-                  <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={i < 4} className="size-full object-cover" />
-                </button>
-              </li>
-            ))}
+          // Columns keep every photo at its own shape, nothing cropped. Sizes come from the local copies,
+          // so the layout is fixed before a photo arrives; a photo newer than the copy assumes 3:2.
+          <ul className="columns-2 md:columns-3 xl:columns-4 gap-3">
+            {data.map((g, i) => {
+              const [w, h] = dims(g.img) ?? [3, 2];
+              return (
+                <li key={g._id} className="mb-3 break-inside-avoid">
+                  <button type="button" onClick={() => setOpen(i)} style={{ aspectRatio: `${w} / ${h}` }}
+                    className="block w-full overflow-hidden border border-ink bg-sheet hover:border-signal focus-visible:border-signal"
+                    aria-label={`Open photo ${i + 1} of ${data.length}`}>
+                    <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={i < 4} className="size-full object-cover" />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

@@ -26,10 +26,20 @@ Mock login and OTP are in `scripts/mock-api.mjs`. No email is sent; `http://loca
 | `src/admin/` | dashboard; `AdminLayout` redirects to `/login` without a token |
 | `src/components/Aircraft.jsx` | the isometric figure on the home page |
 | `src/content/` | page copy and the achievements record (edit text here) |
+| `src/content/events.js` | upcoming events: add a line, set `date: 'YYYY-MM-DD'` once announced |
+| `src/content/teams.js` | the five subteams, their copy, and which dashboard team names map to each |
+| `src/pages/Hangar.jsx` | the hidden game behind the footer's “secret” link (`/hangar`) |
+| `firebase.json` | Firebase Hosting config for `dist/` (unused; the site is on Vercel) |
+| `api/img.js` | Vercel function: serves dashboard photo links as WebP so new photos show before the next build |
 | `src/lib/api.js` | every API call goes through `api()`; `VITE_API` overrides the base URL |
 | `assets-src/` → `npm run images` | source photos → `public/img/*.webp` at 480/960/1600 px |
-| `firebase.json` | Firebase Hosting config for `dist/` |
 
 ## Images added from the dashboard
 
-`npm run build` first runs `npm run photos`, which copies every gallery, sponsor and team photo the API links to into `public/img/r/` (WebP at 400/800/1600 px), so they load from this site instead of OneDrive (3–5 s each). Already-copied photos are skipped; dead links are listed in `src/content/remote-images.json` and show as initials. A photo added after the last build still appears, loaded from its original link, until the next build copies it.
+`npm run build` first runs `npm run photos`, which copies every gallery, sponsor and team photo the API links to into `public/img/r/` (WebP at 400/800/1600 px), so they load from this site instead of OneDrive (3–5 s each). Already-copied photos are skipped; dead links are listed in `src/content/remote-images.json` and show as initials. A photo added after the last build still appears through `/api/img` (which can also open OneDrive share links) until the next build copies it. The same build writes `src/content/snapshot.json`, the team, sponsor and gallery lists the pages prerender before refreshing from the API.
+
+A member appears on a subteam page when their dashboard **Team name** matches that subteam (see `teams.js`; `CAED` counts as Design and `Conceptual` as Aerodynamics). The dashboard previews every photo link and says why one would show blank.
+
+## Contact requests
+
+The contact form saves to the dashboard (Forms) and also emails `aeromodellingquatlas@gmail.com` through FormSubmit. FormSubmit's first email to that inbox is an activation link; someone must click it once. `VITE_INBOX=''` turns the email off.

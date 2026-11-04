@@ -1,6 +1,7 @@
 // Copies the photos the dashboard links to (gallery, sponsors, team) onto this site.
 // OneDrive answers in 3–5 s per image; served from here they load like any local file.
-// Writes public/img/r/<id>-<w>.webp and src/content/remote-images.json (URL → copy, or failed).
+// Writes public/img/r/<id>-<w>.webp, src/content/remote-images.json (URL → copy, or failed)
+// and src/content/snapshot.json (the lists themselves).
 // Already-copied URLs are skipped, so re-runs only fetch what's new. Photos added after a build
 // still show: the site falls back to the original link until the next run.
 import sharp from 'sharp';
@@ -10,6 +11,7 @@ import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 const API = 'https://quatlasserver.vercel.app/api';
 const OUT = 'public/img/r';
 const MANIFEST = 'src/content/remote-images.json';
+const SNAPSHOT = 'src/content/snapshot.json';
 const WIDTHS = [400, 800, 1600];
 // OneDrive refuses requests that don't look like a browser.
 const HEADERS = {
@@ -42,6 +44,8 @@ let urls;
 try {
   const [gallery, sponsors, members] = await Promise.all([json('/gallery/images'), json('/spslist/items'), json('/members/memberData')]);
   urls = [...gallery.map((g) => g.img), ...sponsors.map((s) => s.img), ...members[0].teams.flatMap((t) => t.roleData.map((m) => m.img))];
+  // The pages render this snapshot first (and prerender it), then refresh from the API.
+  await writeFile(SNAPSHOT, JSON.stringify({ gallery, sponsors, members }));
 } catch (e) {
   console.warn(`remote-images: API unreachable (${e.message}); keeping the existing copies.`);
   process.exit(0);

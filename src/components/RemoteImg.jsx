@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import copies from '../content/remote-images.json';
+import { Img } from './Img';
 
 // Photos the dashboard links to (OneDrive / Google Drive). `npm run photos` copies them onto the site
 // (scripts/remote-images.mjs); a copied link is served from /img/r, a link known to be dead shows the
@@ -24,11 +25,20 @@ export function remoteSrc(url, w) {
       u.searchParams.set('height', w);
       return u.href;
     }
+    if (u.host === '1drv.ms') return `/api/img?w=${w}&url=${encodeURIComponent(url)}`; // share link: only the relay can open it
   } catch { /* not an absolute URL: fall through */ }
   return url;
 }
 
-export function RemoteImg({ src, width = 800, sizes, alt = '', className = '', placeholder = null, eager = false }) {
+// Width / height of the local copy, for laying out before the photo arrives.
+export const dims = (url) => (local(url) ? [copies[url].w, copies[url].h] : null);
+
+// Keyed by src: a new link (say, a photo just updated in the dashboard) starts its fallback chain afresh.
+export function RemoteImg(props) {
+  return <Photo key={props.src} {...props} />;
+}
+
+function Photo({ src, width = 800, sizes, alt = '', className = '', placeholder = null, eager = false }) {
   const c = local(src);
   const sized = remoteSrc(src, width);
   const [step, setStep] = useState(0);
@@ -38,8 +48,14 @@ export function RemoteImg({ src, width = 800, sizes, alt = '', className = '', p
     return <img {...load} src={sized} width={c.w} height={c.h} sizes={sizes ?? `${width}px`}
       srcSet={c.widths.map((w) => `${localSrc(c, w)} ${w}w`).join(', ')} />;
   }
-  // Not copied yet: resized → original → placeholder, so a bad link never shows a broken-image icon.
-  const current = step === 0 ? sized : step === 1 && sized !== src ? src : null;
-  if (current === null) return placeholder;
-  return <img {...load} src={current} onError={() => setStep((s) => (s === 0 && sized !== src ? 1 : 2))} />;
+  // Not copied yet: the host's own resized link → the site's relay (api/img.js, which also opens OneDrive
+  // share links) → placeholder, so a bad link never shows a broken-image icon.
+  const chain = [...new Set([sized !== src && sized, `/api/img?w=${width}&url=${encodeURIComponent(src)}`].filter(Boolean))];
+  if (step >= chain.length) return placeholder;
+  return <img {...load} src={chain[step]} onError={() => setStep((s) => s + 1)} />;
+}
+
+// A photo by local name ('gg01') or by dashboard link, for lists that mix both.
+export function Pic({ name, width = 800, ...p }) {
+  return /^https?:\/\//.test(name) ? <RemoteImg src={name} width={width} {...p} /> : <Img name={name} {...p} />;
 }

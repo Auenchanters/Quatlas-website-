@@ -27,15 +27,16 @@ export async function api(path, { method = 'GET', body, auth = false, url } = {}
   return data;
 }
 
-// GET on mount, with reload() for after a write.
-export function useApi(path, { auth = false, url, map = (d) => d } = {}) {
-  const [state, setState] = useState({ data: null, error: null, loading: true });
+// GET on mount, with reload() for after a write. `initial` (raw, as the API returns it) renders at once
+// and in the prerendered HTML; the fetch then replaces it.
+export function useApi(path, { auth = false, url, map = (d) => d, initial } = {}) {
+  const [state, setState] = useState(() => initial ? { data: map(initial), error: null, loading: false } : { data: null, error: null, loading: true });
   const load = useCallback(async () => {
     setState((s) => ({ ...s, loading: true }));
     try {
       setState({ data: map(await api(path, { auth, url })), error: null, loading: false });
     } catch (e) {
-      setState({ data: null, error: e.message, loading: false });
+      setState((s) => (s.data && initial ? { ...s, loading: false } : { data: null, error: e.message, loading: false }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, auth, url]);

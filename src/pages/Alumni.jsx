@@ -1,18 +1,15 @@
 import { SheetHead } from '../components/Layout';
-import { Failed, Loading, People } from '../components/ui';
-import { useApi } from '../lib/api';
+import { People } from '../components/ui';
+import { isAlumni, useTeams } from '../content/teams';
 
 export default function Alumni() {
-  const { data, error, loading, reload } = useApi('/members/memberData', {
-    map: (d) => d[0].teams.find((t) => t.roleName === 'Alumini')?.roleData ?? [],
-  });
+  const { data } = useTeams();
+  const people = data?.filter((t) => isAlumni(t.roleName)).flatMap((t) => t.roleData) ?? [];
   return (
     <>
-      <SheetHead title="Quatlas Alumni" />
+      <SheetHead title="Quatlas Alumni"><p>Everyone who designed, built and flew for Quatlas before us, and where they went next.</p></SheetHead>
       <section className="wrap py-12 md:py-16">
-        {loading && <Loading rows={4} label="Loading alumni" />}
-        {error && <Failed error={error} retry={reload} />}
-        {data && (data.length ? <People people={data} /> : <p className="text-ink-2">No alumni listed yet.</p>)}
+        {people.length ? <People people={people} /> : <p className="text-ink-2">No alumni listed yet.</p>}
       </section>
     </>
   );

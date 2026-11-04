@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
 import { SheetHead, MAP_URL } from '../components/Layout';
 import { Field, Submit, useSubmit } from '../components/ui';
 import { api } from '../lib/api';
@@ -9,6 +10,21 @@ const PEOPLE = [
   // The old page listed "urstrulypuneethgmail.com" (missing the @); corrected here.
   ['Team leader - Puneeth L', 'urstrulypuneeth@gmail.com', '+91 91488 43472'],
   ['Non Tech - Pavan A', 'pavan.aashok1234gh@gmail.com', '+91 7676475397'],
+];
+
+// Requests are saved to the dashboard (Forms) and also emailed to the club inbox through FormSubmit.
+// FormSubmit's first email to this inbox is an activation link; until someone clicks it, requests
+// still reach the dashboard. Set VITE_INBOX to an empty string to switch the email off.
+const INBOX = import.meta.env.VITE_INBOX ?? (import.meta.env.MODE === 'mock' ? '' : 'aeromodellingquatlas@gmail.com');
+const TYPES = ['General query', 'Sponsorship', 'Joining the team', 'Collaboration or workshop', 'Media'];
+
+const FAQ = [
+  ['How do I join Quatlas?', <>Recruitment opens once a year. Watch the <Link to="/events">events page</Link> and our Instagram, then register on the <Link to="/recruitment">recruitment page</Link>. It runs in three steps: a written assessment of basic science and maths, a few rounds of interview, and a group project.</>],
+  ['Do I need aeromodelling experience?', 'No. We look for curiosity and commitment; the team teaches the rest, from CAD to soldering to flying.'],
+  ['Is it only for technical roles?', <>No. The Non-Tech team runs sponsorship, reports and presentations, social media, creative design and this website. See <Link to="/team/non-tech">Non-Tech</Link>.</>],
+  ['How can my company sponsor the team?', <>We take parts, money and services. Choose “Sponsorship” in the form on this page, or read the options on <Link to="/support">Support</Link>.</>],
+  ['Can I donate as an individual?', <>Yes. Pay any amount over UPI in the <Link to="/support#crowdfunding">crowdfunding section</Link> and leave your details so we can thank you.</>],
+  ['Where is the team based?', 'In the R&D-1 Laboratory, ESB II, room 119, at Ramaiah Institute of Technology, Mathikere, Bengaluru.'],
 ];
 
 // The map is a 700 KB embed; it loads only when asked for.
@@ -27,30 +43,46 @@ function Map() {
   );
 }
 
+// Best effort: the dashboard copy is the record, so a failed email never fails the request.
+const email = (f) => fetch(`https://formsubmit.co/ajax/${INBOX}`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+  body: JSON.stringify({ _subject: `Quatlas website: ${f.type} from ${f.name}`, _template: 'table', _captcha: 'false', ...f }),
+}).catch(() => {});
+
 export default function Contact() {
-  const empty = { name: '', usn: '', ConNumber: '', message: '' };
+  const [params] = useSearchParams();
+  const asked = params.get('type');
+  const empty = { type: TYPES.includes(asked) ? asked : TYPES[0], name: '', email: '', ConNumber: '', usn: '', message: '' };
   const [f, setF] = useState(empty);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const [submit, busy] = useSubmit(async () => {
-    const res = await api('/form/addcon', { method: 'POST', body: f });
-    setF(empty);
+    // The dashboard stores name, usn, number and message; the type and email ride in the message.
+    const res = await api('/form/addcon', { method: 'POST', body: {
+      name: f.name, usn: f.usn || '-', ConNumber: f.ConNumber, message: `[${f.type}] ${f.email}\n\n${f.message}`,
+    } });
+    if (INBOX) email(f);
+    setF({ ...empty, type: f.type });
     return res;
   });
   return (
     <>
       <SheetHead title="Contact Us">
-        <p>Are you a student with a passion for flight and innovation? <strong className="text-ink">Quatlas Aeromodelling</strong>, the official team of RIT, is seeking enthusiastic members to join us as we compete in the annual SAE Aero Design Competition in the USA. This is your opportunity to work on cutting-edge projects, gain invaluable experience, and proudly represent our college on an international stage. Join us at Quatlas Aeromodelling and help us achieve new milestones in aeromodelling excellence!</p>
+        <p>Sponsors, students, press or anyone curious about the aircraft: send a request and it lands with the core team. Quick answers are in the <a href="#faq">FAQs</a>.</p>
       </SheetHead>
 
       <section className="wrap py-12 md:py-16 grid gap-12 lg:grid-cols-2">
         <div className="grid gap-10 content-start">
-          {PEOPLE.map(([name, email, phone]) => (
+          {PEOPLE.map(([name, mail, phone]) => (
             <div key={name} className="border-t border-ink pt-4 grid gap-1">
               <h2 className="wide text-xl mb-2">{name}</h2>
-              <p><span className="font-semibold">Email: </span><a href={`mailto:${email}`} className="break-all hover:text-signal">{email}</a></p>
+              <p><span className="font-semibold">Email: </span><a href={`mailto:${mail}`} className="break-all hover:text-signal">{mail}</a></p>
               <p><span className="font-semibold">Contact Number: </span><a href={`tel:${phone.replace(/\s/g, '')}`} className="data text-[0.9375rem] hover:text-signal">{phone}</a></p>
             </div>
           ))}
+          <div className="border-t border-ink pt-4 grid gap-1">
+            <h2 className="wide text-xl mb-2">Club inbox</h2>
+            <p><a href="mailto:aeromodellingquatlas@gmail.com" className="break-all hover:text-signal">aeromodellingquatlas@gmail.com</a></p>
+          </div>
           <div className="border-t border-ink pt-4">
             <h2 className="wide text-xl mb-2">Registered Address</h2>
             <p className="text-ink-2 max-w-md">ESB II , 119, R&amp;D - 1 Laboratory, Quatlas-RIT Ramaiah Institute of Technology MSR Nagar, MSRIT Post, Mathikere Bangalore-560054</p>
@@ -58,14 +90,35 @@ export default function Contact() {
           <Map />
         </div>
 
-        <form onSubmit={submit} className="grid gap-5 content-start border border-ink bg-sheet p-5 md:p-8">
-          <h2 className="wide text-2xl">Send a query</h2>
+        <form id="request" onSubmit={submit} className="grid gap-5 content-start border border-ink bg-sheet p-5 md:p-8 scroll-mt-20">
+          <div className="grid gap-1">
+            <h2 className="wide text-2xl">Send a request</h2>
+            <p className="text-ink-2 text-[0.9375rem]">Goes straight to the core team’s inbox.</p>
+          </div>
+          <Field label="What is it about?" as="select" name="type" value={f.type} onChange={set('type')}>
+            {TYPES.map((t) => <option key={t}>{t}</option>)}
+          </Field>
           <Field label="Name" name="name" required autoComplete="name" value={f.name} onChange={set('name')} />
-          <Field label="Usn" name="usn" required value={f.usn} onChange={set('usn')} placeholder="e.g. 1MS22ME002" />
+          <Field label="Email" name="email" type="email" required autoComplete="email" value={f.email} onChange={set('email')} />
           <Field label="Contact Number" name="ConNumber" type="tel" required autoComplete="tel" value={f.ConNumber} onChange={set('ConNumber')} />
-          <Field label="Message" as="textarea" name="message" rows={6} value={f.message} onChange={set('message')} />
-          <Submit busy={busy}>Submit</Submit>
+          <Field label="USN (students only)" name="usn" value={f.usn} onChange={set('usn')} placeholder="e.g. 1MS22ME002" />
+          <Field label="Message" as="textarea" name="message" rows={6} required value={f.message} onChange={set('message')} />
+          <Submit busy={busy}>Send request</Submit>
         </form>
+      </section>
+
+      <section id="faq" aria-labelledby="faq-h" className="wrap py-12 md:py-16 border-t border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] scroll-mt-20">
+        <h2 id="faq-h" className="display text-4xl md:text-5xl">FAQs</h2>
+        <div className="border-t border-ink">
+          {FAQ.map(([q, a]) => (
+            <details key={q} className="group border-b border-rule">
+              <summary className="flex items-center justify-between gap-4 py-5 cursor-pointer list-none wide text-lg [&::-webkit-details-marker]:hidden">
+                {q}<span aria-hidden="true" className="data text-signal text-xl transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p className="pb-6 text-ink-2 max-w-2xl">{a}</p>
+            </details>
+          ))}
+        </div>
       </section>
     </>
   );
