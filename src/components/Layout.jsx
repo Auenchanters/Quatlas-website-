@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Img } from './Img';
 import Particles from './Particles';
 import SoundToggle from './SoundToggle';
+import ThemeToggle from './ThemeToggle';
 import { Facebook, Instagram, LinkedIn, Mail, Menu, Close, YouTube } from './icons';
 
 const NAV = [
@@ -48,6 +49,7 @@ function Header() {
               <li><NavLink to="/login" className="btn btn-sm mt-2 xl:mt-0">Login</NavLink></li>
             </ul>
           </nav>
+          <ThemeToggle />
           <SoundToggle />
           <button className="xl:hidden btn btn-sm" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
             {open ? <Close /> : <Menu />}<span>Menu</span>
@@ -61,8 +63,8 @@ function Header() {
 const FOOT = [
   ['Club', [['/about', 'About us'], ['/about#faculty', 'Faculty'], ['/achievements', 'Achievements']]],
   ['Team', [['/team', 'Our team'], ['/alumini', 'Alumni'], ['/recruitment', 'Join us']]],
-  ['Support', [['/support', 'Official supporters'], ['/support#crowdfunding', 'Crowdfunding']]],
-  ['Events', [['/events', 'Upcoming'], ['/events#past', 'Past competitions']]],
+  ['Support', [['/support', 'Supporters'], ['/support#crowdfunding', 'Crowdfunding']]],
+  ['Events', [['/events', 'Upcoming'], ['/events#past', 'Past events']]],
   ['Help', [['/contact#faq', 'FAQs'], ['/contact', 'Send a request'], ['/terms', 'Terms of use']]],
 ];
 
@@ -72,7 +74,7 @@ function Footer() {
   const pad = (v) => String(v).padStart(2, '0');
   return (
     <footer className="mt-24 border-t border-ink bg-sheet">
-      <div className="wrap grid gap-10 py-12 md:grid-cols-[1.3fr_2fr]">
+      <div className="wrap grid gap-10 py-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
         <div className="grid gap-5 content-start">
           <p className="max-w-sm text-ink-2">
             Quatlas, a distinguished Aerospace Modelling group hailing from Ramaiah Institute of Technology in Bangalore, Karnataka IN.
@@ -87,10 +89,10 @@ function Footer() {
             ))}
           </ul>
         </div>
-        <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-8">
+        <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-x-6 gap-y-8">
           {FOOT.map(([title, links]) => (
             <div key={title}>
-              <h2 className="text-sm font-semibold mb-3">{title}</h2>
+              <h2 className="text-sm font-[650] mb-3">{title}</h2>
               <ul className="grid gap-2 text-[0.9375rem] text-ink-2">
                 {links.map(([to, label]) =>
                   <li key={label}>{to.startsWith('http')
@@ -122,10 +124,11 @@ function Footer() {
           </div>
           <div className="py-4 md:pl-4 border-t md:border-t-0 border-rule col-span-2 md:col-span-1">
             <dt className="data text-ink-2">Issued</dt>
-            <dd className="mt-1">
-              {new Date().getFullYear()} © Quatlas · <Link to="/terms" className="hover:text-signal">Terms of use</Link>
+            <dd className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              <span>{new Date().getFullYear()} © Quatlas</span>
+              <Link to="/terms" className="hover:text-signal">Terms of use</Link>
               {/* A small hidden game, findable if you look. */}
-              {' · '}<Link to="/hangar" className="no-underline text-ink-2 hover:text-signal">secret</Link>
+              <Link to="/hangar" className="no-underline text-ink-2 hover:text-signal">secret</Link>
             </dd>
           </div>
         </dl>

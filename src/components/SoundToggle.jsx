@@ -7,7 +7,7 @@ export default function SoundToggle() {
   useEffect(() => { setOn(soundOn()); return onSoundChange(setOn); }, []);
   return (
     <button type="button" aria-pressed={on} aria-label="Interface sounds" title={on ? 'Sounds on' : 'Sounds off'}
-      onClick={() => setSound(!on)} className="grid place-items-center size-10 hover:text-signal">
+      onClick={() => setSound(!on)} className="grid place-items-center size-11 hover:text-signal">
       {on ? <Sound /> : <Muted />}
     </button>
   );

@@ -1,7 +1,6 @@
 import { Link, useParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Person } from '../components/ui';
-import { Arrow } from '../components/icons';
 import { SUBTEAMS, membersOf, useTeams } from '../content/teams';
 import NotFound from './NotFound';
 
@@ -46,7 +45,7 @@ export default function Subteam() {
         <ul className="flex flex-wrap gap-x-6 gap-y-2">
           {SUBTEAMS.map((t) => <li key={t.slug}><Link to={`/team/${t.slug}`} aria-current={t.slug === slug ? 'page' : undefined} className={`wide text-sm no-underline ${t.slug === slug ? 'text-signal' : 'hover:text-signal'}`}>{t.name}</Link></li>)}
         </ul>
-        <Link to={`/team/${next.slug}`} className="btn btn-sm">Next: {next.name} <Arrow size={16} /></Link>
+        <Link to={`/team/${next.slug}`} className="btn btn-sm">Next: {next.name}</Link>
       </nav>
     </>
   );

@@ -91,7 +91,7 @@ export function PhotoStrip({ children, label }) {
   return (
     <div className="grid gap-3">
       <div ref={ref} tabIndex={0} aria-label={label} role="region"
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [&>*]:snap-start [&>*]:shrink-0">
+        className="relative flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [&>*]:snap-start [&>*]:shrink-0">
         {children}
       </div>
       <div className="flex gap-2 justify-end">

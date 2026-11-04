@@ -1,12 +1,10 @@
-// Quiet audio notes for clicks, scrolling and form submits, made in code with earshot
-// (github.com/Leonxlnx/earshot), all tuned to A:
-//   click  ui_pop/soft at A4                                  -30 LUFS
-//   tick   pro_hover_tick/soft, one per 160 px scrolled       -36 LUFS
-//   submit pluck/kalimba_soft E5 then A5, 90 ms apart          -28 LUFS
-// Levels are baked into public/sfx/*.mp3, so everything plays at unity gain.
+// Soft, low taps for clicks and form submits, made in code with earshot (github.com/Leonxlnx/earshot):
+//   click   popin: a 120 Hz felt tap, no tick, rolled off above 2.6 kHz     -36 LUFS, 120 ms
+//   submit  popin: the same tap twice, the second a little higher           -33 LUFS, 300 ms
+// No sound on scroll: it was the one people found grating. Levels are baked into public/sfx/*.mp3.
 // Nothing loads until the first tap or key: browsers only allow audio after a gesture.
 
-const FILES = { click: '/sfx/click.mp3', tick: '/sfx/tick.mp3', submit: '/sfx/submit.mp3' };
+const FILES = { click: '/sfx/click.mp3', submit: '/sfx/submit.mp3' };
 const KEY = 'sound';
 const CLICKABLE = 'a[href], button, [role="switch"], [role="button"], summary, select, input[type="checkbox"], input[type="radio"]';
 const subs = new Set();
@@ -49,20 +47,9 @@ export function initSounds() {
     const el = e.target.closest?.(CLICKABLE);
     if (!el || el.disabled || el.type === 'submit') return; // a submit button gets the submit note instead
     await unlock(); // the very first click waits the few ms it takes to decode
-    play('click', 0.06);
+    play('click', 0.03);
   }, true);
 
   // Fires for a submit button and for Enter in a field alike.
   document.addEventListener('submit', async () => { await unlock(); play('submit'); }, true);
-
-  let lastY = scrollY, travelled = 0, lastTick = 0;
-  addEventListener('scroll', () => {
-    travelled += Math.abs(scrollY - lastY);
-    lastY = scrollY;
-    const now = performance.now();
-    if (!ctx || travelled < 160 || now - lastTick < 55) return; // scrolling alone can't start audio
-    travelled = 0;
-    lastTick = now;
-    play('tick', 0.1);
-  }, { passive: true });
 }

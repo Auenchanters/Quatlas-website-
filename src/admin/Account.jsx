@@ -29,7 +29,7 @@ function Overview() {
     <Panel title="Personal Info">
       <div>
         <form className={row} onSubmit={save}>
-          <span className="font-semibold">Name</span>
+          <span className="font-[650]">Name</span>
           {editing
             ? <input aria-label="Name" className="input" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
             : <span>{session.get('name')}</span>}
@@ -37,8 +37,8 @@ function Overview() {
             ? <span className="flex gap-2"><button className="btn btn-sm btn-signal" disabled={saving}>Save</button><button type="button" className="btn btn-sm" onClick={() => setEditing(false)}>Cancel</button></span>
             : <button type="button" className="btn btn-sm" onClick={() => setEditing(true)}>Update</button>}
         </form>
-        <div className={row}><span className="font-semibold">Email</span><span className="break-all">{session.get('email')}</span><Link to="/updateEmail" className="btn btn-sm">Update</Link></div>
-        <div className={row}><span className="font-semibold">Password</span><span aria-label="hidden">•••••••••</span><Link to="/updatePassword" className="btn btn-sm">Update</Link></div>
+        <div className={row}><span className="font-[650]">Email</span><span className="break-all">{session.get('email')}</span><Link to="/updateEmail" className="btn btn-sm">Update</Link></div>
+        <div className={row}><span className="font-[650]">Password</span><span aria-label="hidden">•••••••••</span><Link to="/updatePassword" className="btn btn-sm">Update</Link></div>
       </div>
       <button className="btn btn-danger justify-self-start" onClick={remove} disabled={removing}>Delete Account</button>
     </Panel>

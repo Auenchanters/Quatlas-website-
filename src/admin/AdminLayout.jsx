@@ -3,6 +3,7 @@ import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-route
 import { Menu, Close } from '../components/icons';
 import { session } from '../lib/api';
 import SoundToggle from '../components/SoundToggle';
+import ThemeToggle from '../components/ThemeToggle';
 
 const NAV = [
   ['/Data', 'Home'], ['/recruitdata', 'Recruitment'], ['/forms', 'Forms & Sponsors'],
@@ -31,7 +32,7 @@ export default function AdminLayout() {
             className={`${open ? 'block' : 'hidden'} lg:block absolute lg:static inset-x-0 top-14 bg-sheet border-b lg:border-0 border-ink z-30`}>
             <ul className="wrap lg:p-0 lg:flex items-center gap-1 py-2">
               {NAV.map(([to, label]) => <li key={to}><NavLink to={to} className={link}>{label}</NavLink></li>)}
-              <li className="inline-flex lg:ml-2 mt-2 lg:mt-0"><SoundToggle /></li>
+              <li className="inline-flex lg:ml-2 mt-2 lg:mt-0"><ThemeToggle /><SoundToggle /></li>
               <li><button onClick={logout} className="btn btn-sm lg:ml-1 mt-2 lg:mt-0">Logout</button></li>
             </ul>
           </nav>

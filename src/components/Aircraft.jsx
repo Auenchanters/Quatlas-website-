@@ -49,7 +49,7 @@ export const PARTS = {
   wing: { name: 'Wing', quality: 'Aerodynamic finesse', text: 'Generates the lift that carries the payload. Span, chord and area are fixed in Conceptual Design & Sizing.', explode: [0, 0, 4.4] },
   fuselage: { name: 'Fuselage', quality: 'Structural integrity', text: 'Takes every load between the wing, tail and landing gear. Modelled in 3D CAD before a single part is cut.', explode: [0, 0, 0] },
   payload: { name: 'Payload bay', quality: 'Weight optimization', text: 'The mission. In 2015, its first year, the team lifted 13.6 kg: the highest payload carried by an Indian team in the competition’s history.', explode: [0, 0, 2.8] },
-  motor: { name: 'Motor & propeller', quality: 'Propulsion efficiency', text: 'Turns battery power into thrust. Every gram it saves is a gram of payload the aircraft can carry.', explode: [3.2, 0, 0] },
+  motor: { name: 'Motor & prop', quality: 'Propulsion efficiency', text: 'Turns battery power into thrust. Every gram it saves is a gram of payload the aircraft can carry.', explode: [3.2, 0, 0] },
   tail: { name: 'Tail', quality: 'Stability', text: 'The horizontal and vertical stabilisers keep the aircraft steady and pointed where the pilot wants it.', explode: [-3.4, 0, 0.6] },
   gear: { name: 'Landing gear', quality: 'Takeoff & landing', text: 'Has to survive the takeoff and landing requirements of every flight round, loaded.', explode: [0, 0, -2] },
 };
@@ -152,7 +152,7 @@ export default function Aircraft() {
           {Object.entries(PARTS).map(([id, p]) => (
             <li key={id} className="border-b border-rule odd:border-r [&:nth-last-child(-n+2)]:border-b-0">
               <button type="button" aria-pressed={id === active} onClick={() => setActive(id)} onFocus={() => setActive(id)}
-                className={`w-full text-left px-4 py-3 text-[0.9375rem] font-semibold transition-colors ${id === active ? 'text-signal' : 'hover:text-signal'}`}>
+                className={`w-full text-left px-4 py-3 text-[0.9375rem] font-[650] whitespace-nowrap overflow-hidden text-ellipsis transition-colors ${id === active ? 'text-signal' : 'hover:text-signal'}`}>
                 {p.name}
               </button>
             </li>

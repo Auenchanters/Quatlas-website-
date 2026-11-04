@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Pic } from '../components/RemoteImg';
-import { Arrow } from '../components/icons';
 import { RECORD } from '../content/achievements';
 import { UPCOMING, when } from '../content/events';
 
@@ -22,8 +21,8 @@ export default function Events() {
                 <p className="data text-ink-2 text-sm">{e.place}</p>
               </div>
               {e.link && (e.link[0].startsWith('http')
-                ? <a href={e.link[0]} target="_blank" rel="noreferrer" className="btn btn-sm justify-self-start">{e.link[1]} <Arrow size={16} /></a>
-                : <Link to={e.link[0]} className="btn btn-sm justify-self-start">{e.link[1]} <Arrow size={16} /></Link>)}
+                ? <a href={e.link[0]} target="_blank" rel="noreferrer" className="btn btn-sm justify-self-start">{e.link[1]}</a>
+                : <Link to={e.link[0]} className="btn btn-sm justify-self-start">{e.link[1]}</Link>)}
             </li>
           ))}
         </ol>
@@ -31,7 +30,7 @@ export default function Events() {
 
       <section id="past" aria-labelledby="past-h" className="wrap py-12 md:py-16 grid gap-8">
         <h2 id="past-h" className="display text-4xl md:text-5xl">Past competitions</h2>
-        <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           {RECORD.map((r) => (
             <li key={r.year}>
               <Link to={`/achievements#y${r.year}`} className="group grid gap-3 no-underline">

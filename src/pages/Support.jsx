@@ -4,7 +4,6 @@ import { SheetHead } from '../components/Layout';
 import { Img } from '../components/Img';
 import { RemoteImg } from '../components/RemoteImg';
 import { Field, Submit, useSubmit } from '../components/ui';
-import { Arrow } from '../components/icons';
 import { api, useApi } from '../lib/api';
 import sponsors from '../content/sponsors.json';
 import snapshot from '../content/snapshot.json';
@@ -21,7 +20,7 @@ function Supporters() {
         <h2 className="display text-4xl md:text-5xl">Official Supporters</h2>
         <p className="data text-ink-2">{logos?.length ?? 0} partners</p>
       </div>
-      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 border-t border-l border-rule">
+      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 border-t border-l border-rule">
         {logos?.map((s) => (
           <li key={s._id} className="border-r border-b border-rule">
             <a href={s.link?.startsWith('http') ? s.link : undefined} target="_blank" rel="noreferrer"
@@ -83,7 +82,7 @@ export default function Support() {
             </li>
           ))}
         </ol>
-        <Link to="/contact?type=Sponsorship" className="btn btn-signal mt-10">Talk to us about sponsoring <Arrow size={18} /></Link>
+        <Link to="/contact?type=Sponsorship" className="btn btn-signal mt-10">Talk to us about sponsoring</Link>
       </section>
       <Crowdfunding />
     </>

@@ -3,7 +3,6 @@ import { Navigate, Route, Routes } from 'react-router';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import { Toaster } from './lib/toast';
-import ThemeSlider from './components/ThemeSlider';
 
 // Home ships in the entry chunk; everything else loads with its route, so visitors never download admin code.
 const page = (load) => lazy(load);
@@ -77,7 +76,6 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
-      <ThemeSlider />
       <Toaster />
     </>
   );

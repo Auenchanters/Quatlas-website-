@@ -75,8 +75,8 @@ export default function Contact() {
           {PEOPLE.map(([name, mail, phone]) => (
             <div key={name} className="border-t border-ink pt-4 grid gap-1">
               <h2 className="wide text-xl mb-2">{name}</h2>
-              <p><span className="font-semibold">Email: </span><a href={`mailto:${mail}`} className="break-all hover:text-signal">{mail}</a></p>
-              <p><span className="font-semibold">Contact Number: </span><a href={`tel:${phone.replace(/\s/g, '')}`} className="data text-[0.9375rem] hover:text-signal">{phone}</a></p>
+              <p><span className="font-[650]">Email: </span><a href={`mailto:${mail}`} className="break-all hover:text-signal">{mail}</a></p>
+              <p><span className="font-[650]">Contact Number: </span><a href={`tel:${phone.replace(/\s/g, '')}`} className="data text-[0.9375rem] hover:text-signal">{phone}</a></p>
             </div>
           ))}
           <div className="border-t border-ink pt-4 grid gap-1">

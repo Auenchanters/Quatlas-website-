@@ -2,7 +2,6 @@ import { Link } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Img } from '../components/Img';
 import { Failed, Person, PhotoStrip } from '../components/ui';
-import { Arrow } from '../components/icons';
 import { SUBTEAMS, byRole, isAlumni, isCore, membersOf, subteamOf, useTeams } from '../content/teams';
 
 // A subteam's people as a strip you scroll through (not an auto-ticker).
@@ -52,7 +51,7 @@ export default function Team() {
             <h2 id={s.slug} className="display text-3xl md:text-4xl">{s.name}</h2>
             <div className="flex flex-wrap items-baseline justify-between gap-4">
               <p className="text-ink-2 max-w-xl">{s.about}</p>
-              <Link to={`/team/${s.slug}`} className="wide text-sm inline-flex items-center gap-2 hover:text-signal">Meet {s.name} <Arrow size={18} /></Link>
+              <Link to={`/team/${s.slug}`} className="wide text-sm inline-flex items-center gap-2 hover:text-signal">Meet {s.name}</Link>
             </div>
           </div>
           <Strip people={teams ? membersOf(teams, s) : []} label={`${s.name} members`} />
@@ -68,7 +67,7 @@ export default function Team() {
 
       <section className="wrap py-12 md:py-16 flex flex-wrap items-center justify-between gap-6">
         <p className="wide text-2xl md:text-3xl">The people who flew before us</p>
-        <Link to="/alumini" className="btn">Alumni <Arrow size={18} /></Link>
+        <Link to="/alumini" className="btn">Alumni</Link>
       </section>
     </>
   );

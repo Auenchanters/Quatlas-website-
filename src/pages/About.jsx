@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Img } from '../components/Img';
-import { Arrow } from '../components/icons';
 import { RECORD } from '../content/achievements';
 import { OVERVIEW } from '../content/overview';
 import about from '../content/about.json';
@@ -50,7 +49,7 @@ export default function About() {
       <section id="history" className="wrap py-12 md:py-16 border-t border-rule grid gap-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h2 className="display text-4xl md:text-5xl">Logbook</h2>
-          <Link to="/achievements" className="wide text-sm inline-flex items-center gap-2 hover:text-signal">Full record <Arrow size={18} /></Link>
+          <Link to="/achievements" className="wide text-sm inline-flex items-center gap-2 hover:text-signal">Full record</Link>
         </div>
         <Logbook />
       </section>
@@ -62,13 +61,13 @@ export default function About() {
           <p className="wide text-2xl">{FACULTY.name}</p>
           <p className="text-ink-2">{FACULTY.dept}, Ramaiah Institute of Technology</p>
           <p className="max-w-2xl mt-2">{FACULTY.text}</p>
-          <a href={FACULTY.profile} target="_blank" rel="noreferrer" className="btn btn-sm justify-self-start mt-3">Faculty profile <Arrow size={16} /></a>
+          <a href={FACULTY.profile} target="_blank" rel="noreferrer" className="btn btn-sm justify-self-start mt-3">Faculty profile</a>
         </div>
       </section>
 
       <section id="team" className="wrap py-12 md:py-16 border-t border-rule flex flex-wrap items-center justify-between gap-6">
         <p className="wide text-2xl md:text-3xl">Meet the people behind the aircraft</p>
-        <Link to="/team" className="btn btn-signal">Our team <Arrow size={18} /></Link>
+        <Link to="/team" className="btn btn-signal">Our team</Link>
       </section>
     </>
   );

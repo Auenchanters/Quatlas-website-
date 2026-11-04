@@ -30,7 +30,7 @@ export default function RankChart() {
             <circle cx={x(+r.year)} cy={y(r.rank)} r="14" fill="transparent" />
             <circle cx={x(+r.year)} cy={y(r.rank)} r="5" fill="var(--color-paper)" stroke="var(--color-signal)" strokeWidth="2" className="group-hover:fill-[var(--color-signal)]" />
             {/* Rank and category on one line above the point, so neighbours and the axis stay clear. */}
-            <text x={x(+r.year)} y={y(r.rank) - 14} textAnchor="middle" fontSize="13" fontWeight="600" fill="var(--color-ink)">
+            <text x={x(+r.year)} y={y(r.rank) - 14} textAnchor="middle" fontSize="13" fontWeight="650" fill="var(--color-ink)">
               {ord(r.rank)} <tspan fontSize="11" fontWeight="400" className="data" fill="var(--color-ink-2)">{r.rankIn}</tspan>
             </text>
           </a>

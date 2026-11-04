@@ -158,7 +158,11 @@ export default function Hangar() {
                 <>
                   <p className="data text-signal">{result.why}</p>
                   <p className="display text-5xl md:text-6xl">{result.score}</p>
-                  <p className="text-ink-2">{result.dist} m flown · {result.kg.toFixed(1)} kg delivered · best {best()}</p>
+                  <dl className="flex gap-6 text-ink-2">
+                    <div><dt className="text-sm">Flown</dt><dd className="text-ink">{result.dist} m</dd></div>
+                    <div><dt className="text-sm">Delivered</dt><dd className="text-ink">{result.kg.toFixed(1)} kg</dd></div>
+                    <div><dt className="text-sm">Best</dt><dd className="text-ink">{best()}</dd></div>
+                  </dl>
                 </>
               ) : <p className="display text-4xl md:text-5xl">Ready for takeoff</p>}
               <p className="wide text-sm">Press and hold to {result ? 'fly again' : 'start'}</p>
