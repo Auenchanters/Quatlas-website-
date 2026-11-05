@@ -120,7 +120,7 @@ export default function Gallery() {
             {!items.length && <p className="text-ink-2 border border-dashed border-rule p-6">No photos here yet.</p>}
             {/* Columns keep every photo at its own shape, nothing cropped. Sizes come from the local copies,
                 so the layout is fixed before a photo arrives; a photo newer than the copy assumes 3:2. */}
-            <ul key={view} className="columns-2 md:columns-3 xl:columns-4 gap-3">
+            <ul key={view} data-reveal="stagger" className="columns-2 md:columns-3 xl:columns-4 gap-3">
               {items.map((g, i) => {
                 const [w, h] = dims(g.img) ?? [3, 2];
                 return (

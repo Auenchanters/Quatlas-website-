@@ -260,7 +260,7 @@ export default function Dogfight() {
   const full = () => (document.fullscreenElement ? document.exitFullscreen() : wrap.current.requestFullscreen?.());
 
   return (
-    <div ref={wrap} className="relative border border-ink bg-[#0b0d12] aspect-[16/9] max-h-[85vh] w-full select-none touch-none overflow-hidden text-[#f2f3ef]"
+    <div ref={wrap} className="relative border border-ink bg-[#0b0d12] aspect-[16/9] pointer-coarse:portrait:aspect-[3/4] max-h-[85vh] w-full select-none touch-none overflow-hidden text-[#f2f3ef]"
       onPointerDown={(e) => { if (phase === 'playing' && e.pointerType === 'mouse' && e.button === 0) i().fire = true; }}
       onPointerUp={(e) => { if (e.pointerType === 'mouse') i().fire = false; }}
       onContextMenu={(e) => { e.preventDefault(); if (phase === 'playing') i().missile = true; }}>

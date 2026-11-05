@@ -128,7 +128,7 @@ export default function Particles() {
       mouse.x += (mouse.tx - mouse.x) * (mouse.tx < -1e3 ? 1 : 0.18);
       mouse.y += (mouse.ty - mouse.y) * (mouse.ty < -1e3 ? 1 : 0.18);
       ctx.clearRect(0, 0, W, H);
-      if (dark()) { drawWind(dt); drawStars(dt); } else drawCrosses();
+      if (dark()) { if (!still) drawWind(dt); drawStars(dt); } else drawCrosses();
       ctx.globalAlpha = 1;
       // Stars drift for ever; the crosses only redraw while the cursor or a displaced cross is still moving.
       running = !still && !document.hidden && (dark() || crosses.size > 0 || now - lastInput < 400);
