@@ -19,6 +19,12 @@ export default function PayloadRun() {
   const motor = useRef(null);
 
   useEffect(() => () => { motor.current?.stop(); audio.current?.close(); }, []);
+  // A hidden tab stops drawing; the motor must stop humming too.
+  useEffect(() => {
+    const hide = () => { if (document.hidden) { hold.current = false; motor.current?.set(0, false); } };
+    document.addEventListener('visibilitychange', hide);
+    return () => document.removeEventListener('visibilitychange', hide);
+  }, []);
 
   useEffect(() => {
     const el = canvas.current, ctx = el.getContext('2d');
@@ -61,7 +67,7 @@ export default function PayloadRun() {
   const canStart = () => state === 'ready' || (state === 'over' && result);
 
   useEffect(() => {
-    const down = (e) => { if (e.code !== 'Space') return; e.preventDefault(); if (canStart()) start(); hold.current = true; };
+    const down = (e) => { if (e.code !== 'Space') return; e.preventDefault(); if (canStart() && !e.repeat) start(); hold.current = true; };
     const up = (e) => { if (e.code === 'Space') hold.current = false; };
     addEventListener('keydown', down); addEventListener('keyup', up);
     return () => { removeEventListener('keydown', down); removeEventListener('keyup', up); };

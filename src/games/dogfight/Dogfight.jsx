@@ -26,7 +26,7 @@ function newSortie() {
 }
 
 export default function Dogfight() {
-  const wrap = useRef(null), glCanvas = useRef(null), hudCanvas = useRef(null);
+  const wrap = useRef(null), hudCanvas = useRef(null);
   const [phase, setPhase] = useState('menu'); // menu | playing | paused | won | lost
   const [result, setResult] = useState(null);
   const phaseRef = useRef(phase); phaseRef.current = phase;
@@ -34,7 +34,11 @@ export default function Dogfight() {
 
   useEffect(() => {
     const el = wrap.current;
-    const renderer = new THREE.WebGLRenderer({ canvas: glCanvas.current, antialias: true, powerPreference: 'high-performance' });
+    // A fresh canvas per mount: the old one's context is released on cleanup, so it can't be reused.
+    const canvas = Object.assign(document.createElement('canvas'), { className: 'absolute inset-0 size-full' });
+    canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', 'Dogfight, a 3D air combat game');
+    el.prepend(canvas);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     const scene = createWorld(), camera = new THREE.PerspectiveCamera(68, 16 / 9, 1, 12000);
@@ -45,9 +49,10 @@ export default function Dogfight() {
     const input = { ndc: new THREE.Vector2(0, 0), fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null };
 
     const placeJets = () => {
-      jets.forEach((j) => scene.remove(j));
+      const free = (o) => { scene.remove(o); o.traverse((c) => { c.geometry?.dispose(); [].concat(c.material ?? []).forEach((m) => m.dispose()); }); };
+      jets.forEach(free);
       jets = [g.player, ...g.enemies].map((p, i) => { const j = buildJet(i ? { body: '#3b4450', accent: '#f2b544' } : {}); scene.add(j); return j; });
-      missileMeshes.forEach((m) => scene.remove(m)); missileMeshes = new Map();
+      missileMeshes.forEach(free); missileMeshes = new Map();
     };
     placeJets();
 
@@ -78,7 +83,7 @@ export default function Dogfight() {
       try { if (score > best()) localStorage.setItem(KEY, score); } catch { /* private mode */ }
       setResult({ won, why, score, kills: g.kills, time: mmss(g.t), accuracy: g.shots ? Math.round((g.hits / g.shots) * 100) : 0 });
       if (won) audio?.win();
-      stopMusic?.(); stopMusic = null;
+      stopMusic?.(); stopMusic = null; motor?.set(0, false);
       setTimeout(() => setPhase(won ? 'won' : 'lost'), won ? 400 : 1600);
     };
 
@@ -123,7 +128,7 @@ export default function Dogfight() {
       for (const { bullet, plane } of stepBullets(g.bullets, [P, ...g.enemies], dt)) {
         if (plane === P) { P.hp -= 3.5; g.hurt = 1; audio?.hit(); }
         else { plane.hp -= 7; g.hits++; effects.spark(bullet.pos); if (Math.random() < 0.3) plane.evadeUntil = g.t + 1.5; }
-        if (plane.hp <= 0) destroy(plane);
+        if (plane.hp <= 0 && plane !== P) destroy(plane);
       }
       g.bullets = g.bullets.filter((b) => b.life > 0);
       for (const m of g.missiles) {
@@ -142,12 +147,15 @@ export default function Dogfight() {
         }
       }
 
-      if (P.alive && !g.over) {
-        g.outT = outOfBounds(P) ? g.outT + dt : 0;
-        if (crashed(P)) { destroy(P); end(false, 'You flew into the ground'); }
-        else if (P.hp <= 0) end(false, 'Shot down');
+      if (!g.over) {
+        g.outT = P.alive && outOfBounds(P) ? g.outT + dt : 0;
+        if (P.hp <= 0) { destroy(P); end(false, 'Shot down'); } // bullets only damage; the end happens here
+        else if (crashed(P)) { destroy(P); end(false, 'You flew into the ground'); }
         else if (g.outT > 12) { destroy(P); end(false, 'Left the combat area'); }
         else if (g.kills === g.enemies.length) end(true, 'All four down');
+        // Warning tone once a second for PULL UP and out of bounds.
+        const low = P.pos.y - groundAt(P.pos.x, P.pos.z) < 150 && forwardOf(P, tmp).y < 0;
+        if ((low || g.outT > 0) && (g.warnT = (g.warnT ?? 0) - dt) <= 0) { audio?.warn(); g.warnT = 1; }
       }
       g.hurt = Math.max(0, g.hurt - dt * 2);
       motor?.set(g.throttle, !!P.alive);
@@ -207,9 +215,13 @@ export default function Dogfight() {
     raf = requestAnimationFrame(frame);
 
     // Input.
-    const onMove = (e) => { const r = el.getBoundingClientRect(); input.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
+    // Mouse only: touch drags on the stick and FIRE button must not move the aim point.
+    const onMove = (e) => { if (e.pointerType !== 'mouse') return; const r = el.getBoundingClientRect(); input.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
     const KEYS = { KeyW: ['throttle', 1], KeyS: ['throttle', -1], KeyA: ['roll', -1], KeyD: ['roll', 1], KeyC: ['look', true] };
     const onKey = (down) => (e) => {
+      // Releases always count, so nothing stays held across a pause.
+      if (!down && KEYS[e.code]) { const [k] = KEYS[e.code]; input[k] = k === 'look' ? false : 0; }
+      if (!down && e.code === 'Space') input.fire = false;
       if (phaseRef.current !== 'playing') { if (down && e.code === 'Escape' && phaseRef.current === 'paused') api.current.resume(); return; }
       if (KEYS[e.code]) { const [k, v] = KEYS[e.code]; input[k] = down ? v : (k === 'look' ? false : 0); e.preventDefault(); }
       if (e.code === 'Space') { input.fire = down; e.preventDefault(); }
@@ -217,23 +229,27 @@ export default function Dogfight() {
       if (e.code === 'Escape' && down) api.current.pause();
     };
     const kd = onKey(true), ku = onKey(false);
+    const clearInput = () => Object.assign(input, { fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null });
     const onHide = () => { if (document.hidden && phaseRef.current === 'playing') api.current.pause(); };
+    const onBlur = () => clearInput();
+    const onUp = (e) => { if (e.pointerType === 'mouse') input.fire = false; }; // even when released outside the game
     el.addEventListener('pointermove', onMove);
     addEventListener('keydown', kd); addEventListener('keyup', ku);
     document.addEventListener('visibilitychange', onHide);
+    addEventListener('blur', onBlur); addEventListener('pointerup', onUp);
 
     api.current = {
       input,
       start() {
         if (!audio) { audio = createAudio(); motor = audio.engine({ base: 70, kind: 'jet' }); }
         audio.resume();
-        g = newSortie(); placeJets(); input.fire = false; input.missile = false;
+        g = newSortie(); placeJets(); clearInput(); input.ndc.set(0, 0);
         camera.position.copy(g.player.pos).add(new THREE.Vector3(0, 9, -30));
         stopMusic?.(); stopMusic = audio.music();
         setResult(null); setPhase('playing');
       },
-      pause() { input.fire = false; motor?.set(0, false); stopMusic?.(); stopMusic = null; setPhase('paused'); },
-      resume() { audio?.resume(); stopMusic = audio?.music(); setPhase('playing'); },
+      pause() { clearInput(); motor?.set(0, false); stopMusic?.(); stopMusic = null; setPhase('paused'); },
+      resume() { audio?.resume(); if (!g.over) stopMusic = audio?.music(); setPhase('playing'); },
     };
 
     return () => {
@@ -241,10 +257,11 @@ export default function Dogfight() {
       el.removeEventListener('pointermove', onMove);
       removeEventListener('keydown', kd); removeEventListener('keyup', ku);
       document.removeEventListener('visibilitychange', onHide);
+      removeEventListener('blur', onBlur); removeEventListener('pointerup', onUp);
       stopMusic?.(); motor?.stop(); audio?.close();
       // Free the GPU memory now: browsers cap live WebGL contexts, and each visit would otherwise keep one.
       scene.traverse((o) => { o.geometry?.dispose(); [].concat(o.material ?? []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
-      renderer.dispose(); renderer.forceContextLoss();
+      renderer.dispose(); renderer.forceContextLoss(); canvas.remove();
     };
   }, []);
 
@@ -264,14 +281,13 @@ export default function Dogfight() {
       onPointerDown={(e) => { if (phase === 'playing' && e.pointerType === 'mouse' && e.button === 0) i().fire = true; }}
       onPointerUp={(e) => { if (e.pointerType === 'mouse') i().fire = false; }}
       onContextMenu={(e) => { e.preventDefault(); if (phase === 'playing') i().missile = true; }}>
-      <canvas ref={glCanvas} className="absolute inset-0 size-full" aria-label="Dogfight, a 3D air combat game" role="img" />
       <canvas ref={hudCanvas} className="absolute inset-0 size-full pointer-events-none" aria-hidden="true" />
 
       {phase === 'playing' && (
         <>
           {/* Touch controls (shown on touch screens only). */}
           <div className="hidden pointer-coarse:block absolute left-4 bottom-4 size-32 rounded-full border-2 border-white/40 bg-white/10"
-            onPointerDown={stick} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => (i().stick = null)} onPointerCancel={() => (i().stick = null)} aria-hidden="true" />
+            onPointerDown={stick} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => { i().stick = null; i().ndc.set(0, 0); }} onPointerCancel={() => { i().stick = null; i().ndc.set(0, 0); }} aria-hidden="true" />
           <div className="hidden pointer-coarse:flex absolute right-4 bottom-4 gap-3">
             <button type="button" className="size-16 rounded-full bg-white/15 border-2 border-white/50 data text-white" onPointerDown={() => (i().missile = true)}>MSL</button>
             <button type="button" className="size-20 rounded-full bg-[#c41e2c]/80 border-2 border-white/60 data text-white" onPointerDown={fire(true)} onPointerUp={fire(false)} onPointerCancel={fire(false)}>FIRE</button>
