@@ -64,6 +64,11 @@
   from { opacity: 0; transform: translateY(0.35em); filter: blur(3px); }
 }
 
+/* Lenis smooth scroll. */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis [data-lenis-prevent] { overscroll-behavior: contain; }
+
 @layer base {
   html, body { overflow-x: clip; }
   /* A bare grid is one column that never grows past its container (a wide child scrolls inside instead). */
@@ -96,6 +101,13 @@
   .wide { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
   .data { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
   .section { padding-block: clamp(5rem, 10vw, 9rem); }
+
+  /* Rolling numbers: one 1em-tall window per digit, the 0–9 stack slides behind it. */
+  .roll { display: inline-flex; align-items: flex-end; line-height: 1; font-variant-numeric: tabular-nums; vertical-align: baseline; }
+  .roll > span { height: 1em; }
+  .roll-col { display: inline-block; overflow: hidden; }
+  .roll-col > span { display: flex; flex-direction: column; will-change: transform; }
+  .roll-col > span > span { height: 1em; }
 
   .wrap { width: 100%; max-width: 78rem; margin-inline: auto; padding-inline: 1rem; }
   @media (min-width: 768px) { .wrap { padding-inline: 2.5rem; } }

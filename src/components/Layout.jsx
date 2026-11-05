@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { revealPage } from '../lib/motion';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Img } from './Img';
 import Particles from './Particles';
@@ -45,7 +46,7 @@ function Header() {
           <nav id="nav" aria-label="Main"
             className={`${open ? 'block' : 'hidden'} xl:block absolute xl:static inset-x-0 top-16 bg-paper border-b xl:border-0 border-ink`}>
             <ul className="wrap xl:p-0 xl:flex items-center gap-7 py-3">
-              {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end className={link}>{label}</NavLink></li>)}
+              {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end viewTransition className={link}>{label}</NavLink></li>)}
               <li><NavLink to="/login" className="btn btn-sm mt-2 xl:mt-0">Login</NavLink></li>
             </ul>
           </nav>
@@ -97,7 +98,7 @@ function Footer() {
                 {links.map(([to, label]) =>
                   <li key={label}>{to.startsWith('http')
                     ? <a href={to} target="_blank" rel="noreferrer" className="no-underline hover:text-signal">{label}</a>
-                    : <Link to={to} className="no-underline hover:text-signal">{label}</Link>}</li>)}
+                    : <Link to={to} viewTransition className="no-underline hover:text-signal">{label}</Link>}</li>)}
               </ul>
             </div>
           ))}
@@ -137,6 +138,13 @@ function Footer() {
   );
 }
 
+// Keyed by route: its effect runs once the (lazy) page has committed, and cleans up on the way out.
+function PageMotion({ children }) {
+  const ref = useRef(null);
+  useEffect(() => revealPage(ref.current), []);
+  return <div ref={ref}>{children}</div>;
+}
+
 export default function Layout() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
@@ -148,7 +156,7 @@ export default function Layout() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 btn bg-paper">Skip to content</a>
       <Particles />
       <Header />
-      <main id="main"><Outlet /></main>
+      <main id="main"><PageMotion key={pathname}><Outlet /></PageMotion></main>
       <Footer />
     </>
   );
@@ -158,8 +166,8 @@ export default function Layout() {
 export function SheetHead({ title, children }) {
   return (
     <div className="wrap pt-[clamp(4rem,9vw,8rem)] pb-[clamp(3rem,6vw,5rem)] border-b border-rule">
-      <h1 className="display text-[clamp(2.75rem,6vw,5.5rem)]">{title}</h1>
-      {children && <div className="mt-6 max-w-2xl text-lg text-ink-2">{children}</div>}
+      <h1 data-reveal="words" className="display text-[clamp(2.75rem,6vw,5.5rem)]">{title}</h1>
+      {children && <div data-reveal="up" className="mt-6 max-w-2xl text-lg text-ink-2">{children}</div>}
     </div>
   );
 }
@@ -168,8 +176,8 @@ export function SheetHead({ title, children }) {
 export function Copy({ sections, from = 0, to }) {
   return sections.slice(from, to).map((s, i) => (
     <section key={i} className="wrap grid md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-12 gap-y-4 py-10 md:py-14 border-b border-rule">
-      {s.heading ? <h2 className="wide text-2xl md:text-[1.75rem]">{s.heading}</h2> : <span />}
-      <div className="copy">
+      {s.heading ? <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">{s.heading}</h2> : <span />}
+      <div data-reveal="up" className="copy">
         {s.blocks.map((b, j) => b.type === 'p'
           ? <p key={j}>{b.text}</p>
           : <ul key={j}>{b.items.map((t, k) => <li key={k}>{t}</li>)}</ul>)}
