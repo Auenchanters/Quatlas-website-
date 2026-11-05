@@ -34,7 +34,7 @@ export default function Events() {
           {RECORD.map((r) => (
             <li key={r.year}>
               <Link to={`/achievements#y${r.year}`} className="group grid gap-3 no-underline">
-                <Pic name={r.photos[0]} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 46vw, 100vw" alt="" className="w-full aspect-[3/2] object-cover border border-ink group-hover:border-signal" />
+                {r.photos?.[0] && <Pic name={r.photos[0]} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 46vw, 100vw" alt="" className="w-full aspect-[3/2] object-cover border border-ink group-hover:border-signal" />}
                 <p className="data text-signal">{r.year}</p>
                 <p className="wide text-lg group-hover:text-signal">{r.title ?? 'SAE Aero Design'}</p>
                 <p className="text-ink-2">{r.summary}</p>

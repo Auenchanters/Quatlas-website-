@@ -56,8 +56,8 @@ export default function Home() {
           <p data-reveal="up" className="wide text-lg">{HERO.place}</p>
           <div data-reveal="up"><Quotes /></div>
           <div data-reveal="up" className="flex flex-wrap gap-3">
-            <Link to="/recruitment" viewTransition className="btn btn-signal">Join the team</Link>
-            <Link to="/support" viewTransition className="btn">Support the build</Link>
+            <Link to="/recruitment" className="btn btn-signal">Join the team</Link>
+            <Link to="/support" className="btn">Support the build</Link>
           </div>
         </div>
         <div data-reveal="up"><Aircraft /></div>
@@ -69,14 +69,14 @@ export default function Home() {
         <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Club overview</h2>
         <div data-reveal="up" className="copy text-[1.0625rem]">
           <p>{OVERVIEW[0]}</p>
-          <p><Link to="/about" viewTransition>More about the club</Link></p>
+          <p><Link to="/about">More about the club</Link></p>
         </div>
       </section>
 
       <section aria-labelledby="next" className="wrap pb-[clamp(5rem,10vw,9rem)] grid gap-8">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-4">
           <h2 id="next" data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Upcoming</h2>
-          <Link to="/events" viewTransition className="wide text-sm inline-flex items-center gap-2 hover:text-signal">All events</Link>
+          <Link to="/events" className="wide text-sm inline-flex items-center gap-2 hover:text-signal">All events</Link>
         </div>
         <ul data-reveal="stagger" className="grid gap-8 md:grid-cols-3">
           {UPCOMING.map((e) => (
@@ -103,7 +103,7 @@ export default function Home() {
                 ))}
               </tbody>
             </table>
-            <Link to="/achievements" viewTransition className="btn mt-10">All achievements</Link>
+            <Link to="/achievements" className="btn mt-10">All achievements</Link>
           </div>
           <div data-reveal="image">
             <Img name="quatlas-05" sizes="(min-width: 1024px) 40vw, 100vw" alt="The red-and-white Quatlas aircraft, tail number 038, climbing out over a grass field." className="w-full h-auto border border-ink" />
@@ -115,7 +115,7 @@ export default function Home() {
         <ul data-reveal="stagger" className="border-t border-ink">
           {PATHS.map(([to, title, text]) => (
             <li key={to} className="border-b border-rule">
-              <Link to={to} viewTransition className="group grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_auto] gap-3 lg:gap-10 py-10 no-underline items-baseline">
+              <Link to={to} className="group grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_auto] gap-3 lg:gap-10 py-10 no-underline items-baseline">
                 <h3 className="display text-[clamp(1.875rem,3.3vw,2.75rem)] group-hover:text-signal transition-colors">{title}</h3>
                 <p className="text-ink-2 max-w-xl">{text}</p>
                 <span className="wide text-sm inline-flex items-center gap-2 group-hover:text-signal">Learn more</span>

@@ -43,9 +43,9 @@ export default function Subteam() {
       </section>
       <nav aria-label="Subteams" className="wrap py-10 border-t border-ink flex flex-wrap items-center justify-between gap-4">
         <ul className="flex flex-wrap gap-x-6 gap-y-2">
-          {SUBTEAMS.map((t) => <li key={t.slug}><Link to={`/team/${t.slug}`} viewTransition aria-current={t.slug === slug ? 'page' : undefined} className={`wide text-sm no-underline ${t.slug === slug ? 'text-signal' : 'hover:text-signal'}`}>{t.name}</Link></li>)}
+          {SUBTEAMS.map((t) => <li key={t.slug}><Link to={`/team/${t.slug}`} aria-current={t.slug === slug ? 'page' : undefined} className={`wide text-sm no-underline ${t.slug === slug ? 'text-signal' : 'hover:text-signal'}`}>{t.name}</Link></li>)}
         </ul>
-        <Link to={`/team/${next.slug}`} viewTransition className="btn btn-sm">Next: {next.name}</Link>
+        <Link to={`/team/${next.slug}`} className="btn btn-sm">Next: {next.name}</Link>
       </nav>
     </>
   );

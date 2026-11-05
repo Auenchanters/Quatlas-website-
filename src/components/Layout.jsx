@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { revealPage } from '../lib/motion';
+import { useEffect, useLayoutEffect, useRef, useState, ViewTransition } from 'react';
+import { revealPage, scrollToTop } from '../lib/motion';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Img } from './Img';
 import Particles from './Particles';
@@ -46,7 +46,7 @@ function Header() {
           <nav id="nav" aria-label="Main"
             className={`${open ? 'block menu-in' : 'hidden'} xl:block absolute xl:static inset-x-0 top-16 bg-paper border-b xl:border-0 border-ink`}>
             <ul className="wrap xl:p-0 xl:flex items-center gap-7 py-3">
-              {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end viewTransition className={link}>{label}</NavLink></li>)}
+              {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end className={link}>{label}</NavLink></li>)}
               <li><NavLink to="/login" className="btn btn-sm mt-2 xl:mt-0">Login</NavLink></li>
             </ul>
           </nav>
@@ -100,7 +100,7 @@ function Footer() {
                 {links.map(([to, label]) =>
                   <li key={label}>{to.startsWith('http')
                     ? <a href={to} target="_blank" rel="noreferrer" className="no-underline hover:text-signal">{label}</a>
-                    : <Link to={to} viewTransition className="no-underline hover:text-signal">{label}</Link>}</li>)}
+                    : <Link to={to} className="no-underline hover:text-signal">{label}</Link>}</li>)}
               </ul>
             </div>
           ))}
@@ -143,7 +143,7 @@ function Footer() {
 // Keyed by route: its effect runs once the (lazy) page has committed, and cleans up on the way out.
 function PageMotion({ children }) {
   const ref = useRef(null);
-  useEffect(() => revealPage(ref.current), []);
+  useLayoutEffect(() => revealPage(ref.current), []);
   return <div ref={ref}>{children}</div>;
 }
 
@@ -151,14 +151,14 @@ export default function Layout() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
-    else window.scrollTo(0, 0);
+    else scrollToTop();
   }, [pathname, hash]);
   return (
     <>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 btn bg-paper">Skip to content</a>
       <Particles />
       <Header />
-      <main id="main"><PageMotion key={pathname}><Outlet /></PageMotion></main>
+      <main id="main"><ViewTransition><PageMotion key={pathname}><Outlet /></PageMotion></ViewTransition></main>
       <Footer />
     </>
   );

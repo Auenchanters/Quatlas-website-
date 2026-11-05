@@ -41,7 +41,7 @@ function Supporters() {
       {logos?.length > 0 && (
         <div className="grid gap-4">
           {rowsOf(logos).map((row, i) => (
-            <Marquee key={i} label={i ? 'Supporters, second row' : 'Supporters'} reverse={i === 1}>
+            <Marquee key={i} label={i ? 'Supporters, second row' : 'Supporters'} reverse={i === 1} decorative={i === 1 && logos.length < 8}>
               {row.map((s) => <Tile key={s._id} s={s} />)}
             </Marquee>
           ))}
@@ -119,7 +119,7 @@ export default function Support() {
             </li>
           ))}
         </ol>
-        <Link to="/contact?type=Sponsorship" viewTransition className="btn btn-signal mt-12">Talk to us about sponsoring</Link>
+        <Link to="/contact?type=Sponsorship" className="btn btn-signal mt-12">Talk to us about sponsoring</Link>
       </section>
       <Crowdfunding />
     </>

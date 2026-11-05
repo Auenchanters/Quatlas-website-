@@ -24,7 +24,7 @@ function transition(change, cls) {
 // thumbnail you clicked and shrinks back into the one you're on when it closes (view-transition-name).
 function Viewer({ items, index, onClose, onMove }) {
   const ref = useRef(null);
-  useLayoutEffect(() => { ref.current?.showModal(); }, []);
+  useLayoutEffect(() => { const d = ref.current; d.showModal(); return () => d.close(); }, []); // close() hands focus back
   useEffect(() => {
     const key = (e) => { if (e.key === 'ArrowRight') onMove(1); if (e.key === 'ArrowLeft') onMove(-1); };
     addEventListener('keydown', key);
@@ -92,7 +92,7 @@ export default function Gallery() {
   const [open, setOpen] = useState(null);
   const move = (d) => setOpen((i) => (i + d + items.length) % items.length);
 
-  const show = (v) => v !== view && transition(() => setParams(v === 'aircraft' ? {} : { view: v }, { replace: true, preventScrollReset: true }));
+  const show = (v) => v !== view && setParams(v === 'aircraft' ? {} : { view: v }, { replace: true, preventScrollReset: true });
   const openAt = (i, el) => {
     el.style.viewTransitionName = 'photo';
     transition(() => { el.style.viewTransitionName = ''; setOpen(i); });

@@ -10,6 +10,6 @@ initSounds();
 const root = document.getElementById('root');
 const app = <StrictMode><BrowserRouter><App /></BrowserRouter></StrictMode>;
 
-// Hydrate only HTML prerendered for this exact route; any other route renders fresh.
-if (root.dataset.route === location.pathname) hydrateRoot(root, app);
+// Hydrate only HTML prerendered for this exact URL (prerendering never sees a ?query); anything else renders fresh.
+if (root.dataset.route === location.pathname && !location.search) hydrateRoot(root, app);
 else { root.textContent = ''; createRoot(root).render(app); }
