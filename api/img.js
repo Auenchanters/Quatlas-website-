@@ -26,6 +26,19 @@ export async function readCapped(body, max) {
   }
 }
 
+// Follows redirects by hand so every hop is checked against ALLOWED before it is fetched
+// (redirect: 'follow' would call any host a link redirects to, and only let us check the last one).
+export async function fetchAllowed(u, get = fetch) {
+  for (let hop = 0; hop < 6; hop++) {
+    if (u.protocol !== 'https:' || !ALLOWED.test(u.hostname)) return null;
+    const r = await get(u.href, { headers: HEADERS, redirect: 'manual', signal: AbortSignal.timeout(20000) });
+    const next = r.status >= 300 && r.status < 400 && r.headers.get('location');
+    if (!next) return r;
+    u = new URL(next, u);
+  }
+  return null;
+}
+
 function source(u) {
   if (u.hostname === 'drive.google.com') {
     const id = u.pathname.match(/\/d\/([^/]+)/)?.[1] ?? u.searchParams.get('id');
@@ -40,9 +53,9 @@ export default async function handler(req, res) {
   if (u.protocol !== 'https:' || !ALLOWED.test(u.hostname)) return res.status(400).send('Host not allowed');
   const width = widthFor(req.query.w);
   try {
-    const r = await fetch(source(u), { headers: HEADERS, redirect: 'follow', signal: AbortSignal.timeout(20000) });
-    const type = r.headers.get('content-type') ?? '';
-    if (!r.ok || !ALLOWED.test(new URL(r.url).hostname) || !type.startsWith('image/')) return res.status(404).send('Not an image');
+    const r = await fetchAllowed(source(u));
+    const type = r?.headers.get('content-type') ?? '';
+    if (!r?.ok || !type.startsWith('image/')) return res.status(404).send('Not an image');
     if (+r.headers.get('content-length') > MAX_BYTES) return res.status(413).send('Too large');
     const buf = await readCapped(r.body, MAX_BYTES);
     if (!buf) return res.status(413).send('Too large');
