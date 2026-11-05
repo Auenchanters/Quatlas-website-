@@ -2,7 +2,7 @@ import { motionAllowed } from './motion';
 
 const html = () => document.documentElement;
 
-export function applyTheme(theme) {
+function applyTheme(theme) {
   html().dataset.theme = theme;
   try { localStorage.setItem('theme', theme); } catch { /* private mode: the choice just isn't remembered */ }
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0b0d12' : '#f2f3ef');

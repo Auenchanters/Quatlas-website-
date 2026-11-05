@@ -5,31 +5,30 @@ import Home from './pages/Home';
 import { Toaster } from './lib/toast';
 
 // Home ships in the entry chunk; everything else loads with its route, so visitors never download admin code.
-const page = (load) => lazy(load);
-const About = page(() => import('./pages/About'));
-const Achievements = page(() => import('./pages/Achievements'));
-const Team = page(() => import('./pages/Team'));
-const Subteam = page(() => import('./pages/Subteam'));
-const Events = page(() => import('./pages/Events'));
-const Support = page(() => import('./pages/Support'));
-const Hangar = page(() => import('./pages/Hangar'));
-const Contact = page(() => import('./pages/Contact'));
-const Alumni = page(() => import('./pages/Alumni'));
-const Gallery = page(() => import('./pages/Gallery'));
-const Recruitment = page(() => import('./pages/Recruitment'));
-const Legal = page(() => import('./pages/Legal'));
-const Results = page(() => import('./pages/Results'));
-const NotFound = page(() => import('./pages/NotFound'));
-const Auth = page(() => import('./pages/Auth'));
+const About = lazy(() => import('./pages/About'));
+const Achievements = lazy(() => import('./pages/Achievements'));
+const Team = lazy(() => import('./pages/Team'));
+const Subteam = lazy(() => import('./pages/Subteam'));
+const Events = lazy(() => import('./pages/Events'));
+const Support = lazy(() => import('./pages/Support'));
+const Hangar = lazy(() => import('./pages/Hangar'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Alumni = lazy(() => import('./pages/Alumni'));
+const Gallery = lazy(() => import('./pages/Gallery'));
+const Recruitment = lazy(() => import('./pages/Recruitment'));
+const Legal = lazy(() => import('./pages/Legal'));
+const Results = lazy(() => import('./pages/Results'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Auth = lazy(() => import('./pages/Auth'));
 
 // Admin: one chunk per screen, behind AdminLayout's token check.
-const AdminLayout = page(() => import('./admin/AdminLayout'));
-const Dashboard = page(() => import('./admin/Dashboard'));
-const AdminRecruitment = page(() => import('./admin/Recruitment'));
-const Forms = page(() => import('./admin/Forms'));
-const TeamData = page(() => import('./admin/Team'));
-const Links = page(() => import('./admin/Links'));
-const Account = page(() => import('./admin/Account'));
+const AdminLayout = lazy(() => import('./admin/AdminLayout'));
+const Dashboard = lazy(() => import('./admin/Dashboard'));
+const AdminRecruitment = lazy(() => import('./admin/Recruitment'));
+const Forms = lazy(() => import('./admin/Forms'));
+const TeamData = lazy(() => import('./admin/Team'));
+const Links = lazy(() => import('./admin/Links'));
+const Account = lazy(() => import('./admin/Account'));
 
 export default function App() {
   return (

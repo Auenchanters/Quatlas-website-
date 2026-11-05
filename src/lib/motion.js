@@ -17,7 +17,7 @@ export function scrollToTop() {
   else window.scrollTo(0, 0);
 }
 
-export function startMotion() {
+function startMotion() {
   if (!motionAllowed()) return Promise.resolve(null);
   return (loaded ??= Promise.all([import('gsap'), import('gsap/ScrollTrigger'), import('gsap/SplitText'), import('lenis')])
     .then(([{ gsap }, { ScrollTrigger }, { SplitText }, { default: Lenis }]) => {
