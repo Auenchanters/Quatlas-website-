@@ -35,6 +35,7 @@
   --fig-top: var(--color-sheet); --fig-left: #e4e6e1; --fig-right: #cdd0ca;
   --fig-on-top: #f6d5d8; --fig-on-left: #eaa3a9; --fig-on-right: #d9737c;
   --fig-grid: #e3e5e0;
+  --grid-line: color-mix(in srgb, var(--color-rule) 70%, transparent);
   color-scheme: light;
 }
 

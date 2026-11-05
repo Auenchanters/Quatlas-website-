@@ -164,14 +164,29 @@ export default function Layout() {
   );
 }
 
-// Page heading shared by every sheet: big expanded title, optional lede.
-export function SheetHead({ title, children }) {
+// Page heading shared by every sheet: big title, optional lede.
+// name: a view-transition-name, so a tile's title can morph into this one (the morph is the entrance,
+// so it skips the word reveal). backdrop: a full-bleed layer behind the head, faded into the page.
+export function SheetHead({ title, name, backdrop, children }) {
   return (
-    <div className="wrap pt-[clamp(4rem,9vw,8rem)] pb-[clamp(3rem,6vw,5rem)] border-b border-rule">
-      <h1 data-reveal="words" className="display text-[clamp(2.75rem,6vw,5.5rem)]">{title}</h1>
-      {children && <div data-reveal="up" className="mt-6 max-w-2xl text-lg text-ink-2">{children}</div>}
+    <div className="relative isolate">
+      {backdrop && (
+        <div aria-hidden="true" className="absolute inset-0 -z-10 overflow-hidden">
+          {backdrop}
+          <div className="absolute inset-0 bg-linear-to-b from-paper/30 via-paper/70 to-paper" />
+        </div>
+      )}
+      <div className="wrap pt-[clamp(4rem,9vw,8rem)] pb-[clamp(3rem,6vw,5rem)] border-b border-rule">
+        <h1 data-reveal={name ? undefined : 'words'} style={name ? { viewTransitionName: name } : undefined} className="display text-[clamp(2.75rem,6vw,5.5rem)]">{title}</h1>
+        {children && <div data-reveal="up" className="mt-6 max-w-2xl text-lg text-ink-2">{children}</div>}
+      </div>
     </div>
   );
+}
+
+// Drawing-sheet grid: the stand-in behind team tiles and subteam heads until each team's own background lands.
+export function SheetGrid({ className = '' }) {
+  return <div className={`size-full bg-[linear-gradient(var(--grid-line)_1px,transparent_1px),linear-gradient(90deg,var(--grid-line)_1px,transparent_1px)] bg-[size:24px_24px] ${className}`} />;
 }
 
 // Renders the structured copy in src/content/*.json.

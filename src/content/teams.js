@@ -33,6 +33,12 @@ export const SUBTEAMS = [
 
 export const TEAM_INTRO = 'Students from every branch at Ramaiah, organised the way an aircraft is: one core team and five subteams that each own a part of the build.';
 
+// The buttons on /team: every subteam, then the alumni.
+export const TILES = [
+  ...SUBTEAMS.map((s) => ({ slug: s.slug, name: s.name, to: `/team/${s.slug}` })),
+  { slug: 'alumni', name: 'Alumni', to: '/alumini' },
+];
+
 const norm = (s = '') => s.trim().toLowerCase();
 export const subteamOf = (roleName) => SUBTEAMS.find((s) => s.match.includes(norm(roleName)));
 export const isCore = (roleName) => norm(roleName) === 'core';
