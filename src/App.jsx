@@ -46,6 +46,7 @@ export default function App() {
             <Route path="sponsors" element={<Navigate to="/support" replace />} />
             <Route path="crowdfunding" element={<Navigate to="/support#crowdfunding" replace />} />
             <Route path="hangar" element={<Hangar />} />
+            <Route path="hangar/:game" element={<Hangar />} />
             <Route path="contact" element={<Contact />} />
             <Route path="alumini" element={<Alumni />} />
             <Route path="alumni" element={<Navigate to="/alumini" replace />} />

@@ -1,175 +1,105 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { Link, useParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
+import { HANGAR } from '../content/hangar';
+import NotFound from './NotFound';
 
-// "Payload Run", the hidden game behind the footer's "secret" link.
-// Hold (mouse, touch or Space) to climb; climbing drains the battery. Collect payload crates,
-// pick up cells to recharge, keep clear of the pylons, the ground and the altitude ceiling.
-const W = 960, H = 540, PLANE_X = 220, CEIL = 40, GROUND = H - 48;
-const KEY = 'payload-best';
-const best = () => { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } };
+// The hidden hangar, behind the footer's "secret" link: pick a game. Each game is its own chunk.
+const GAMES = {
+  'payload-run': lazy(() => import('../games/payload/PayloadRun')),
+  dogfight: lazy(() => import('../games/dogfight/Dogfight')),
+};
 
-function fresh() {
-  return { y: H / 2, vy: 0, t: 0, dist: 0, speed: 4.2, kg: 0, battery: 1, items: [], next: 60, gust: 0, over: false };
-}
-
-// Pylons come in pairs with a gap; crates and cells float in the gaps and between them.
-function spawn(s) {
-  const gap = Math.max(150, 230 - s.dist / 400);
-  const top = CEIL + 30 + Math.random() * (GROUND - CEIL - gap - 60);
-  s.items.push({ kind: 'pylon', x: W + 40, top, gap, w: 26 });
-  s.items.push({ kind: Math.random() < 0.28 ? 'cell' : 'crate', x: W + 40 + 13, y: top + gap / 2, r: 13 });
-  if (Math.random() < 0.5) s.items.push({ kind: 'crate', x: W + 40 + 200, y: CEIL + 60 + Math.random() * (GROUND - CEIL - 120), r: 13 });
-  s.next = Math.max(70, 120 - s.dist / 300);
-}
-
-function draw(ctx, s, c, k = 1) {
-  ctx.fillStyle = c.paper; ctx.fillRect(0, 0, W, H);
-  // Graph-paper grid scrolling with the flight.
-  ctx.strokeStyle = c.grid; ctx.lineWidth = 1;
-  const off = -(s.dist % 40);
-  for (let x = off; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-  // Ceiling and ground.
-  ctx.strokeStyle = c.signal; ctx.setLineDash([6, 6]);
-  ctx.beginPath(); ctx.moveTo(0, CEIL); ctx.lineTo(W, CEIL); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = c.ink; ctx.fillRect(0, GROUND, W, 2);
-  for (let x = off * 2 % 24; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x, GROUND + 2); ctx.lineTo(x - 10, GROUND + 14); ctx.strokeStyle = c.ink2; ctx.stroke(); }
-
-  for (const it of s.items) {
-    if (it.kind === 'pylon') {
-      ctx.strokeStyle = c.ink; ctx.lineWidth = 1.5;
-      ctx.strokeRect(it.x, CEIL, it.w, it.top - CEIL);
-      ctx.strokeRect(it.x, it.top + it.gap, it.w, GROUND - it.top - it.gap);
-      ctx.lineWidth = 1;
-      for (const [a, b] of [[CEIL, it.top], [it.top + it.gap, GROUND]]) for (let y = a; y < b - 12; y += 16) {
-        ctx.beginPath(); ctx.moveTo(it.x, y); ctx.lineTo(it.x + it.w, y + 12); ctx.stroke();
-      }
-    } else if (!it.got) {
-      ctx.lineWidth = 1.5;
-      if (it.kind === 'crate') {
-        ctx.strokeStyle = c.signal; ctx.strokeRect(it.x - 11, it.y - 11, 22, 22);
-        ctx.beginPath(); ctx.moveTo(it.x - 11, it.y - 11); ctx.lineTo(it.x + 11, it.y + 11); ctx.moveTo(it.x + 11, it.y - 11); ctx.lineTo(it.x - 11, it.y + 11); ctx.stroke();
-      } else {
-        ctx.strokeStyle = c.ink; ctx.strokeRect(it.x - 7, it.y - 12, 14, 24); ctx.fillStyle = c.ink; ctx.fillRect(it.x - 3, it.y - 15, 6, 3);
-        ctx.fillRect(it.x - 5, it.y + 2, 10, 8);
-      }
-    }
-  }
-
-  // The aircraft, side view, pitched with its climb rate.
-  ctx.save(); ctx.translate(PLANE_X, s.y); ctx.rotate(Math.max(-0.5, Math.min(0.5, s.vy / 14)));
-  ctx.strokeStyle = c.ink; ctx.lineWidth = 1.75; ctx.fillStyle = c.sheet;
-  ctx.beginPath(); ctx.moveTo(34, 0); ctx.quadraticCurveTo(30, -7, 10, -7); ctx.lineTo(-38, -3); ctx.lineTo(-38, 2); ctx.lineTo(10, 6); ctx.quadraticCurveTo(30, 6, 34, 0); ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-30, -3); ctx.lineTo(-42, -18); ctx.lineTo(-36, -18); ctx.lineTo(-22, -3); ctx.stroke(); // fin
-  ctx.fillStyle = c.signal; ctx.fillRect(-4, -9, 26, 4); // wing, end on
-  ctx.beginPath(); ctx.moveTo(36, -9); ctx.lineTo(36, 9); ctx.stroke(); // propeller
-  ctx.beginPath(); ctx.moveTo(4, 6); ctx.lineTo(0, 16); ctx.moveTo(18, 6); ctx.lineTo(20, 16); ctx.stroke(); // gear
-  ctx.restore();
-
-  // Instruments.
-  // k scales the readouts up when the canvas is drawn small (phones).
-  ctx.font = `500 ${15 * k}px "IBM Plex Mono", monospace`; ctx.fillStyle = c.ink; ctx.textBaseline = 'top';
-  ctx.fillText(`${String(Math.floor(s.dist / 10)).padStart(5, '0')} m`, 20, 10);
-  ctx.fillText(`${s.kg.toFixed(1)} kg`, 20 + 110 * k, 10);
-  const bx = 20 + 210 * k, bw = 90 * k;
-  ctx.lineWidth = 1.5; ctx.strokeStyle = c.ink; ctx.strokeRect(bx, 10, bw, 14 * k);
-  ctx.fillStyle = s.battery < 0.2 ? c.signal : c.ink; ctx.fillRect(bx + 2, 12, (bw - 4) * s.battery, 14 * k - 4);
-  ctx.fillStyle = c.ink2; ctx.textAlign = 'right'; ctx.fillText(`BEST ${best()}`, W - 20, 10); ctx.textAlign = 'left';
-}
-
-const score = (s) => Math.floor(s.dist / 10 + s.kg * 50);
-
-export default function Hangar() {
-  const canvas = useRef(null);
-  const [state, setState] = useState('ready'); // ready | flying | over
-  const [result, setResult] = useState(null);
-  const game = useRef(fresh());
-  const hold = useRef(false);
-
+// Payload Run flying itself, as the card's preview (loaded with the game's chunk, after the page).
+function PayloadPreview() {
+  const ref = useRef(null);
   useEffect(() => {
-    const ctx = canvas.current.getContext('2d');
-    const css = getComputedStyle(document.documentElement);
-    const v = (n) => css.getPropertyValue(n).trim();
-    const c = { paper: v('--color-paper'), sheet: v('--color-sheet'), ink: v('--color-ink'), ink2: v('--color-ink-2'), signal: v('--color-signal'), grid: v('--fig-grid') || v('--color-rule') };
-    let raf, last = performance.now();
-    const step = (now) => {
-      const dt = Math.min(2, (now - last) / 16.67); last = now;
-      const s = game.current;
-      if (state === 'flying' && !s.over) {
-        const up = hold.current && s.battery > 0;
-        s.vy += (up ? -0.55 : 0.38) * dt + s.gust * dt;
-        s.vy = Math.max(-7, Math.min(8, s.vy)) * 0.985;
-        s.y += s.vy * dt;
-        s.battery = Math.max(0, Math.min(1, s.battery - (up ? 0.0035 : -0.0006) * dt));
-        s.speed = 4.2 + s.dist / 4000;
-        s.dist += s.speed * dt;
-        if (Math.random() < 0.01) s.gust = (Math.random() - 0.5) * 0.25;
-        s.gust *= 0.99;
-        for (const it of s.items) it.x -= s.speed * dt;
-        s.items = s.items.filter((it) => it.x > -60);
-        if ((s.next -= s.speed * dt / 4.2) <= 0) spawn(s);
-        for (const it of s.items) {
-          if (it.kind === 'pylon') {
-            const inX = PLANE_X + 34 > it.x && PLANE_X - 38 < it.x + it.w;
-            if (inX && (s.y - 8 < it.top || s.y + 8 > it.top + it.gap)) s.over = 'Clipped a pylon';
-          } else if (!it.got && Math.hypot(it.x - PLANE_X, it.y - s.y) < it.r + 18) {
-            it.got = true;
-            if (it.kind === 'crate') s.kg += 0.5; else s.battery = Math.min(1, s.battery + 0.35);
-          }
+    let raf, alive = true;
+    Promise.all([import('../games/payload/sim'), import('../games/payload/draw')]).then(([sim, art]) => {
+      const el = ref.current; if (!el || !alive) return;
+      const ctx = el.getContext('2d'); el.width = sim.W; el.height = sim.H;
+      let s = sim.fresh(), fx = art.createFx(), t0 = performance.now();
+      s.dist = 6000; // start at dusk: the prettiest light
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const frame = (now) => {
+        if (!still) {
+          // Autopilot: aim for the middle of the next gap.
+          const next = s.items.find((i) => i.kind === 'pylon' && i.x > sim.PLANE_X - 30);
+          const target = next ? next.top + next.gap / 2 : sim.H / 2;
+          sim.step(s, s.y > target + 4 || s.vy > 3, 1); s.battery = 1;
+          art.applyEvents(fx, s.events, s);
+          if (s.over || s.dist > 22000) { s = sim.fresh(); s.dist = 6000; fx = art.createFx(); }
         }
-        if (s.y + 14 > GROUND) s.over = 'Hit the ground';
-        if (s.y - 10 < CEIL) s.over = 'Broke the altitude ceiling';
-        if (s.over) {
-          const sc = score(s);
-          try { if (sc > best()) localStorage.setItem(KEY, sc); } catch { /* private mode */ }
-          setResult({ why: s.over, score: sc, kg: s.kg, dist: Math.floor(s.dist / 10) });
-          setState('over');
-        }
-      }
-      draw(ctx, game.current, c, Math.min(2.2, Math.max(1, (W / canvas.current.clientWidth) * 0.7)));
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [state]);
+        art.draw(ctx, s, fx, now - t0, 1, 0);
+        if (!still && alive) raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+    });
+    return () => { alive = false; cancelAnimationFrame(raf); };
+  }, []);
+  return <canvas ref={ref} aria-hidden="true" className="block w-full aspect-[16/9]" />;
+}
 
-  const start = () => { game.current = fresh(); hold.current = false; setResult(null); setState('flying'); };
-  useEffect(() => {
-    const down = (e) => { if (e.code !== 'Space') return; e.preventDefault(); if (state !== 'flying') start(); hold.current = true; };
-    const up = (e) => { if (e.code === 'Space') hold.current = false; };
-    addEventListener('keydown', down); addEventListener('keyup', up);
-    return () => { removeEventListener('keydown', down); removeEventListener('keyup', up); };
-  }, [state]);
+function DogfightPreview() {
+  return (
+    <svg viewBox="0 0 320 180" aria-hidden="true" className="block w-full aspect-[16/9]">
+      <defs>
+        <linearGradient id="df-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#0d2a4a" /><stop offset="0.7" stopColor="#ff8a5c" /><stop offset="1" stopColor="#ffc58a" /></linearGradient>
+      </defs>
+      <rect width="320" height="180" fill="url(#df-sky)" />
+      <path d="M0 150 L40 128 L80 140 L130 112 L170 136 L220 120 L270 138 L320 122 L320 180 L0 180Z" fill="#1d2a3d" />
+      <path d="M0 165 L320 165 L320 180 L0 180Z" fill="#14324a" />
+      {[[210, 50, 0.6], [250, 78, 0.45], [178, 92, 0.4]].map(([x, y, s]) => (
+        <g key={x} transform={`translate(${x} ${y}) scale(${s}) rotate(-12)`} fill="#2a3442"><path d="M0 0 L60 -6 L66 0 L60 6Z M20 0 L34 -26 L42 -26 L38 0Z M20 0 L34 26 L42 26 L38 0Z M2 0 L-4 -12 L6 -12 L12 0Z" /></g>
+      ))}
+      <g transform="translate(70 104) rotate(-14)"><path d="M0 0 L84 -7 L92 0 L84 7Z M28 0 L48 -36 L58 -36 L52 0Z M28 0 L48 36 L58 36 L52 0Z M2 0 L-6 -16 L8 -16 L16 0Z" fill="#c41e2c" /><path d="M58 -3 L76 -4 L76 4 L58 3Z" fill="#8fd3ff" /></g>
+      <path d="M150 88 L208 54" stroke="#ffe27a" strokeWidth="1.5" strokeDasharray="6 5" />
+      <circle cx="160" cy="90" r="9" fill="none" stroke="#ffffff" strokeOpacity="0.8" /><path d="M160 76v6M160 98v6M146 90h6M168 90h6" stroke="#fff" strokeOpacity="0.8" />
+    </svg>
+  );
+}
 
-  const press = (e) => { e.preventDefault(); if (state !== 'flying') { start(); } hold.current = true; };
-  const release = () => { hold.current = false; };
-
+function Picker() {
+  const previews = { 'payload-run': <PayloadPreview />, dogfight: <DogfightPreview /> };
   return (
     <>
-      <SheetHead title="Payload Run"><p>You found the hangar. Hold to climb, let go to sink. Collect payload, grab battery cells, and stay between the ground and the ceiling.</p></SheetHead>
-      <section className="wrap py-10 grid gap-4">
-        <div className="relative border border-ink select-none touch-none">
-          <canvas ref={canvas} width={W} height={H} className="block w-full h-auto cursor-pointer"
-            onPointerDown={press} onPointerUp={release} onPointerLeave={release} onPointerCancel={release}
-            aria-label="Payload Run game. Press and hold, or hold Space, to climb." role="img" />
-          {state !== 'flying' && (
-            <div className="absolute inset-0 grid place-content-center justify-items-center gap-3 text-center bg-paper/80 p-6 pointer-events-none">
-              {result ? (
-                <>
-                  <p className="data text-signal">{result.why}</p>
-                  <p className="display text-5xl md:text-6xl">{result.score}</p>
-                  <dl className="flex gap-6 text-ink-2">
-                    <div><dt className="text-sm">Flown</dt><dd className="text-ink">{result.dist} m</dd></div>
-                    <div><dt className="text-sm">Delivered</dt><dd className="text-ink">{result.kg.toFixed(1)} kg</dd></div>
-                    <div><dt className="text-sm">Best</dt><dd className="text-ink">{best()}</dd></div>
-                  </dl>
-                </>
-              ) : <p className="display text-[clamp(2rem,4vw,3.5rem)]">Ready for takeoff</p>}
-              <p className="wide text-sm">Press and hold to {result ? 'fly again' : 'start'}</p>
-            </div>
-          )}
+      <SheetHead title={HANGAR.title}><p>{HANGAR.intro}</p></SheetHead>
+      <section className="wrap section pt-12">
+        <ul data-reveal="stagger" className="grid gap-6 md:grid-cols-2">
+          {HANGAR.games.map((g) => (
+            <li key={g.slug}>
+              <Link to={`/hangar/${g.slug}`} className="press group grid border border-ink no-underline hover:border-signal h-full">
+                <span className="border-b border-ink overflow-hidden bg-[#0b0d12]">{previews[g.slug]}</span>
+                <span className="grid gap-2 p-5">
+                  <span className="data text-signal">{g.label}</span>
+                  <span className="display text-[clamp(1.75rem,3vw,2.5rem)] group-hover:text-signal transition-colors">{g.name}</span>
+                  <span className="text-ink-2">{g.about}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  );
+}
+
+export default function Hangar() {
+  const { game } = useParams();
+  if (!game) return <Picker />;
+  const Game = GAMES[game], info = HANGAR.games.find((g) => g.slug === game);
+  if (!Game) return <NotFound />;
+  return (
+    <>
+      <SheetHead title={info.name}><p>{info.how}</p></SheetHead>
+      <section className="wrap pt-10 pb-16 grid gap-4">
+        <Suspense fallback={<div className="aspect-[16/9] border border-ink grid place-items-center data text-ink-2">Fuelling up…</div>}>
+          <Game />
+        </Suspense>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="data text-ink-2">{info.note}</p>
+          <Link to="/hangar" className="btn btn-sm">Back to the hangar</Link>
         </div>
-        <p className="data text-ink-2">Score: one point per 10 m, fifty per kilogram of payload.</p>
       </section>
     </>
   );
