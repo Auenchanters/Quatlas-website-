@@ -9,10 +9,12 @@
     "images": "node scripts/images.mjs",
     "mock": "node scripts/mock-api.mjs",
     "dev:mock": "vite --mode mock",
-    "photos": "node scripts/remote-images.mjs"
+    "photos": "node scripts/remote-images.mjs",
+    "test": "node --test"
   },
   "dependencies": {
-    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/inter-tight": "^5.3.0",
+    "@fontsource-variable/montserrat": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

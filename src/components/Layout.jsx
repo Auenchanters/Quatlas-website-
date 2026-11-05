@@ -157,8 +157,8 @@ export default function Layout() {
 // Page heading shared by every sheet: big expanded title, optional lede.
 export function SheetHead({ title, children }) {
   return (
-    <div className="wrap pt-14 md:pt-20 pb-10 md:pb-14 border-b border-rule">
-      <h1 className="display text-[clamp(2.5rem,8vw,5.75rem)]">{title}</h1>
+    <div className="wrap pt-[clamp(4rem,9vw,8rem)] pb-[clamp(3rem,6vw,5rem)] border-b border-rule">
+      <h1 className="display text-[clamp(2.75rem,6vw,5.5rem)]">{title}</h1>
       {children && <div className="mt-6 max-w-2xl text-lg text-ink-2">{children}</div>}
     </div>
   );

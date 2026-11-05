@@ -5,7 +5,8 @@
 /* Hallmark · reworded "Quatlas Aeromodelling" to "Quatlas Aeromodelling Ramaiah Institute of Technology" · 58 named the separate place line; it joined the headline lockup */
 /* Hallmark · waive 83 · the gallery and achievements pages are the club's photo record of each competition season · photographs are the content */
 @import "tailwindcss";
-@import "@fontsource-variable/archivo/standard.css";
+@import "@fontsource-variable/montserrat/wght.css";
+@import "@fontsource-variable/inter-tight/wght.css";
 @import "@fontsource/ibm-plex-mono/latin-400.css";
 @import "@fontsource/ibm-plex-mono/latin-500.css";
 
@@ -18,7 +19,8 @@
   --color-rule: #c4c7c0;
   --color-signal: #c41e2c;
   --color-signal-ink: #9e1622;
-  --font-sans: "Archivo Variable", system-ui, sans-serif;
+  --font-sans: "Inter Tight Variable", system-ui, sans-serif;
+  --font-display: "Montserrat Variable", "Inter Tight Variable", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -80,7 +82,7 @@
   ::selection { background: var(--color-signal); color: var(--color-on-signal); }
   :focus-visible { outline: 2px solid var(--color-signal); outline-offset: 3px; }
   a { text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
-  h1, h2, h3 { text-wrap: balance; line-height: 1.05; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.05; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
   p { text-wrap: pretty; }
   table { font-variant-numeric: tabular-nums; }
   @media (prefers-reduced-motion: reduce) {
@@ -89,10 +91,11 @@
 }
 
 @layer components {
-  /* Expanded, heavy Archivo: the lettering of a drawing title block. */
-  .display { font-stretch: 125%; font-weight: 800; letter-spacing: -0.025em; text-transform: uppercase; }
-  .wide { font-stretch: 115%; font-weight: 650; letter-spacing: -0.01em; }
-  .data { font-family: var(--font-mono); font-size: 0.8125rem; letter-spacing: 0.02em; }
+  /* Sentence-case Montserrat headings; mono labels are the drawing's annotation voice. */
+  .display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.02; }
+  .wide { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+  .data { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .section { padding-block: clamp(5rem, 10vw, 9rem); }
 
   .wrap { width: 100%; max-width: 78rem; margin-inline: auto; padding-inline: 1rem; }
   @media (min-width: 768px) { .wrap { padding-inline: 2.5rem; } }
@@ -100,12 +103,12 @@
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
     min-height: 2.75rem; padding: 0.5rem 1.25rem; border: 1px solid var(--color-ink);
-    font-stretch: 115%; font-weight: 650; font-size: 0.9375rem; text-decoration: none;
-    transition: background-color 160ms, color 160ms, border-color 160ms, transform 80ms;
+    font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; text-decoration: none;
+    transition: background-color 160ms, color 160ms, border-color 160ms, transform 120ms var(--ease-out-expo);
     cursor: pointer;
   }
   .btn:hover { background: var(--color-ink); color: var(--color-paper); }
-  .btn:active { transform: translateY(1px); }
+  .btn:active { transform: scale(0.97); }
   .btn-signal { background: var(--color-signal); border-color: var(--color-signal); color: var(--color-on-signal); }
   .btn-signal:hover { background: var(--color-signal-ink); border-color: var(--color-signal-ink); color: var(--color-on-signal); }
   .btn-sm { min-height: 2.75rem; padding: 0.25rem 0.875rem; font-size: 0.875rem; }
