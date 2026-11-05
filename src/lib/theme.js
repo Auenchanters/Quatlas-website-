@@ -16,6 +16,7 @@ export function flipTheme(origin) {
   if (!document.startViewTransition || !motionAllowed()) { applyTheme(to); return to; }
   html().classList.add('theme-flip');
   const t = document.startViewTransition(() => applyTheme(to));
+  t.ready.catch(() => {}); // a flip that's skipped (say, a quick double pull) is fine
   t.ready.then(() => {
     if (!origin) return;
     const { x, y } = origin;
@@ -25,6 +26,6 @@ export function flipTheme(origin) {
       { duration: 520, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' },
     );
   });
-  t.finished.finally(() => html().classList.remove('theme-flip'));
+  t.finished.catch(() => {}).finally(() => html().classList.remove('theme-flip'));
   return to;
 }

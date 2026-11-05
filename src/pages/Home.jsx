@@ -4,7 +4,7 @@ import Aircraft from '../components/Aircraft';
 import { Img } from '../components/Img';
 import Marquee from '../components/Marquee';
 import Roll from '../components/Roll';
-import { RECORD } from '../content/achievements';
+import { RECORD, FIRST_YEAR, LATEST_YEAR } from '../content/achievements';
 import { OVERVIEW } from '../content/overview';
 import { UPCOMING, when } from '../content/events';
 import { HERO, QUOTES, PATHS, LOGOS } from '../content/home';
@@ -92,7 +92,7 @@ export default function Home() {
       <section className="border-y border-ink bg-sheet">
         <div className="wrap section grid gap-12 lg:grid-cols-2 items-start">
           <div>
-            <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">The record, {RECORD.at(-1).year} to {RECORD[0].year}</h2>
+            <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">The record, {FIRST_YEAR} to {LATEST_YEAR}</h2>
             <table className="mt-10 w-full text-left">
               <tbody data-reveal="stagger">
                 {RECORD.map((r) => (

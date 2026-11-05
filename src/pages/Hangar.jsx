@@ -14,7 +14,10 @@ const GAMES = {
 function PayloadPreview() {
   const ref = useRef(null);
   useEffect(() => {
-    let raf, alive = true;
+    let raf, alive = true, seen = true;
+    // Only fly while the card is on screen.
+    const io = new IntersectionObserver(([e]) => { const was = seen; seen = e.isIntersecting; if (seen && !was && alive) raf = requestAnimationFrame(loop.current); });
+    const loop = { current: null };
     Promise.all([import('../games/payload/sim'), import('../games/payload/draw')]).then(([sim, art]) => {
       const el = ref.current; if (!el || !alive) return;
       const ctx = el.getContext('2d'); el.width = sim.W; el.height = sim.H;
@@ -22,6 +25,7 @@ function PayloadPreview() {
       s.dist = 6000; // start at dusk: the prettiest light
       const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const frame = (now) => {
+        if (!seen) return;
         if (!still) {
           // Autopilot: aim for the middle of the next gap.
           const next = s.items.find((i) => i.kind === 'pylon' && i.x > sim.PLANE_X - 30);
@@ -33,9 +37,10 @@ function PayloadPreview() {
         art.draw(ctx, s, fx, now - t0, 1, 0);
         if (!still && alive) raf = requestAnimationFrame(frame);
       };
+      loop.current = frame; io.observe(el);
       raf = requestAnimationFrame(frame);
     });
-    return () => { alive = false; cancelAnimationFrame(raf); };
+    return () => { alive = false; io.disconnect(); cancelAnimationFrame(raf); };
   }, []);
   return <canvas ref={ref} aria-hidden="true" className="block w-full aspect-[16/9]" />;
 }

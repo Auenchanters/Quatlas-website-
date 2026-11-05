@@ -7,6 +7,7 @@ npm install
 npm run dev          # http://localhost:5173, against the live API
 npm run build        # dist/: static files, public pages prerendered
 npm run preview      # serve dist/ at http://localhost:4173
+npm test             # unit tests (node --test): stats, gallery split, motion gate, games, image relay
 ```
 
 ## Testing the dashboard without touching real data
@@ -25,11 +26,11 @@ Mock login and OTP are in `scripts/mock-api.mjs`. No email is sent; `http://loca
 | `src/pages/` | public pages and the auth flows |
 | `src/admin/` | dashboard; `AdminLayout` redirects to `/login` without a token |
 | `src/components/Aircraft.jsx` | the isometric figure on the home page |
+| `CONTENT.md` | where every piece of copy, every number and every image lives |
 | `src/content/` | page copy and the achievements record (edit text here) |
 | `src/content/events.js` | upcoming events: add a line, set `date: 'YYYY-MM-DD'` once announced |
 | `src/content/teams.js` | the five subteams, their copy, and which dashboard team names map to each |
-| `src/pages/Hangar.jsx` | the hidden game behind the footer's “secret” link (`/hangar`) |
-| `firebase.json` | Firebase Hosting config for `dist/` (unused; the site is on Vercel) |
+| `src/pages/Hangar.jsx`, `src/games/` | the hidden hangar behind the footer's “secret” link (`/hangar`): Payload Run (2D canvas) and Dogfight (3D, three.js); game rules are in `sim.js` / `logic.js` with tests |
 | `api/img.js` | Vercel function: serves dashboard photo links as WebP so new photos show before the next build |
 | `src/lib/api.js` | every API call goes through `api()`; `VITE_API` overrides the base URL |
 | `assets-src/` → `npm run images` | source photos → `public/img/*.webp` at 480/960/1600 px |

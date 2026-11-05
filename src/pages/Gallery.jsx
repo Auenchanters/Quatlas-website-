@@ -17,7 +17,8 @@ function transition(change, cls) {
   if (!document.startViewTransition || !motionAllowed()) return change();
   if (cls) document.documentElement.classList.add(cls);
   const t = document.startViewTransition(() => flushSync(change));
-  t.finished.finally(() => cls && document.documentElement.classList.remove(cls));
+  t.ready.catch(() => {});
+  t.finished.catch(() => {}).finally(() => cls && document.documentElement.classList.remove(cls));
 }
 
 // Full-size view in a native <dialog>: focus trap and backdrop come with it. It grows out of the

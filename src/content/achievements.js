@@ -65,4 +65,6 @@ export const RECORD = [
     ],
     photos: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
   },
-];
+].sort((a, b) => b.year - a.year); // newest first, whatever order years are added in
+
+export const FIRST_YEAR = RECORD.at(-1)?.year, LATEST_YEAR = RECORD[0]?.year;

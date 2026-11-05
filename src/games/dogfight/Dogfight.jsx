@@ -242,7 +242,9 @@ export default function Dogfight() {
       removeEventListener('keydown', kd); removeEventListener('keyup', ku);
       document.removeEventListener('visibilitychange', onHide);
       stopMusic?.(); motor?.stop(); audio?.close();
-      renderer.dispose();
+      // Free the GPU memory now: browsers cap live WebGL contexts, and each visit would otherwise keep one.
+      scene.traverse((o) => { o.geometry?.dispose(); [].concat(o.material ?? []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
+      renderer.dispose(); renderer.forceContextLoss();
     };
   }, []);
 

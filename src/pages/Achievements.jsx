@@ -2,13 +2,13 @@ import { SheetHead } from '../components/Layout';
 import { Pic } from '../components/RemoteImg';
 import Roll from '../components/Roll';
 import { PhotoStrip } from '../components/ui';
-import { RECORD } from '../content/achievements';
+import { RECORD, FIRST_YEAR } from '../content/achievements';
 
 // Every competition as a vertical timeline: a rail with a dot per year, newest first.
 export default function Achievements() {
   return (
     <>
-      <SheetHead title="Iconic achievements"><p>Every competition since the team’s first entry in {RECORD.at(-1).year}.</p></SheetHead>
+      <SheetHead title="Iconic achievements"><p>Every competition since the team’s first entry in {FIRST_YEAR}.</p></SheetHead>
       <ol className="wrap section grid gap-[clamp(4rem,8vw,7rem)]">
         {RECORD.map((r, n) => (
           <li key={r.year} aria-labelledby={`y${r.year}`}
