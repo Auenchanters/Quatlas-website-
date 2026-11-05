@@ -70,6 +70,8 @@ html.theme-flip::view-transition-old(root), html.theme-flip::view-transition-new
 }
 @media (min-width: 768px) { :root { --gutter: 2.5rem; } }
 
+@keyframes marquee { to { transform: translateX(calc(-1 * var(--set-w, 50%))); } }
+
 @keyframes quote {
   from { opacity: 0; transform: translateY(0.35em); filter: blur(3px); }
 }
@@ -131,8 +133,23 @@ html.lenis, html.lenis body { height: auto; }
   }
   .btn:hover { background: var(--color-ink); color: var(--color-paper); }
   .btn:active { transform: scale(0.97); }
+  .press { transition: transform 120ms var(--ease-out-expo), border-color 160ms; }
+  .press:active { transform: scale(0.97); }
   .btn-signal { background: var(--color-signal); border-color: var(--color-signal); color: var(--color-on-signal); }
   .btn-signal:hover { background: var(--color-signal-ink); border-color: var(--color-signal-ink); color: var(--color-on-signal); }
+  /* Marquee (components/Marquee.jsx). */
+  .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+  .marquee-track { display: flex; width: max-content; animation: marquee var(--marquee-dur, 30s) linear infinite; }
+  .marquee-track[data-reverse] { animation-direction: reverse; }
+  .marquee:hover .marquee-track, .marquee:focus-within .marquee-track { animation-play-state: paused; }
+  .marquee-set { display: flex; gap: 1rem; padding-right: 1rem; flex-shrink: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee { mask-image: none; }
+    .marquee-track { animation: none; width: auto; }
+    .marquee-set { flex-wrap: wrap; flex-shrink: 1; }
+    .marquee-set + .marquee-set { display: none; }
+  }
+
   /* Two icons in one spot: the outgoing one fades and blurs (data-state a = first child shown). */
   .icon-swap { display: grid; }
   .icon-swap > * { grid-area: 1 / 1; transition: opacity 180ms, filter 180ms, scale 180ms var(--ease-out-expo); }
