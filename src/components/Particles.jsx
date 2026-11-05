@@ -14,7 +14,7 @@ export default function Particles() {
     let ctx = null; // created on first interaction: canvas set-up is the costly part
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const mouse = { x: -1e4, y: -1e4, tx: -1e4, ty: -1e4 };
-    let W = 0, H = 0, stars = [], color = {}, raf = 0, idle = 0, last = 0, running = false, lastInput = 0;
+    let W = 0, H = 0, stars = [], winds = [], color = {}, raf = 0, idle = 0, last = 0, running = false, lastInput = 0;
 
     const readColors = () => {
       const s = getComputedStyle(document.documentElement);
@@ -30,6 +30,26 @@ export default function Particles() {
       stars = Array.from({ length: Math.round((W * H) / 6500) }, () => ({
         x: Math.random() * W, y: Math.random() * H, z: [0.35, 0.65, 1][(Math.random() * 3) | 0], ox: 0, oy: 0, tw: Math.random() * 6.28,
       }));
+      winds = Array.from({ length: 40 }, () => wind(true));
+    }
+
+    // Night wind: faint streaks drifting up and to the right at 28°, like airflow past the page.
+    const WX = Math.cos(0.49), WY = -Math.sin(0.49);
+    function wind(anywhere) {
+      const w = { v: 20 + Math.random() * 40, len: 60 + Math.random() * 100, a: 0.04 + Math.random() * 0.08 };
+      if (anywhere) return { ...w, x: Math.random() * W, y: Math.random() * H };
+      return Math.random() < 0.5 ? { ...w, x: -w.len, y: Math.random() * H } : { ...w, x: Math.random() * W, y: H + w.len };
+    }
+    function drawWind(dt) {
+      ctx.strokeStyle = color.ink;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < winds.length; i++) {
+        const w = winds[i];
+        if (!still) { w.x += WX * w.v * dt / 1000; w.y += WY * w.v * dt / 1000; }
+        if (w.x - WX * w.len > W || w.y - WY * w.len < 0) { winds[i] = wind(false); continue; }
+        ctx.globalAlpha = w.a;
+        ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x - WX * w.len, w.y - WY * w.len); ctx.stroke();
+      }
     }
 
     // Eases each point's offset toward "away from the cursor"; returns closeness 0..1.
@@ -108,7 +128,7 @@ export default function Particles() {
       mouse.x += (mouse.tx - mouse.x) * (mouse.tx < -1e3 ? 1 : 0.18);
       mouse.y += (mouse.ty - mouse.y) * (mouse.ty < -1e3 ? 1 : 0.18);
       ctx.clearRect(0, 0, W, H);
-      dark() ? drawStars(dt) : drawCrosses();
+      if (dark()) { drawWind(dt); drawStars(dt); } else drawCrosses();
       ctx.globalAlpha = 1;
       // Stars drift for ever; the crosses only redraw while the cursor or a displaced cross is still moving.
       running = !still && !document.hidden && (dark() || crosses.size > 0 || now - lastInput < 400);

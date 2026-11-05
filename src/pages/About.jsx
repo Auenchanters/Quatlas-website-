@@ -38,24 +38,24 @@ export default function About() {
   return (
     <>
       <SheetHead title="About"><p>{lede.text}</p></SheetHead>
-      <section className="wrap py-12 md:py-16 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start">
+      <section className="wrap section grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start">
         <div className="grid gap-6">
-          <h2 className="wide text-2xl md:text-[1.75rem]">Club overview</h2>
-          <div className="copy">{OVERVIEW.map((t) => <p key={t}>{t}</p>)}<p>{second.text}</p></div>
+          <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">Club overview</h2>
+          <div data-reveal="up" className="copy">{OVERVIEW.map((t) => <p key={t}>{t}</p>)}<p>{second.text}</p></div>
         </div>
         <Img name="groupPhoto" sizes="(min-width: 1024px) 45vw, 100vw" alt="The Quatlas team in team shirts behind their aircraft at an exhibition stall." className="w-full h-auto border border-ink" />
       </section>
 
-      <section id="history" className="wrap py-12 md:py-16 border-t border-rule grid gap-8">
+      <section id="history" className="wrap section border-t border-rule grid gap-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 className="display text-4xl md:text-5xl">Logbook</h2>
+          <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Logbook</h2>
           <Link to="/achievements" className="wide text-sm inline-flex items-center gap-2 hover:text-signal">Full record</Link>
         </div>
         <Logbook />
       </section>
 
-      <section id="faculty" className="wrap py-12 md:py-16 border-t border-rule grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <h2 className="display text-4xl md:text-5xl">Faculty</h2>
+      <section id="faculty" className="wrap section border-t border-rule grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Faculty</h2>
         <div className="border-t border-ink pt-5 grid gap-2 content-start">
           <p className="data text-signal">{FACULTY.role}</p>
           <p className="wide text-2xl">{FACULTY.name}</p>
@@ -65,7 +65,7 @@ export default function About() {
         </div>
       </section>
 
-      <section id="team" className="wrap py-12 md:py-16 border-t border-rule flex flex-wrap items-center justify-between gap-6">
+      <section id="team" className="wrap section border-t border-rule flex flex-wrap items-center justify-between gap-6">
         <p className="wide text-2xl md:text-3xl">Meet the people behind the aircraft</p>
         <Link to="/team" className="btn btn-signal">Our team</Link>
       </section>

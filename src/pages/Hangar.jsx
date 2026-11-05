@@ -164,7 +164,7 @@ export default function Hangar() {
                     <div><dt className="text-sm">Best</dt><dd className="text-ink">{best()}</dd></div>
                   </dl>
                 </>
-              ) : <p className="display text-4xl md:text-5xl">Ready for takeoff</p>}
+              ) : <p className="display text-[clamp(2rem,4vw,3.5rem)]">Ready for takeoff</p>}
               <p className="wide text-sm">Press and hold to {result ? 'fly again' : 'start'}</p>
             </div>
           )}

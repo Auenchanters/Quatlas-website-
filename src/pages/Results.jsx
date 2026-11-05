@@ -23,7 +23,7 @@ function Lookup() {
       <SheetHead title="Quatlas Results">
         <p>For example, use the USN 1MS22ME002-T to search for results, and if any issues arise, please contact the captain for assistance.</p>
       </SheetHead>
-      <section className="wrap py-12 md:py-16">
+      <section className="wrap section">
         <form onSubmit={submit} className="grid gap-4 max-w-md">
           <Field label="USN" name="usn" required value={usn} onChange={(e) => setUsn(e.target.value)} placeholder="Enter your usn"
             className="[&_.input]:data [&_.input]:text-base [&_.input]:uppercase" aria-invalid={!!error} aria-describedby={error ? 'usn-error' : undefined} />
@@ -42,7 +42,7 @@ function Result() {
   return (
     <>
       <SheetHead title={selected ? 'Congratulations' : 'Result'} />
-      <section className="wrap py-12 md:py-16 grid gap-6 justify-items-start">
+      <section className="wrap section grid gap-6 justify-items-start">
         <p className="copy text-xl">
           {selected
             ? `${r.name}(${r.usn}) you are selected for an interview round for the Quatlas Aeromodelling team in the role of ${r.role} and your test score is ${r.score}. Interview timings and dates will be announced shortly.`

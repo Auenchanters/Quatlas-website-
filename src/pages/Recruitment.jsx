@@ -3,12 +3,8 @@ import { SheetHead } from '../components/Layout';
 import { Failed, Loading } from '../components/ui';
 import { useApi } from '../lib/api';
 import { PARTS } from '../content/aircraft';
+import { DO, PROCESS } from '../content/recruitment';
 
-const DO = [
-  ['Hands-On Building', 'Engage in the full process of crafting aeromodelling projects from initial concept to final assembly.'],
-  ['Collaborative Projects', 'Work in teams to solve challenges and bring your ideas to life.'],
-  ['Skill Development', 'Gain valuable experience in both technical and non-technical roles, enhancing your portfolio and future career prospects.'],
-];
 const ROLES = {
   Technical: [
     ['Conceptual Design & Sizing', 'In the Conceptual Design & Sizing phase, we transform innovative ideas into feasible designs by defining key parameters such as dimensions and weight distribution, ensuring our concepts are both creative and viable.'],
@@ -23,11 +19,6 @@ const ROLES = {
     ['Website Management', 'The Website Management team ensures our online presence is up-to-date and user-friendly, providing information about our projects, events, and team activities to the public.'],
   ],
 };
-const PROCESS = [
-  ['Assessment', 'You will be assessed for the basic knowledge of science and Mathematics for technical'],
-  ['Interview', 'After clearing the Exam you will go through a few rounds of interview'],
-  ['Project', 'For the final step you will be given a group project to complete and be a part of the club'],
-];
 
 // Internal links stay in the app; "/" or blank means the link isn't published yet.
 function ScheduleLink({ href, children }) {
@@ -58,15 +49,15 @@ export default function Recruitment() {
         <p>Quatlas Aeromodelling is an exclusive aeromodelling team at Ramaiah Institute of Technology. The team participates in various aeromodelling competitions, including the prestigious SAE Aero Design competition in the USA, where student teams from across India design, build, test, and showcase their innovative aircraft. The designs are judged based on a number of criteria. Quatlas consists of multidisciplinary students working on various subsystems, which are categorized under technical and non-technical roles.</p>
       </SheetHead>
 
-      <section className="wrap py-12 md:py-16 border-b border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <h2 className="wide text-2xl md:text-[1.75rem]">What We Do</h2>
+      <section className="wrap section border-b border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">What We Do</h2>
         <dl className="grid gap-6">
           {DO.map(([t, d]) => <div key={t}><dt className="font-[650]">{t}</dt><dd className="text-ink-2 mt-1">{d}</dd></div>)}
         </dl>
       </section>
 
-      <section className="wrap py-12 md:py-16 border-b border-rule grid gap-10">
-        <h2 className="display text-4xl md:text-5xl">Roles</h2>
+      <section className="wrap section border-b border-rule grid gap-10">
+        <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Roles</h2>
         <div className="grid gap-12 lg:grid-cols-2">
           {Object.entries(ROLES).map(([group, roles]) => (
             <div key={group}>
@@ -86,8 +77,8 @@ export default function Recruitment() {
         </p>
       </section>
 
-      <section className="wrap py-12 md:py-16 border-b border-rule grid gap-8">
-        <h2 className="wide text-2xl md:text-[1.75rem]">Recruitment Process</h2>
+      <section className="wrap section border-b border-rule grid gap-8">
+        <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">Recruitment Process</h2>
         <ol className="grid gap-8 md:grid-cols-3">
           {PROCESS.map(([t, d], i) => (
             <li key={t} className="border-t border-ink pt-4">
@@ -99,13 +90,13 @@ export default function Recruitment() {
         </ol>
       </section>
 
-      <section className="wrap py-12 md:py-16 border-b border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <h2 className="wide text-2xl md:text-[1.75rem]">Exam Schedule</h2>
+      <section className="wrap section border-b border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">Exam Schedule</h2>
         <div><Schedule /></div>
       </section>
 
-      <section className="wrap py-12 md:py-16 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <h2 className="wide text-2xl md:text-[1.75rem]">Stay Connected</h2>
+      <section className="wrap section grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">Stay Connected</h2>
         <p className="copy text-ink-2">Follow us on our social media channels and check our website for the latest updates and announcements. We look forward to welcoming you to our community of aviation enthusiasts!</p>
       </section>
     </>

@@ -9,8 +9,8 @@ export default function Events() {
     <>
       <SheetHead title="Events"><p>What the team is building towards next, and every competition it has already flown.</p></SheetHead>
 
-      <section aria-labelledby="upcoming" className="wrap py-12 md:py-16 border-b border-rule grid gap-8">
-        <h2 id="upcoming" className="display text-4xl md:text-5xl">Upcoming</h2>
+      <section aria-labelledby="upcoming" className="wrap section border-b border-rule grid gap-8">
+        <h2 data-reveal="words" id="upcoming" className="display text-[clamp(2rem,4vw,3.5rem)]">Upcoming</h2>
         <ol className="border-t border-ink">
           {UPCOMING.map((e) => (
             <li key={e.title} className="border-b border-rule py-6 grid gap-3 md:grid-cols-[12rem_minmax(0,1fr)_auto] md:gap-8 items-baseline">
@@ -28,8 +28,8 @@ export default function Events() {
         </ol>
       </section>
 
-      <section id="past" aria-labelledby="past-h" className="wrap py-12 md:py-16 grid gap-8">
-        <h2 id="past-h" className="display text-4xl md:text-5xl">Past competitions</h2>
+      <section id="past" aria-labelledby="past-h" className="wrap section grid gap-8">
+        <h2 data-reveal="words" id="past-h" className="display text-[clamp(2rem,4vw,3.5rem)]">Past competitions</h2>
         <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           {RECORD.map((r) => (
             <li key={r.year}>

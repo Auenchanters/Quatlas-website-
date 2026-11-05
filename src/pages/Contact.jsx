@@ -3,29 +3,16 @@ import { Link, useSearchParams } from 'react-router';
 import { SheetHead, MAP_URL } from '../components/Layout';
 import { Field, Submit, useSubmit } from '../components/ui';
 import { api } from '../lib/api';
+import { PEOPLE, TYPES, FAQ } from '../content/contact';
 
 const MAP_EMBED = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.0835259698624!2d77.562613474846!3d13.030352813587932!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae170e309db333%3A0x42bc025a603938d4!2sQuatlas%20Aeromodelling!5e0!3m2!1sen!2sin!4v1718769975645!5m2!1sen!2sin';
 
-const PEOPLE = [
-  // The old page listed "urstrulypuneethgmail.com" (missing the @); corrected here.
-  ['Team leader - Puneeth L', 'urstrulypuneeth@gmail.com', '+91 91488 43472'],
-  ['Non Tech - Pavan A', 'pavan.aashok1234gh@gmail.com', '+91 7676475397'],
-];
 
 // Requests are saved to the dashboard (Forms) and also emailed to the club inbox through FormSubmit.
 // FormSubmit's first email to this inbox is an activation link; until someone clicks it, requests
 // still reach the dashboard. Set VITE_INBOX to an empty string to switch the email off.
 const INBOX = import.meta.env.VITE_INBOX ?? (import.meta.env.MODE === 'mock' ? '' : 'aeromodellingquatlas@gmail.com');
-const TYPES = ['General query', 'Sponsorship', 'Joining the team', 'Collaboration or workshop', 'Media'];
 
-const FAQ = [
-  ['How do I join Quatlas?', <>Recruitment opens once a year. Watch the <Link to="/events">events page</Link> and our Instagram, then register on the <Link to="/recruitment">recruitment page</Link>. It runs in three steps: a written assessment of basic science and maths, a few rounds of interview, and a group project.</>],
-  ['Do I need aeromodelling experience?', 'No. We look for curiosity and commitment; the team teaches the rest, from CAD to soldering to flying.'],
-  ['Is it only for technical roles?', <>No. The Non-Tech team runs sponsorship, reports and presentations, social media, creative design and this website. See <Link to="/team/non-tech">Non-Tech</Link>.</>],
-  ['How can my company sponsor the team?', <>We take parts, money and services. Choose “Sponsorship” in the form on this page, or read the options on <Link to="/support">Support</Link>.</>],
-  ['Can I donate as an individual?', <>Yes. Pay any amount over UPI in the <Link to="/support#crowdfunding">crowdfunding section</Link> and leave your details so we can thank you.</>],
-  ['Where is the team based?', 'In the R&D-1 Laboratory, ESB II, room 119, at Ramaiah Institute of Technology, Mathikere, Bengaluru.'],
-];
 
 // The map is a 700 KB embed; it loads only when asked for.
 function Map() {
@@ -70,21 +57,21 @@ export default function Contact() {
         <p>Sponsors, students, press or anyone curious about the aircraft: send a request and it lands with the core team. Quick answers are in the <a href="#faq">FAQs</a>.</p>
       </SheetHead>
 
-      <section className="wrap py-12 md:py-16 grid gap-12 lg:grid-cols-2">
+      <section className="wrap section grid gap-12 lg:grid-cols-2">
         <div className="grid gap-10 content-start">
           {PEOPLE.map(([name, mail, phone]) => (
             <div key={name} className="border-t border-ink pt-4 grid gap-1">
-              <h2 className="wide text-xl mb-2">{name}</h2>
+              <h2 data-reveal="words" className="wide text-xl mb-2">{name}</h2>
               <p><span className="font-[650]">Email: </span><a href={`mailto:${mail}`} className="break-all hover:text-signal">{mail}</a></p>
               <p><span className="font-[650]">Contact Number: </span><a href={`tel:${phone.replace(/\s/g, '')}`} className="data text-[0.9375rem] hover:text-signal">{phone}</a></p>
             </div>
           ))}
           <div className="border-t border-ink pt-4 grid gap-1">
-            <h2 className="wide text-xl mb-2">Club inbox</h2>
+            <h2 data-reveal="words" className="wide text-xl mb-2">Club inbox</h2>
             <p><a href="mailto:aeromodellingquatlas@gmail.com" className="break-all hover:text-signal">aeromodellingquatlas@gmail.com</a></p>
           </div>
           <div className="border-t border-ink pt-4">
-            <h2 className="wide text-xl mb-2">Registered Address</h2>
+            <h2 data-reveal="words" className="wide text-xl mb-2">Registered Address</h2>
             <p className="text-ink-2 max-w-md">ESB II , 119, R&amp;D - 1 Laboratory, Quatlas-RIT Ramaiah Institute of Technology MSR Nagar, MSRIT Post, Mathikere Bangalore-560054</p>
           </div>
           <Map />
@@ -92,7 +79,7 @@ export default function Contact() {
 
         <form id="request" onSubmit={submit} className="grid gap-5 content-start border border-ink bg-sheet p-5 md:p-8 scroll-mt-20">
           <div className="grid gap-1">
-            <h2 className="wide text-2xl">Send a request</h2>
+            <h2 data-reveal="words" className="wide text-2xl">Send a request</h2>
             <p className="text-ink-2 text-[0.9375rem]">Goes straight to the core team’s inbox.</p>
           </div>
           <Field label="What is it about?" as="select" name="type" value={f.type} onChange={set('type')}>
@@ -107,8 +94,8 @@ export default function Contact() {
         </form>
       </section>
 
-      <section id="faq" aria-labelledby="faq-h" className="wrap py-12 md:py-16 border-t border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] scroll-mt-20">
-        <h2 id="faq-h" className="display text-4xl md:text-5xl">FAQs</h2>
+      <section id="faq" aria-labelledby="faq-h" className="wrap section border-t border-rule grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] scroll-mt-20">
+        <h2 data-reveal="words" id="faq-h" className="display text-[clamp(2rem,4vw,3.5rem)]">FAQs</h2>
         <div className="border-t border-ink">
           {FAQ.map(([q, a]) => (
             <details key={q} className="group border-b border-rule">

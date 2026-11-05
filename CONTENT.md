@@ -14,9 +14,13 @@ Pages only lay content out. To update the site, edit these files. You don't need
 | `sponsors.json` | "Three ways to sponsor" | |
 | `teams.js` | Team intro, subteam names/descriptions, which dashboard team names map to which subteam | Members themselves come from the dashboard. |
 | `events.js` | Events page, Home "Upcoming" | |
+| `contact.jsx` | Contact people, form request types, FAQ | FAQ answers may contain links (JSX). |
+| `recruitment.js` | Recruitment roles and selection process | Dates come from the dashboard. |
 | `overview.js`, `about.json`, `terms.json` | About, Home overview, Terms | |
 | `gallery-tags.js` | Which gallery photos show under **Aircraft** | Every photo not listed shows under **People**. |
 | `snapshot.json` | Build-time copy of dashboard data (members, gallery, sponsor logos) | Refreshed from the API. Don't hand-edit. |
+
+Short one-line intros under page titles still live in the page files in `src/pages/`.
 
 ## Images: `assets-src/`
 

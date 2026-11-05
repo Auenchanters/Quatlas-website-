@@ -44,7 +44,7 @@ function Header() {
         </Link>
         <div className="flex items-center gap-2 xl:gap-4">
           <nav id="nav" aria-label="Main"
-            className={`${open ? 'block' : 'hidden'} xl:block absolute xl:static inset-x-0 top-16 bg-paper border-b xl:border-0 border-ink`}>
+            className={`${open ? 'block menu-in' : 'hidden'} xl:block absolute xl:static inset-x-0 top-16 bg-paper border-b xl:border-0 border-ink`}>
             <ul className="wrap xl:p-0 xl:flex items-center gap-7 py-3">
               {NAV.map(([to, label]) => <li key={to}><NavLink to={to} end viewTransition className={link}>{label}</NavLink></li>)}
               <li><NavLink to="/login" className="btn btn-sm mt-2 xl:mt-0">Login</NavLink></li>
@@ -192,7 +192,7 @@ export function SheetGrid({ className = '' }) {
 // Renders the structured copy in src/content/*.json.
 export function Copy({ sections, from = 0, to }) {
   return sections.slice(from, to).map((s, i) => (
-    <section key={i} className="wrap grid md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-12 gap-y-4 py-10 md:py-14 border-b border-rule">
+    <section key={i} className="wrap grid md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-12 gap-y-4 py-[clamp(3rem,6vw,5rem)] border-b border-rule">
       {s.heading ? <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">{s.heading}</h2> : <span />}
       <div data-reveal="up" className="copy">
         {s.blocks.map((b, j) => b.type === 'p'

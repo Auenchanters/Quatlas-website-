@@ -76,6 +76,10 @@ html.theme-flip::view-transition-old(root), html.theme-flip::view-transition-new
 
 @keyframes marquee { to { transform: translateX(calc(-1 * var(--set-w, 50%))); } }
 
+/* Mobile menu: opens from the Menu button's corner (top right), 220 ms. */
+@keyframes menu-in { from { opacity: 0; scale: 0.95; } }
+.menu-in { animation: menu-in 220ms var(--ease-out-expo); transform-origin: top right; }
+
 @keyframes quote {
   from { opacity: 0; transform: translateY(0.35em); filter: blur(3px); }
 }
