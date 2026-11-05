@@ -42,7 +42,7 @@ export function applyEvents(fx, events, s) {
       // The reward flies to the HUD along an arc, not a straight line.
       fx.floaters.push({ x0: e.x, y0: e.y, t: 0, text: e.kind === 'crate' ? '+0.5 kg' : '+charge', c });
     } else if (e.type === 'crash') {
-      fx.shake = 16;
+      fx.shake = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 16;
       for (let i = 0; i < 46; i++) {
         const a = hash(i * 3.1) * Math.PI * 2, v = 2 + hash(i * 7.7) * 7;
         fx.parts.push({ x: PLANE_X, y: s.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2, life: 1, size: 2 + hash(i) * 4, c: ['#e23a46', '#f5f5f2', '#3a3f47', '#ffb347'][i % 4], g: 0.18 });

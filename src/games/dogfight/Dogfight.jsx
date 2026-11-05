@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+
+const focusOnMount = (el) => el?.focus({ preventScroll: true });
 import * as THREE from 'three';
 import Roll from '../../components/Roll';
 import { createAudio } from '../audio';
@@ -62,6 +64,8 @@ export default function Dogfight() {
       hudCanvas.current.width = w * dpr; hudCanvas.current.height = h * dpr; hud.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     const ro = new ResizeObserver(size); ro.observe(el); size();
+    let onScreen = true;
+    const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }); io.observe(el);
 
     const project = (v) => {
       const p = v.clone().project(camera), w = el.clientWidth, h = el.clientHeight;
@@ -165,6 +169,7 @@ export default function Dogfight() {
     const frame = (now) => {
       const dt = Math.min(1 / 30, (now - last) / 1000); last = now;
       const ph = phaseRef.current, P = g.player;
+      if (!onScreen && ph !== 'playing') { raf = requestAnimationFrame(frame); return; }
       if (ph === 'playing') step(dt);
       if (ph === 'menu') { // a slow orbit around the parked jet
         P.pos.set(0, 900, -2600); P.quat.identity();
@@ -253,7 +258,7 @@ export default function Dogfight() {
     };
 
     return () => {
-      cancelAnimationFrame(raf); ro.disconnect();
+      cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
       el.removeEventListener('pointermove', onMove);
       removeEventListener('keydown', kd); removeEventListener('keyup', ku);
       document.removeEventListener('visibilitychange', onHide);
@@ -321,7 +326,7 @@ export default function Dogfight() {
               </dl>
             </>
           )}
-          <button type="button" className="btn btn-signal" onClick={() => (phase === 'paused' ? api.current.resume() : api.current.start())}>
+          <button type="button" ref={phase === 'menu' ? undefined : focusOnMount} className="btn btn-signal" onClick={() => (phase === 'paused' ? api.current.resume() : api.current.start())}>
             {phase === 'menu' ? 'Take off' : phase === 'paused' ? 'Resume' : 'Fly again'}
           </button>
         </div>

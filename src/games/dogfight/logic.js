@@ -142,8 +142,8 @@ export function think(e, player, now, skill = 0.5) {
     aim = leadPoint(e.pos, player.pos, player.vel, BULLET_SPEED, new Vector3()).sub(e.pos).normalize();
     fire = dist < 650 && f.angleTo(aim) < 0.05 + (1 - skill) * 0.05;
     // A long turning fight at close range with no shot: break it off and extend.
-    e.knife = dist < 600 && f.angleTo(aim) > 0.6 ? (e.knife ?? 0) + 1 / 60 : 0;
-    if (e.knife > 5 - skill * 2) { e.knife = 0; e.extendUntil = now + 4; e.extendDir = f.clone().setY(0.15).normalize(); }
+    if (dist < 600 && f.angleTo(aim) > 0.6) e.knifeSince ??= now; else e.knifeSince = null;
+    if (e.knifeSince != null && now - e.knifeSince > 5 - skill * 2) { e.knifeSince = null; e.extendUntil = now + 4; e.extendDir = f.clone().setY(0.15).normalize(); }
   }
   return { mode, fire, input: { ...steerToward(e, aim), throttle: mode === 'pursue' && dist < 300 ? 0.45 : 0.85 } };
 }
