@@ -57,8 +57,18 @@
 :root[data-theme="dark"] .logo { background: var(--color-plate); padding: 0.4rem; filter: none; }
 :root[data-theme="dark"] .brand-logo { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
 
-/* Theme switch: a short cross-fade where the browser has view transitions. */
+/* Route changes cross-fade; the theme flip instead grows a circle from the pull cord (lib/theme.js). */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; }
+html.theme-flip::view-transition-old(root), html.theme-flip::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+/* Pull cord: hangs through the last header slot, i.e. 22px in from the content edge. */
+:root {
+  --gutter: 1rem;
+  --pullcord-right: calc(max(0px, (100vw - 78rem) / 2) + var(--gutter) - 10px);
+  --pullcord-z: 45;
+  --pullcord-ink: var(--color-ink-2);
+}
+@media (min-width: 768px) { :root { --gutter: 2.5rem; } }
 
 @keyframes quote {
   from { opacity: 0; transform: translateY(0.35em); filter: blur(3px); }
@@ -123,6 +133,10 @@ html.lenis, html.lenis body { height: auto; }
   .btn:active { transform: scale(0.97); }
   .btn-signal { background: var(--color-signal); border-color: var(--color-signal); color: var(--color-on-signal); }
   .btn-signal:hover { background: var(--color-signal-ink); border-color: var(--color-signal-ink); color: var(--color-on-signal); }
+  /* Two icons in one spot: the outgoing one fades and blurs (data-state a = first child shown). */
+  .icon-swap { display: grid; }
+  .icon-swap > * { grid-area: 1 / 1; transition: opacity 180ms, filter 180ms, scale 180ms var(--ease-out-expo); }
+  .icon-swap[data-state="a"] > :nth-child(2), .icon-swap[data-state="b"] > :nth-child(1) { opacity: 0; filter: blur(4px); scale: 0.7; }
   .btn-sm { min-height: 2.75rem; padding: 0.25rem 0.875rem; font-size: 0.875rem; }
   .btn-danger { border-color: var(--color-signal); color: var(--color-signal); }
   .btn-danger:hover { background: var(--color-signal); color: var(--color-on-signal); }

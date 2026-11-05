@@ -39,13 +39,15 @@ function play(name, spread = 0) {
   src.start();
 }
 
+export async function playSound(name) { await unlock(); play(name); }
+
 export function initSounds() {
   addEventListener('pointerdown', unlock, { capture: true, passive: true });
   addEventListener('keydown', unlock, { capture: true, passive: true });
 
   document.addEventListener('click', async (e) => {
     const el = e.target.closest?.(CLICKABLE);
-    if (!el || el.disabled || el.type === 'submit') return; // a submit button gets the submit note instead
+    if (!el || el.disabled || el.type === 'submit' || el.closest('.pullcord')) return; // the cord plays its own // a submit button gets the submit note instead
     await unlock(); // the very first click waits the few ms it takes to decode
     play('click', 0.03);
   }, true);

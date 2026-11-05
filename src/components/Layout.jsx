@@ -4,7 +4,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Img } from './Img';
 import Particles from './Particles';
 import SoundToggle from './SoundToggle';
-import ThemeToggle from './ThemeToggle';
+import ThemeCord from './ThemeCord';
 import { Facebook, Instagram, LinkedIn, Mail, Menu, Close, YouTube } from './icons';
 
 const NAV = [
@@ -50,11 +50,13 @@ function Header() {
               <li><NavLink to="/login" className="btn btn-sm mt-2 xl:mt-0">Login</NavLink></li>
             </ul>
           </nav>
-          <ThemeToggle />
           <SoundToggle />
           <button className="xl:hidden btn btn-sm" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
-            {open ? <Close /> : <Menu />}<span>Menu</span>
+            <span className="icon-swap" data-state={open ? 'b' : 'a'}><Menu /><Close /></span><span>Menu</span>
           </button>
+          {/* The theme cord hangs through this slot (see --pullcord-right). */}
+          <span aria-hidden="true" className="size-11 shrink-0" />
+          <ThemeCord />
         </div>
       </div>
     </header>

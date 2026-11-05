@@ -8,7 +8,7 @@ export default function SoundToggle() {
   return (
     <button type="button" aria-pressed={on} aria-label="Interface sounds" title={on ? 'Sounds on' : 'Sounds off'}
       onClick={() => setSound(!on)} className="grid place-items-center size-11 hover:text-signal">
-      {on ? <Sound /> : <Muted />}
+      <span className="icon-swap" data-state={on ? 'a' : 'b'}><Sound /><Muted /></span>
     </button>
   );
 }
