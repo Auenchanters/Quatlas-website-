@@ -17,8 +17,9 @@ export function heightAt(x, z) {
 }
 export const groundAt = (x, z) => Math.max(0, heightAt(x, z));
 
-export function createPlane({ pos = new Vector3(0, 900, 0), quat = new Quaternion(), speed = 140, hp = 100, team = 'red', min = 60, max = 190 } = {}) {
-  return { pos: pos.clone(), quat: quat.clone(), vel: new Vector3(), speed, hp, maxHp: hp, team, min, max, alive: true, cooldown: 0, smoke: 0 };
+// agility scales the turn rates: the player out-turns the enemies a little, as arcade games do.
+export function createPlane({ pos = new Vector3(0, 900, 0), quat = new Quaternion(), speed = 140, hp = 100, team = 'red', min = 60, max = 190, agility = 1 } = {}) {
+  return { pos: pos.clone(), quat: quat.clone(), vel: new Vector3(), speed, hp, maxHp: hp, team, min, max, agility, alive: true, cooldown: 0, smoke: 0 };
 }
 export const forwardOf = (p, out = new Vector3()) => out.copy(FWD).applyQuaternion(p.quat);
 export const upOf = (p, out = new Vector3()) => out.copy(UP).applyQuaternion(p.quat);
@@ -26,9 +27,9 @@ export const upOf = (p, out = new Vector3()) => out.copy(UP).applyQuaternion(p.q
 // input: pitch (nose up +), roll (right wing down +), yaw (nose right +), throttle 0..1; all −1..1.
 export const RATES = { pitch: 1.5, roll: 3.2, yaw: 0.55 };
 export function fly(p, input, dt) {
-  _q.setFromAxisAngle(RIGHT, clamp(input.pitch) * RATES.pitch * dt); p.quat.multiply(_q);
-  _q.setFromAxisAngle(FWD, clamp(input.roll) * RATES.roll * dt); p.quat.multiply(_q);
-  _q.setFromAxisAngle(UP, -clamp(input.yaw) * RATES.yaw * dt); p.quat.multiply(_q);
+  _q.setFromAxisAngle(RIGHT, clamp(input.pitch) * RATES.pitch * p.agility * dt); p.quat.multiply(_q);
+  _q.setFromAxisAngle(FWD, clamp(input.roll) * RATES.roll * p.agility * dt); p.quat.multiply(_q);
+  _q.setFromAxisAngle(UP, -clamp(input.yaw) * RATES.yaw * p.agility * dt); p.quat.multiply(_q);
   p.quat.normalize();
   const f = forwardOf(p, _v);
   // Throttle sets the target speed; climbing bleeds speed, diving gains it.
@@ -128,14 +129,21 @@ export function think(e, player, now, skill = 0.5) {
   const playerBehind = dist < 700 && pf.angleTo(toPlayer.clone().negate()) < 0.5 && f.angleTo(toPlayer) > 2.2;
   let mode = 'pursue', aim, fire = false;
   if (alt < 180 || e.pos.y < 120) { mode = 'climb'; aim = f.clone().setY(0).normalize().add(new Vector3(0, 1.4, 0)).normalize(); }
-  else if (now < (e.evadeUntil ?? 0) || playerBehind) {
+  // A pilot can't break away again straight after a break: a cooldown, longer for weaker pilots.
+  else if (now < (e.evadeUntil ?? 0) || (playerBehind && now > (e.evadeReady ?? 0))) {
     mode = 'evade';
-    if (!e.evadeDir || now > (e.evadeUntil ?? 0)) { e.evadeUntil = now + 2.5; e.evadeDir = new Vector3().crossVectors(f, UP).multiplyScalar(Math.sign(Math.sin(now * 3.1 + e.pos.x)) || 1).add(new Vector3(0, -0.3, 0)).normalize(); }
+    if (!e.evadeDir || now > (e.evadeUntil ?? 0)) { e.evadeUntil = now + 2.5; e.evadeReady = now + 2.5 + 7 * (1 - skill); e.evadeDir = new Vector3().crossVectors(f, UP).multiplyScalar(Math.sign(Math.sin(now * 3.1 + e.pos.x)) || 1).add(new Vector3(0, -0.3, 0)).normalize(); }
     aim = e.evadeDir;
   } else if (e.pos.length() > ARENA * 0.9) { mode = 'return'; aim = e.pos.clone().negate().setY(900 - e.pos.y).normalize(); }
-  else {
+  else if (now < (e.extendUntil ?? 0)) {
+    // Extending: run straight out to come back for another pass. This is the player's chance.
+    mode = 'extend'; aim = e.extendDir;
+  } else {
     aim = leadPoint(e.pos, player.pos, player.vel, BULLET_SPEED, new Vector3()).sub(e.pos).normalize();
     fire = dist < 650 && f.angleTo(aim) < 0.05 + (1 - skill) * 0.05;
+    // A long turning fight at close range with no shot: break it off and extend.
+    e.knife = dist < 600 && f.angleTo(aim) > 0.6 ? (e.knife ?? 0) + 1 / 60 : 0;
+    if (e.knife > 5 - skill * 2) { e.knife = 0; e.extendUntil = now + 4; e.extendDir = f.clone().setY(0.15).normalize(); }
   }
   return { mode, fire, input: { ...steerToward(e, aim), throttle: mode === 'pursue' && dist < 300 ? 0.45 : 0.85 } };
 }

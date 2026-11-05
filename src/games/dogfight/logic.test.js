@@ -73,6 +73,13 @@ test('enemy AI climbs when low, fires when lined up, evades when hit', () => {
   shooter.evadeUntil = 5;
   assert.equal(think(shooter, player, 1).mode, 'evade');
 });
+test('enemy AI breaks off a long turning fight and extends', () => {
+  const player = createPlane({ pos: new Vector3(300, 1000, 0) });
+  const e = createPlane({ pos: new Vector3(0, 1000, 0), team: 'blue' }); // player off its wing: no shot
+  let mode;
+  for (let i = 0; i < 60 * 6; i++) mode = think(e, player, i / 60, 0.5).mode;
+  assert.equal(mode, 'extend');
+});
 test('terrain is deterministic and the sea counts as ground', () => {
   assert.equal(heightAt(123, 456), heightAt(123, 456));
   assert.equal(crashed(createPlane({ pos: new Vector3(0, -1, 0) })), true);
