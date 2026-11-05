@@ -5,13 +5,8 @@ import { Img } from '../components/Img';
 import { RECORD } from '../content/achievements';
 import { OVERVIEW } from '../content/overview';
 import { UPCOMING, when } from '../content/events';
+import { HERO, QUOTES, PATHS } from '../content/home';
 
-const QUOTES = [
-  'Pioneering the skies with precision and passion',
-  'Where innovation takes flight',
-  'Charting new horizons in aerospace excellence',
-  'Innovating the blueprint of tomorrow’s aviation',
-];
 
 function Quotes() {
   const [i, setI] = useState(0);
@@ -27,11 +22,6 @@ function Quotes() {
   );
 }
 
-const PATHS = [
-  ['/team', 'Our Team', 'Embark on an exciting career journey with Quatlas today! Exploring the endless skies, one propeller at a time.'],
-  ['/support', 'Official Supporters', 'Join us in pioneering the future of aerospace modeling. Sponsor our project and gain access to unique opportunities and advanced technological insights.'],
-  ['/support#crowdfunding', 'Crowd Funding', 'Support our mission to innovate and create new possibilities in aerospace modeling. Your contribution will help us push the boundaries of technology and design, shaping the future of the industry.'],
-];
 
 export default function Home() {
   return (

@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Img } from '../components/Img';
 import { Failed, Person, PhotoStrip } from '../components/ui';
-import { SUBTEAMS, byRole, isAlumni, isCore, membersOf, subteamOf, useTeams } from '../content/teams';
+import { TEAM_INTRO, SUBTEAMS, byRole, isAlumni, isCore, membersOf, subteamOf, useTeams } from '../content/teams';
 
 // A subteam's people as a strip you scroll through (not an auto-ticker).
 function Strip({ people, label }) {
@@ -23,7 +23,7 @@ export default function Team() {
   return (
     <>
       <SheetHead title="Our Team">
-        <p>Students from every branch at Ramaiah, organised the way an aircraft is: one core team and five subteams that each own a part of the build.</p>
+        <p>{TEAM_INTRO}</p>
       </SheetHead>
 
       <figure className="wrap pt-12">

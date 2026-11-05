@@ -2,15 +2,11 @@ import { SheetHead } from '../components/Layout';
 import { Pic } from '../components/RemoteImg';
 import { PhotoStrip } from '../components/ui';
 import { RECORD } from '../content/achievements';
-import RankChart from '../components/RankChart';
 
 export default function Achievements() {
   return (
     <>
       <SheetHead title="Iconic Achievements"><p>Every competition since the team’s first entry in 2015.</p></SheetHead>
-      <section className="wrap py-12 md:py-16 border-b border-rule">
-        <RankChart />
-      </section>
       {RECORD.map((r, n) => (
         <section key={r.year} aria-labelledby={`y${r.year}`} className="wrap py-12 md:py-16 border-b border-rule grid gap-8 scroll-mt-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <div className="grid gap-5 content-start">

@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Failed, Loading } from '../components/ui';
 import { useApi } from '../lib/api';
-import { PARTS } from '../components/Aircraft';
+import { PARTS } from '../content/aircraft';
 
 const DO = [
   ['Hands-On Building', 'Engage in the full process of crafting aeromodelling projects from initial concept to final assembly.'],

@@ -6,6 +6,7 @@ import { RemoteImg } from '../components/RemoteImg';
 import { Field, Submit, useSubmit } from '../components/ui';
 import { api, useApi } from '../lib/api';
 import sponsors from '../content/sponsors.json';
+import { INTRO, CROWDFUNDING } from '../content/support';
 import snapshot from '../content/snapshot.json';
 
 // Official supporters and crowdfunding on one sheet. Logos sit in a still grid, never a ticker.
@@ -50,11 +51,11 @@ function Crowdfunding() {
     <section id="crowdfunding" className="wrap py-12 md:py-16 grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-start">
       <div className="grid gap-5">
         <h2 className="display text-4xl md:text-5xl">Crowdfunding</h2>
-        <p className="text-ink-2 max-w-md">Every rupee goes into the aircraft and the trip to competition: balsa and carbon, motors and batteries, registration and travel. Scan to pay over UPI, any amount.</p>
+        <p className="text-ink-2 max-w-md">{CROWDFUNDING.text}</p>
         <Img name="gpay_qr_code" sizes="320px" alt="UPI QR code for paying Quatlas" className="w-full max-w-xs h-auto border border-ink bg-white p-3" />
       </div>
       <form onSubmit={submit} className="grid gap-5 border-t border-ink pt-6">
-        <p className="text-ink-2">After you pay, leave your details so the team can thank you and keep you updated.</p>
+        <p className="text-ink-2">{CROWDFUNDING.after}</p>
         <Field label="Name" name="name" required autoComplete="name" value={f.name} onChange={set('name')} />
         <Field label="Email" name="email" type="email" required autoComplete="email" value={f.email} onChange={set('email')} />
         <Field label="Contact Number" name="mobile" type="tel" required autoComplete="tel" value={f.mobile} onChange={set('mobile')} />
@@ -68,7 +69,7 @@ export default function Support() {
   return (
     <>
       <SheetHead title="Support">
-        <p>Quatlas is built by students and paid for by people who believe in it. Sponsor the team with parts, money or services, or chip in directly.</p>
+        <p>{INTRO}</p>
       </SheetHead>
       <Supporters />
       <section className="wrap py-12 md:py-16 border-b border-rule">

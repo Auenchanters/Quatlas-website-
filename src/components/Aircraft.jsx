@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { PARTS } from '../content/aircraft';
 
 // Isometric general-arrangement drawing of a high-wing SAE Regular-class aircraft.
 // Units are arbitrary model units; x runs nose-ward, y to port, z up.
@@ -44,15 +45,6 @@ const box = (x0, y0, z0, x1, y1, z1) => prismXZ([[x0, z0], [x1, z0], [x1, z1], [
 const wheel = (cx, y, cz, r) => [{ shade: 'left', pts: Array.from({ length: 20 }, (_, i) => [cx + r * Math.cos((i / 20) * 2 * Math.PI), y, cz + r * Math.sin((i / 20) * 2 * Math.PI)]) }];
 const strut = (a, b) => [{ shade: 'line', pts: [a, b] }];
 
-// The parts, with the four qualities from the SAE overview: weight, aerodynamics, propulsion, structure.
-export const PARTS = {
-  wing: { name: 'Wing', quality: 'Aerodynamic finesse', text: 'Generates the lift that carries the payload. Span, chord and area are fixed in Conceptual Design & Sizing.', explode: [0, 0, 4.4] },
-  fuselage: { name: 'Fuselage', quality: 'Structural integrity', text: 'Takes every load between the wing, tail and landing gear. Modelled in 3D CAD before a single part is cut.', explode: [0, 0, 0] },
-  payload: { name: 'Payload bay', quality: 'Weight optimization', text: 'The mission. In 2015, its first year, the team lifted 13.6 kg: the highest payload carried by an Indian team in the competition’s history.', explode: [0, 0, 2.8] },
-  motor: { name: 'Motor & prop', quality: 'Propulsion efficiency', text: 'Turns battery power into thrust. Every gram it saves is a gram of payload the aircraft can carry.', explode: [3.2, 0, 0] },
-  tail: { name: 'Tail', quality: 'Stability', text: 'The horizontal and vertical stabilisers keep the aircraft steady and pointed where the pilot wants it.', explode: [-3.4, 0, 0.6] },
-  gear: { name: 'Landing gear', quality: 'Takeoff & landing', text: 'Has to survive the takeoff and landing requirements of every flight round, loaded.', explode: [0, 0, -2] },
-};
 
 // Painter's order, back to front. Anything entirely above another part's top plane is drawn after it.
 const PIECES = [
