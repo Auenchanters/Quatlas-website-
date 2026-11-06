@@ -61,7 +61,7 @@ export function Person({ p, big = false, sizes }) {
   return (
     <div className="grid gap-2 content-start">
       <div className="aspect-[4/5] border border-ink bg-sheet overflow-hidden">
-        <RemoteImg src={p.img} width={big ? 640 : 480} sizes={sizes ?? '(min-width: 1280px) 18vw, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 47vw'} alt={p.name} className="size-full object-cover"
+        <RemoteImg src={p.img} width={big ? 640 : 480} sizes={sizes ?? '(min-width: 1280px) 18vw, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 47vw'} alt={p.name} className="size-full object-cover object-top"
           placeholder={<span aria-hidden="true" className="size-full grid place-items-center display text-4xl text-ink-2">{initials(p.name)}</span>} />
       </div>
       <p className={`wide leading-tight mt-1 ${big ? 'text-xl' : ''}`}>{p.name}</p>

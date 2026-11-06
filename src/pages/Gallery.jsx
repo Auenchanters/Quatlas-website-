@@ -7,7 +7,7 @@ import { Failed } from '../components/ui';
 import { Chevron, Close } from '../components/icons';
 import { useApi } from '../lib/api';
 import { motionAllowed } from '../lib/motion';
-import { splitGallery } from '../content/gallery-tags';
+import { REPO_PHOTOS, splitGallery } from '../content/gallery-tags';
 import snapshot from '../content/snapshot.json';
 
 const TABS = [['aircraft', 'Aircraft'], ['people', 'People']];
@@ -88,7 +88,7 @@ export default function Gallery() {
   const { data, error, loading, reload } = useApi('/gallery/images', { initial: snapshot.gallery, map: (d) => [...d].reverse() });
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'people' ? 'people' : 'aircraft';
-  const sets = useMemo(() => (data ? splitGallery(data) : null), [data]);
+  const sets = useMemo(() => (data ? splitGallery([...REPO_PHOTOS, ...data]) : null), [data]);
   const items = sets?.[view] ?? [];
   const [open, setOpen] = useState(null);
   const move = (d) => setOpen((i) => (i + d + items.length) % items.length);

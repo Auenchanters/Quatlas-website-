@@ -1,17 +1,17 @@
 import { Link, useParams } from 'react-router';
 import { SheetGrid, SheetHead } from '../components/Layout';
 import { Person } from '../components/ui';
-import { SUBTEAMS, membersOf, useTeams } from '../content/teams';
+import { SUBTEAMS, membersOf } from '../content/teams';
+import { TEAMS } from '../content/roster';
 import NotFound from './NotFound';
 
 export default function Subteam() {
   const { slug } = useParams();
   const i = SUBTEAMS.findIndex((s) => s.slug === slug);
-  const { data: teams } = useTeams();
   if (i < 0) return <NotFound />;
   const s = SUBTEAMS[i];
   const next = SUBTEAMS[(i + 1) % SUBTEAMS.length];
-  const people = teams ? membersOf(teams, s) : [];
+  const people = membersOf(TEAMS, s);
   const leads = people.filter((p) => /lead|head/i.test(p.role ?? ''));
   const rest = people.filter((p) => !leads.includes(p));
   return (

@@ -65,9 +65,11 @@
 html.vt-close::view-transition-group(photo) { animation-duration: 256ms; }
 html.theme-flip::view-transition-old(root), html.theme-flip::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
-/* Pull cord: hangs through the last header slot, i.e. 22px in from the content edge. */
+/* Pull cord: hangs through the last header slot, i.e. 22px in from the content edge. pullcord's
+   rope length is fixed (176px), so the anchor sits above the page to leave a short drop below the header. */
 :root {
   --gutter: 1rem;
+  --pullcord-top: -76px;
   --pullcord-right: calc(max(0px, (100vw - 78rem) / 2) + var(--gutter) - 10px);
   --pullcord-z: 45;
   --pullcord-ink: var(--color-ink-2);

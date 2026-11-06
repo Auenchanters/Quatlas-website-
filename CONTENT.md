@@ -12,12 +12,13 @@ Pages only lay content out. To update the site, edit these files. You don't need
 | `aircraft.js` | Aircraft drawing / 3D model legend, Design blueprint | `SPECS` in mm. `null` hides that dimension. |
 | `support.js` | Support intro, crowdfunding text, UPI payee | `UPI.pa` = UPI ID, `UPI.pn` = name |
 | `sponsors.json` | "Three ways to sponsor" | |
-| `teams.js` | Team intro, subteam names/descriptions, which dashboard team names map to which subteam | Members themselves come from the dashboard. |
+| `teams.js` | Team intro, subteam names/descriptions, which team names map to which subteam | |
+| `roster.js` | The current team: core, subteams, names, roles, photos | Photos are `assets-src/team-<name>.jpg`; run `npm run images` after adding one. Alumni still come from the dashboard. |
 | `events.js` | Events page, Home "Upcoming" | |
 | `contact.jsx` | Contact people, form request types, FAQ | FAQ answers may contain links (JSX). |
 | `recruitment.js` | Recruitment roles and selection process | Dates come from the dashboard. |
 | `overview.js`, `about.json`, `terms.json` | About, Home overview, Terms | |
-| `gallery-tags.js` | Which gallery photos show under **Aircraft** | Every photo not listed shows under **People**. |
+| `gallery-tags.js` | Which gallery photos show under **Aircraft**, and the gallery photos kept in the repo (`REPO_PHOTOS`) | Every photo not listed shows under **People**. Repo photos live in `assets-src`. |
 | `snapshot.json` | Build-time copy of dashboard data (members, gallery, sponsor logos) | Refreshed from the API. Don't hand-edit. |
 
 Short one-line intros under page titles still live in the page files in `src/pages/`.

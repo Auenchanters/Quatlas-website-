@@ -1,18 +1,23 @@
 import { useApi } from '../lib/api';
 import snapshot from './snapshot.json';
 
-// Subteams of the club. Members come from the dashboard: a member shows on a subteam page when their
-// "Team name" matches one of `match` (case-insensitive). CAED and Conceptual are the names already in the data.
+// Subteams of the club, in the roster sheet's order. A person shows on a subteam page when their team's
+// `roleName` (src/content/roster.js) matches one of `match`, case-insensitive.
 export const SUBTEAMS = [
+  {
+    slug: 'aerodynamics', name: 'Aerodynamics', match: ['aerodynamics', 'aerodynamic', 'aero', 'conceptual'],
+    about: 'Turns the mission rules into a wing. Airfoil choice, sizing, stability and performance estimates start here, long before anything is cut.',
+    work: ['Conceptual sizing against the mission', 'Airfoil selection and CFD', 'Stability and control analysis', 'Performance and payload prediction'],
+  },
   {
     slug: 'avionics', name: 'Avionics', match: ['avionics', 'electronics', 'electrical'],
     about: 'Wires the aircraft and makes it fly: motor and battery selection, receivers, servos, power distribution and the payload release. Avionics owns every bench test before the first flight.',
     work: ['Propulsion and battery sizing', 'Servo, receiver and ESC integration', 'Wiring harness and power budget', 'Bench and range tests'],
   },
   {
-    slug: 'aerodynamics', name: 'Aerodynamics', match: ['aerodynamics', 'aerodynamic', 'aero', 'conceptual'],
-    about: 'Turns the mission rules into a wing. Airfoil choice, sizing, stability and performance estimates start here, long before anything is cut.',
-    work: ['Conceptual sizing against the mission', 'Airfoil selection and CFD', 'Stability and control analysis', 'Performance and payload prediction'],
+    slug: 'social-media', name: 'Social Media', match: ['social media', 'social-media'],
+    about: 'Tells the team’s story: the posts, photos and videos that follow every build, flight and competition, and the face Quatlas shows sponsors and new members.',
+    work: ['Posts from the workshop and the field', 'Photo and video coverage at events', 'Content for sponsors and outreach', 'Recruitment campaigns'],
   },
   {
     slug: 'design', name: 'Design', match: ['design', 'caed', 'cad'],
@@ -20,14 +25,9 @@ export const SUBTEAMS = [
     work: ['3D CAD of the full airframe', 'Assembly and fit checks', 'Manufacturing drawings', 'Technical design report figures'],
   },
   {
-    slug: 'structures', name: 'Structures', match: ['structures', 'structure', 'manufacturing', 'fabrication'],
-    about: 'Makes the airframe light enough to lift a heavy payload and strong enough to land. Material choice, load analysis and the build itself.',
-    work: ['Load cases and FEA', 'Material and joint selection', 'Laser cutting, layup and assembly', 'Repairs at the field'],
-  },
-  {
-    slug: 'non-tech', name: 'Non-Tech', match: ['non technical', 'non-technical', 'non tech', 'non-tech', 'management'],
-    about: 'Keeps the team running: sponsorship, finance, outreach, social media and events. Nothing reaches the competition without them.',
-    work: ['Sponsorship and partnerships', 'Budget and procurement', 'Social media and design', 'Events and outreach'],
+    slug: 'web-development', name: 'Web Development', match: ['web development', 'web-development', 'web'],
+    about: 'Builds and runs this website: the team pages, the gallery, recruitment, and the dashboard the club uses to keep it current.',
+    work: ['The public website', 'The admin dashboard and its server', 'Recruitment and contact forms', 'Hosting, security and speed'],
   },
 ];
 
@@ -53,5 +53,5 @@ export const byRole = (people) => [...people].sort((a, b) => rank(a.role) - rank
 // Every member of one subteam, from all matching team names.
 export const membersOf = (teams, sub) => byRole(teams.filter((t) => sub.match.includes(norm(t.roleName))).flatMap((t) => t.roleData));
 
-// Every team from the dashboard, prerendered from the build-time snapshot.
+// Every team in the dashboard, prerendered from the build-time snapshot. Only alumni are read from it now.
 export const useTeams = () => useApi('/members/memberData', { initial: snapshot.members, map: (d) => d[0].teams });

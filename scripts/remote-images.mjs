@@ -46,10 +46,6 @@ try {
   urls = [...gallery.map((g) => g.img), ...sponsors.map((s) => s.img), ...members[0].teams.flatMap((t) => t.roleData.map((m) => m.img))];
   // The pages render this snapshot first (and prerender it), then refresh from the API.
   await writeFile(SNAPSHOT, JSON.stringify({ gallery, sponsors, members }));
-  // The home stats strip only needs the roster size, so it gets this instead of the whole snapshot.
-  // (Alumni don't count; same rule as isAlumni in src/content/teams.js.)
-  const roster = members[0].teams.filter((t) => !/^alumi?ni$/i.test(t.roleName.trim())).reduce((n, t) => n + t.roleData.length, 0);
-  await writeFile('src/content/counts.json', `${JSON.stringify({ members: roster })}\n`);
 } catch (e) {
   console.warn(`remote-images: API unreachable (${e.message}); keeping the existing copies.`);
   process.exit(0);

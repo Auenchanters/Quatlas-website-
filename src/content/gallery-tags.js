@@ -43,7 +43,12 @@ export const AIRCRAFT = new Set([
   '68e20d8dcf3f3b27c62a772d', // model
   '68e20d5191d056032a30dcd9', // model
   '68e16297d226f9e47dd73ecb', // model
+  'event-chennai-planes', // models (repo photo)
 ]);
+
+// Photos kept in the repo (assets-src, `npm run images`) instead of the dashboard. They show first.
+export const REPO_PHOTOS = ['event-team-seated', 'event-field-2', 'event-field-1', 'event-chennai-planes', 'event-chennai-pilot',
+  'event-orientation', 'event-pradarshana-1', 'event-pradarshana-2', 'event-workshop'].map((img) => ({ _id: img, img }));
 
 export function splitGallery(items, aircraft = AIRCRAFT) {
   const out = { aircraft: [], people: [] };

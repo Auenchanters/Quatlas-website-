@@ -2,8 +2,9 @@ import { Link } from 'react-router';
 import { SheetGrid, SheetHead } from '../components/Layout';
 import { Img } from '../components/Img';
 import Roll from '../components/Roll';
-import { Failed, Person, PhotoStrip } from '../components/ui';
+import { Person, PhotoStrip } from '../components/ui';
 import { TEAM_INTRO, TILES, SUBTEAMS, byRole, isAlumni, isCore, membersOf, subteamOf, useTeams } from '../content/teams';
+import { TEAMS } from '../content/roster';
 
 // A team's people as a strip you scroll through (not an auto-ticker).
 function Strip({ people, label }) {
@@ -15,10 +16,10 @@ function Strip({ people, label }) {
   );
 }
 
-const countOf = (teams, slug) => {
-  if (!teams) return 0;
-  if (slug === 'alumni') return teams.filter((t) => isAlumni(t.roleName)).reduce((n, t) => n + t.roleData.length, 0);
-  return membersOf(teams, SUBTEAMS.find((s) => s.slug === slug)).length;
+// Alumni from the dashboard, everyone else from the roster.
+const countOf = (dashboard, slug) => {
+  if (slug !== 'alumni') return membersOf(TEAMS, SUBTEAMS.find((s) => s.slug === slug)).length;
+  return dashboard?.filter((t) => isAlumni(t.roleName)).reduce((n, t) => n + t.roleData.length, 0) ?? 0;
 };
 
 // One big button per subteam. The name carries over into the team page's title (view transition).
@@ -41,25 +42,23 @@ function Tile({ tile, n, count }) {
 }
 
 export default function Team() {
-  const { data: teams, error, reload } = useTeams();
-  const core = byRole(teams?.filter((t) => isCore(t.roleName)).flatMap((t) => t.roleData) ?? []);
-  const lead = core.slice(0, 3);
-  // Teams in the data that match no subteam still show, so nobody disappears.
-  const other = teams?.filter((t) => !isCore(t.roleName) && !isAlumni(t.roleName) && !subteamOf(t.roleName)) ?? [];
+  const { data: dashboard } = useTeams();
+  const core = byRole(TEAMS.filter((t) => isCore(t.roleName)).flatMap((t) => t.roleData));
+  const lead = core.slice(0, 2); // captain and vice-captain
+  // Roster teams that match no subteam still show, so nobody disappears.
+  const other = TEAMS.filter((t) => !isCore(t.roleName) && !subteamOf(t.roleName));
   return (
     <>
       <SheetHead title="Our team"><p>{TEAM_INTRO}</p></SheetHead>
 
       <figure data-reveal="image" className="wrap pt-12">
-        <Img name="groupPhoto" eager sizes="(min-width: 1280px) 1200px, 100vw" alt="The Quatlas team in team shirts behind their aircraft at an exhibition stall." className="w-full h-auto border border-ink" />
-        <figcaption className="data text-ink-2 mt-2">The team, with the aircraft</figcaption>
+        <Img name="event-team-seated" eager sizes="(min-width: 1280px) 1200px, 100vw" alt="The Quatlas team seated together in the stands at an event, wearing event lanyards." className="w-full h-auto border border-ink" />
+        <figcaption className="data text-ink-2 mt-2">The team</figcaption>
       </figure>
-
-      {error && !teams && <div className="wrap py-10"><Failed error={error} retry={reload} /></div>}
 
       <section aria-labelledby="core" className="wrap section border-b border-rule grid gap-10">
         <h2 id="core" data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Core team</h2>
-        <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 md:grid-cols-3 md:max-w-4xl">
+        <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 md:max-w-3xl">
           {lead.map((p) => <li key={p._id ?? p.name}><Person p={p} big sizes="(min-width: 768px) 28vw, 46vw" /></li>)}
         </ul>
         {core.length > 3 && (
@@ -72,7 +71,7 @@ export default function Team() {
       <section aria-labelledby="subteams" className="wrap section grid gap-10">
         <h2 id="subteams" data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Subteams</h2>
         <ul data-reveal="stagger" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {TILES.map((t, n) => <Tile key={t.slug} tile={t} n={n} count={countOf(teams, t.slug)} />)}
+          {TILES.map((t, n) => <Tile key={t.slug} tile={t} n={n} count={countOf(dashboard, t.slug)} />)}
         </ul>
       </section>
 
