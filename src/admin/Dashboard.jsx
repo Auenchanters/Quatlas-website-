@@ -5,7 +5,7 @@ import { Failed, Loading } from '../components/ui';
 import { api, session, useApi } from '../lib/api';
 import { toast } from '../lib/toast';
 import { SUBTEAMS } from '../content/teams';
-import { CLUB_LINKEDIN, MemberCards, RosterSync } from './Members';
+import { CLUB_LINKEDIN, MemberCards } from './Members';
 
 const IMG_HINT = `Photo links: a Google Drive file shared as “Anyone with the link”, a OneDrive embed link ending in ?width=…, or a photo already on the site (https://quatlas-website.vercel.app/img/…). Check the preview: if it says “No image”, the site shows initials instead. The team name decides where a member appears: Core, ${SUBTEAMS.map((t) => t.name).join(', ')}, or Alumini. Someone in two teams is added once per team. Left empty, LinkedIn points to the club’s page.`;
 
@@ -41,12 +41,6 @@ export default function Dashboard() {
             return { msg: `Successfully added ${v.name} to teamInfo data` };
           }} />
       </Panel>
-
-      {members.data && (
-        <Panel title="Current team and the roster sheet">
-          <RosterSync teams={members.data} reload={members.reload} />
-        </Panel>
-      )}
 
       {/* Teams in the site's order (Core, the subteams, anything else, Alumini last); empty ones hidden. */}
       {members.data?.filter((t) => t.roleData.length).sort((a, b) => rank(a.roleName) - rank(b.roleName)).map((t) => (

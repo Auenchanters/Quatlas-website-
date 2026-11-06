@@ -3,20 +3,20 @@ import { Link, useParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import TeamBackdrop, { decodeOnScroll } from '../components/TeamBackdrop';
 import { Person } from '../components/ui';
-import { SUBTEAMS, membersOf } from '../content/teams';
-import { TEAMS } from '../content/roster';
+import { SUBTEAMS, membersOf, useTeams } from '../content/teams';
 import NotFound from './NotFound';
 
 export default function Subteam() {
   const { slug } = useParams();
   const page = useRef(null);
+  const { data: teams = [] } = useTeams();
   // Web Development's text decodes out of code as it scrolls in.
   useEffect(() => (slug === 'web-development' && page.current ? decodeOnScroll(page.current) : undefined), [slug]);
   const i = SUBTEAMS.findIndex((s) => s.slug === slug);
   if (i < 0) return <NotFound />;
   const s = SUBTEAMS[i];
   const next = SUBTEAMS[(i + 1) % SUBTEAMS.length];
-  const people = membersOf(TEAMS, s);
+  const people = membersOf(teams, s);
   const leads = people.filter((p) => /lead|head/i.test(p.role ?? ''));
   const rest = people.filter((p) => !leads.includes(p));
   return (

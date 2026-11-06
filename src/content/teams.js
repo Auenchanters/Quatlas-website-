@@ -2,7 +2,7 @@ import { useApi } from '../lib/api';
 import snapshot from './snapshot.json';
 
 // Subteams of the club, in the roster sheet's order. A person shows on a subteam page when their team's
-// `roleName` (src/content/roster.js) matches one of `match`, case-insensitive.
+// name in the dashboard (`roleName`) matches one of `match`, case-insensitive.
 export const SUBTEAMS = [
   {
     slug: 'aerodynamics', name: 'Aerodynamics', match: ['aerodynamics', 'aerodynamic', 'aero', 'conceptual'],
@@ -53,5 +53,8 @@ export const byRole = (people) => [...people].sort((a, b) => rank(a.role) - rank
 // Every member of one subteam, from all matching team names.
 export const membersOf = (teams, sub) => byRole(teams.filter((t) => sub.match.includes(norm(t.roleName))).flatMap((t) => t.roleData));
 
-// Every team in the dashboard, prerendered from the build-time snapshot. Only alumni are read from it now.
+// Every team in the dashboard (the admin panel edits it), prerendered from the build-time snapshot.
 export const useTeams = () => useApi('/members/memberData', { initial: snapshot.members, map: (d) => d[0].teams });
+
+// Headcount for the home page: each current member once, however many teams they're in.
+export const memberCount = (teams = []) => new Set(teams.filter((t) => !isAlumni(t.roleName)).flatMap((t) => t.roleData.map((p) => p.name.trim().toLowerCase()))).size;

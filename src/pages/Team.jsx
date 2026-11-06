@@ -5,7 +5,6 @@ import { Img } from '../components/Img';
 import Roll from '../components/Roll';
 import { Person, PhotoStrip } from '../components/ui';
 import { TEAM_INTRO, TILES, SUBTEAMS, byRole, isAlumni, isCore, membersOf, subteamOf, useTeams } from '../content/teams';
-import { TEAMS } from '../content/roster';
 
 // A team's people as a strip you scroll through (not an auto-ticker).
 function Strip({ people, label }) {
@@ -17,9 +16,9 @@ function Strip({ people, label }) {
   );
 }
 
-// Alumni from the dashboard, everyone else from the roster.
-const countOf = (dashboard, slug) => {
-  if (slug !== 'alumni') return membersOf(TEAMS, SUBTEAMS.find((s) => s.slug === slug)).length;
+// Everyone comes from the dashboard (the admin panel).
+const countOf = (dashboard = [], slug) => {
+  if (slug !== 'alumni') return membersOf(dashboard, SUBTEAMS.find((s) => s.slug === slug)).length;
   return dashboard?.filter((t) => isAlumni(t.roleName)).reduce((n, t) => n + t.roleData.length, 0) ?? 0;
 };
 
@@ -42,11 +41,11 @@ function Tile({ tile, n, count }) {
 }
 
 export default function Team() {
-  const { data: dashboard } = useTeams();
-  const core = byRole(TEAMS.filter((t) => isCore(t.roleName)).flatMap((t) => t.roleData));
+  const { data: dashboard = [] } = useTeams();
+  const core = byRole(dashboard.filter((t) => isCore(t.roleName)).flatMap((t) => t.roleData));
   const lead = core.slice(0, 2); // captain and vice-captain
-  // Roster teams that match no subteam still show, so nobody disappears.
-  const other = TEAMS.filter((t) => !isCore(t.roleName) && !subteamOf(t.roleName));
+  // Dashboard teams that match no subteam still show, so nobody disappears.
+  const other = dashboard.filter((t) => t.roleData.length && !isCore(t.roleName) && !isAlumni(t.roleName) && !subteamOf(t.roleName));
   return (
     <>
       <SheetHead title="Our team"><p>{TEAM_INTRO}</p></SheetHead>
@@ -61,9 +60,9 @@ export default function Team() {
         <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 md:max-w-3xl">
           {lead.map((p) => <li key={p._id ?? p.name}><Person p={p} big sizes="(min-width: 768px) 28vw, 46vw" /></li>)}
         </ul>
-        {core.length > 3 && (
+        {core.length > 2 && (
           <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {core.slice(3).map((p) => <li key={p._id ?? p.name}><Person p={p} /></li>)}
+            {core.slice(lead.length).map((p) => <li key={p._id ?? p.name}><Person p={p} /></li>)}
           </ul>
         )}
       </section>
