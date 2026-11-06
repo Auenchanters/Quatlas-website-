@@ -1,5 +1,6 @@
 import { useApi } from '../lib/api';
 import snapshot from './snapshot.json';
+import photos from './images.json';
 
 // Subteams of the club, in the order they're shown everywhere (tiles, the subteam nav, "Next:" links). A person shows on a subteam page when their team's
 // name in the dashboard (`roleName`) matches one of `match`, case-insensitive. oneRow: everyone on the
@@ -59,6 +60,20 @@ export const isCoreLead = (p) => rank(p.role) <= 2;
 // Every member of one subteam, from all matching team names.
 export const membersOf = (teams, sub) => byRole(teams.filter((t) => sub.match.includes(norm(t.roleName))).flatMap((t) => t.roleData));
 
+// Fill-ins for what the dashboard doesn't have yet, so the site is right without an admin edit. Each one
+// steps aside once the dashboard has it:
+// - a member with no photo link (…/img/none) gets the site's own team-<first name> photo, if there is one;
+// - Core with no non-technical head gets Kartik, with the photo and LinkedIn from his other team.
+const first = (name = '') => name.trim().split(/\s+/)[0].toLowerCase();
+const withPhoto = (p) => (/\/img\/none$/.test(p.img ?? '') && photos[`team-${first(p.name)}`] ? { ...p, img: `team-${first(p.name)}` } : p);
+function fillIn(teams) {
+  const out = teams.map((t) => ({ ...t, roleData: t.roleData.map(withPhoto) }));
+  const core = out.find((t) => isCore(t.roleName));
+  const kartik = out.flatMap((t) => t.roleData).find((p) => norm(p.name) === 'kartik');
+  if (core && kartik && !core.roleData.some((p) => /non-?tech/i.test(p.role ?? ''))) core.roleData = [...core.roleData, { ...kartik, _id: 'site-kartik-core', role: 'Non-Tech Head' }];
+  return out;
+}
+
 // Every team in the dashboard (the admin panel edits it), prerendered from the build-time snapshot.
-export const useTeams = () => useApi('/members/memberData', { initial: snapshot.members, map: (d) => d[0].teams });
+export const useTeams = () => useApi('/members/memberData', { initial: snapshot.members, map: (d) => fillIn(d[0].teams) });
 

@@ -176,7 +176,7 @@ function aero() {
 function avionics() {
   const W = 1200, H = 640, D = 380, RANGES = [1, 2, 5, 10], rad = Math.PI / 180;
   const st = {
-    batt: true, avion: true, nav: true, strobe: true, arm: false, guard: false, ap: false, range: 1, arc: false, wx: true, tfc: true,
+    batt: true, avion: true, nav: true, strobe: false, arm: false, guard: false, ap: false, range: 1, arc: false, wx: true, tfc: true,
     thr: 0.35, rpm: 0, drain: 0, volt: 12.6, amp: 0, temp: 24, pitch: 0, bank: 0, hdg: 40, bug: 40, spd: 48, alt: 120, x: 0, y: 0,
     wpt: null, on: true, boot: -9, armT: 0, cas: '', ack: true, press: {}, hot: null, drag: false, sweep: 0,
   };
