@@ -63,11 +63,28 @@ export const membersOf = (teams, sub) => byRole(teams.filter((t) => sub.match.in
 // Fill-ins for what the dashboard doesn't have yet, so the site is right without an admin edit. Each one
 // steps aside once the dashboard has it:
 // - a member with no photo link (…/img/none) gets the site's own team-<first name> photo, if there is one;
+// - a member whose LinkedIn is missing or the club page gets their own link from LINKEDIN, by name;
 // - Core with no non-technical head gets Kartik, with the photo and LinkedIn from his other team.
+const LINKEDIN = {
+  'aneesh agumbe': 'https://www.linkedin.com/in/aneesh-agumbe-02b08a367/',
+  'mriganki tripati': 'https://www.linkedin.com/in/mriganki-tripathi-5a0491366/',
+  'b mauli': 'https://www.linkedin.com/in/b-mauli-76aa55375',
+  'syed ahmed': 'https://www.linkedin.com/in/syed-abid-ahmed-50885a30a/',
+  kartik: 'https://www.linkedin.com/in/kartik-mashetty/',
+  sinchan: 'https://www.linkedin.com/in/sinchan-y-r-1a215937b/',
+  'twisha kalra': 'https://www.linkedin.com/in/twisha-kalra-752181344/',
+  'sumedha gramle': 'https://www.linkedin.com/in/sumedha-gramle-a44660355/',
+  'syed sabi': 'https://www.linkedin.com/in/syed-sabi/',
+  'milind s': 'https://www.linkedin.com/in/milind-mugali-5a1404366/',
+  'srishti pravin': 'https://www.linkedin.com/in/srishti-gokhe-421038383/',
+  'meenakshi k': 'https://www.linkedin.com/in/meenakshi-k123/',
+  'niyati yadav': 'https://www.linkedin.com/in/niyati-yadav-31909038a/',
+};
 const first = (name = '') => name.trim().split(/\s+/)[0].toLowerCase();
 const withPhoto = (p) => (/\/img\/none$/.test(p.img ?? '') && photos[`team-${first(p.name)}`] ? { ...p, img: `team-${first(p.name)}` } : p);
+const withLinkedIn = (p) => (LINKEDIN[norm(p.name)] && (!p.linkedin || /linkedin\.com\/company\/quatlas/i.test(p.linkedin)) ? { ...p, linkedin: LINKEDIN[norm(p.name)] } : p);
 function fillIn(teams) {
-  const out = teams.map((t) => ({ ...t, roleData: t.roleData.map(withPhoto) }));
+  const out = teams.map((t) => ({ ...t, roleData: t.roleData.map((p) => withLinkedIn(withPhoto(p))) }));
   const core = out.find((t) => isCore(t.roleName));
   const kartik = out.flatMap((t) => t.roleData).find((p) => norm(p.name) === 'kartik');
   if (core && kartik && !core.roleData.some((p) => /non-?tech/i.test(p.role ?? ''))) core.roleData = [...core.roleData, { ...kartik, _id: 'site-kartik-core', role: 'Non-Tech Head' }];
