@@ -47,7 +47,7 @@ function Photo({ src, width = 800, sizes, alt = '', className = '', placeholder 
   if ((!c && !/^https?:\/\//.test(src ?? '')) || copies[src]?.failed) return placeholder;
   const load = { loading: eager ? 'eager' : 'lazy', fetchPriority: eager ? 'high' : undefined, decoding: 'async', alt, className };
   if (c) {
-    return <img {...load} src={sized} width={c.w} height={c.h} sizes={sizes ?? `${width}px`}
+    return <img {...load} src={sized} width={c.w} height={c.h} sizes={sizes ?? `${width}px`} style={c.c ? { backgroundColor: c.c } : undefined}
       srcSet={c.widths.map((w) => `${localSrc(c, w)} ${w}w`).join(', ')} />;
   }
   // Not copied yet: the host's own resized link → the site's relay (api/img.js, which also opens OneDrive

@@ -1,7 +1,7 @@
 // Home page copy. Fields: HERO.label (mono figure label), HERO.title (headline lines),
 // HERO.place, HERO.lede (optional). QUOTES rotate under the headline. PATHS: [link, title, text].
 export const HERO = {
-  label: 'Fig. 01 — Quatlas 038',
+  label: 'Fig. 01 — Quatlas 012',
   title: ['Designed on paper.', 'Proven in the air.'],
   place: 'Quatlas Aeromodelling, Ramaiah Institute of Technology',
 };

@@ -1,7 +1,7 @@
 import { W, H, PLANE_X, CEIL, GROUND } from './sim.js';
 
 // Payload Run's look: a sky that turns from day to dusk to night as you fly further, layered parallax
-// (mountains, a city skyline, clouds, near hills, the airfield), lattice pylons, the red-and-white 038,
+// (mountains, a city skyline, clouds, near hills, the airfield), lattice pylons, the navy-and-white 012,
 // and particles for exhaust, pickups and the crash. Pure canvas; everything procedural.
 
 const hash = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -165,35 +165,75 @@ function pickup(ctx, it, t) {
   }
 }
 
-// The 038, side view, nose right; pitched with its climb rate. Spinning prop, tail number.
+// The 012, side view, nose right, pitched with its climb rate: the boxy navy fuselage with its white
+// nose and open balsa bay, the parasol wing on struts, the low wing with its winglet, the swept fin,
+// the bow gear and a wooden prop with red tips. Model units; S scales them to the field.
+const S = 1.2, TAIL = [-44, -3]; // TAIL: where the exhaust leaves, in model units
+const pitchOf = (s) => clamp(s.vy / 14, -0.5, 0.5);
+const NAVY = '#262a78', NAVY_DARK = '#171a52', WHITE = '#f3f3ee', LINE = '#0e1030';
+
 function plane(ctx, s, t) {
-  ctx.save(); ctx.translate(PLANE_X, s.y); ctx.rotate(clamp(s.vy / 14, -0.5, 0.5)); ctx.scale(1.15, 1.15);
-  ctx.lineJoin = 'round'; ctx.strokeStyle = '#1f242b'; ctx.lineWidth = 1.2;
-  // Tail plane and fin.
-  ctx.fillStyle = '#c41e2c';
-  ctx.beginPath(); ctx.moveTo(-40, -2); ctx.lineTo(-44, -20); ctx.lineTo(-36, -20); ctx.lineTo(-26, -3); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#e9ecef'; ctx.fillRect(-46, -1, 16, 3);
-  // Fuselage.
-  const g = ctx.createLinearGradient(0, -8, 0, 8);
-  g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#c9ced6');
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.moveTo(36, 1); ctx.quadraticCurveTo(34, -8, 16, -8); ctx.lineTo(-40, -3); ctx.lineTo(-40, 2); ctx.lineTo(14, 7); ctx.quadraticCurveTo(32, 8, 36, 1); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#c41e2c'; // nose cowl and cheat line
-  ctx.beginPath(); ctx.moveTo(36, 1); ctx.quadraticCurveTo(34, -8, 24, -8); ctx.lineTo(24, 7.5); ctx.quadraticCurveTo(32, 8, 36, 1); ctx.fill();
-  ctx.fillRect(-30, -1, 50, 2.2);
-  ctx.fillStyle = '#7fc4ff'; ctx.beginPath(); ctx.moveTo(14, -7.5); ctx.lineTo(6, -7.5); ctx.lineTo(8, -3); ctx.lineTo(17, -3); ctx.closePath(); ctx.fill(); // window
-  // High wing, end on, with strut.
-  ctx.fillStyle = '#c41e2c'; ctx.beginPath(); ctx.roundRect(-6, -13, 30, 5, 2.5); ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(8, -8); ctx.lineTo(0, 5); ctx.stroke();
-  // Gear.
-  ctx.beginPath(); ctx.moveTo(18, 6); ctx.lineTo(21, 15); ctx.moveTo(-2, 5); ctx.lineTo(-4, 13); ctx.stroke();
-  ctx.fillStyle = '#1f242b'; for (const [x, y] of [[21, 16], [-4, 14]]) { ctx.beginPath(); ctx.arc(x, y, 3.6, 0, 7); ctx.fill(); }
-  // Tail number.
-  ctx.fillStyle = '#1f242b'; ctx.font = '700 6px "IBM Plex Mono", monospace'; ctx.fillText('038', -36, -9);
-  // Propeller: a blurred disc and one blade catching the light.
-  ctx.fillStyle = 'rgba(210,214,220,0.35)'; ctx.beginPath(); ctx.ellipse(38, 1, 2.2, 13, 0, 0, 7); ctx.fill();
-  const b = Math.sin(t / 16) * 12; ctx.strokeStyle = '#2b3038'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(38, 1 - b); ctx.lineTo(38, 1 + b); ctx.stroke();
+  ctx.save(); ctx.translate(PLANE_X, s.y); ctx.rotate(pitchOf(s)); ctx.scale(S, S);
+  ctx.lineJoin = 'round'; ctx.strokeStyle = LINE; ctx.lineWidth = 0.9;
+  const poly = (pts, fill) => { ctx.fillStyle = fill; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fill(); ctx.stroke(); };
+
+  // Far-side struts and the stabiliser sit behind the fuselage.
+  ctx.strokeStyle = '#c9cbd6'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(5, -6); ctx.lineTo(7, -15); ctx.moveTo(-6, -6); ctx.lineTo(-4, -15); ctx.stroke();
+  ctx.strokeStyle = LINE; ctx.lineWidth = 0.9;
+  poly([[-30, -5.5], [-45, -6.5], [-46, -4], [-30, -3.5]], NAVY);
+  // Fin, swept back, with the tail number.
+  poly([[-27, -5], [-35, -22], [-42.5, -22], [-42, -5]], NAVY);
+  ctx.save(); ctx.translate(-36.5, -12); ctx.rotate(-1.2); ctx.fillStyle = WHITE; ctx.font = '700 6px Georgia, serif'; ctx.textAlign = 'center'; ctx.fillText('012', 0, 2); ctx.restore();
+
+  // Fuselage: straight top, bottom rising to the tail; a highlight along the top of the film.
+  const g = ctx.createLinearGradient(0, -6, 0, 7);
+  g.addColorStop(0, '#3a3f9a'); g.addColorStop(0.45, NAVY); g.addColorStop(1, NAVY_DARK);
+  poly([[36, -6], [-42, -5], [-42, -1], [-6, 7], [36, 7]], g);
+  // White nose block and the motor on its mount.
+  poly([[36, -6], [28, -6], [28, 7], [36, 7]], WHITE);
+  ctx.fillStyle = '#b9bdc3'; ctx.fillRect(36, -3, 1.5, 6);
+  ctx.fillStyle = '#1c1c1f'; ctx.fillRect(37.5, -2.6, 3.6, 5.2);
+  ctx.fillStyle = '#c9a227'; ctx.fillRect(40.2, -2.6, 1.2, 5.2);
+  // Open bay: balsa longeron and formers showing through the top.
+  ctx.fillStyle = '#d6ad74'; ctx.fillRect(4, -6, 24, 2.2);
+  ctx.fillStyle = '#8a6a3e'; for (let x = 6; x < 28; x += 5) ctx.fillRect(x, -6, 1, 3.6);
+
+  // Low wing at the fuselage bottom, and its white winglet on the near tip.
+  poly([[17, 6.5], [-8, 6.5], [-9, 8.5], [14, 9.5], [17.5, 8]], WHITE);
+  ctx.fillStyle = NAVY; ctx.fillRect(-3, 7, 15, 1.4);
+  poly([[13, 7], [-6, 7], [-4, -1], [9, -1]], 'rgba(243,243,238,0.92)');
+
+  // Parasol wing: an airfoil seen end on, white leading and trailing edges, navy covering, tip plate.
+  poly([[-6, -19.5], [-13, -22.5], [-14, -17.8]], WHITE);
+  ctx.fillStyle = WHITE; ctx.strokeStyle = LINE;
+  ctx.beginPath(); ctx.moveTo(15, -16.5); ctx.bezierCurveTo(13, -21, 2, -21.5, -14, -17.8); ctx.lineTo(-14, -16.6); ctx.bezierCurveTo(0, -15.6, 10, -15.4, 15, -16.5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = NAVY; ctx.beginPath(); ctx.moveTo(10, -18.8); ctx.bezierCurveTo(5, -20.4, -2, -20.4, -9, -18.2); ctx.lineTo(-9, -17); ctx.bezierCurveTo(-2, -16.4, 5, -16.4, 10, -16.8); ctx.fill();
+  // Near-side struts.
+  ctx.strokeStyle = WHITE; ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.moveTo(7, -6); ctx.lineTo(9, -16); ctx.moveTo(-4, -6); ctx.lineTo(-2, -16); ctx.stroke();
+
+  // Bow gear in aluminium and a white wheel.
+  ctx.strokeStyle = '#a9adb5'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(22, 7); ctx.quadraticCurveTo(25, 11, 25, 15); ctx.stroke();
+  ctx.fillStyle = '#ecece8'; ctx.strokeStyle = LINE; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.arc(25, 16, 4.2, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1c1c1f'; ctx.beginPath(); ctx.arc(25, 16, 1.4, 0, 7); ctx.fill();
+
+  // Prop: a faint wooden disc, and the blades caught mid-turn with their red tips.
+  ctx.fillStyle = 'rgba(212,147,74,0.22)'; ctx.beginPath(); ctx.ellipse(42.5, 0, 2.4, 17, 0, 0, 7); ctx.fill();
+  const b = Math.sin(t / 14) * 17;
+  ctx.strokeStyle = '#d4934a'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(42.5, -b * 0.82); ctx.lineTo(42.5, b * 0.82); ctx.stroke();
+  ctx.strokeStyle = '#cf2a2a'; ctx.beginPath(); ctx.moveTo(42.5, -b * 0.82); ctx.lineTo(42.5, -b); ctx.moveTo(42.5, b * 0.82); ctx.lineTo(42.5, b); ctx.stroke();
+  ctx.lineCap = 'butt';
   ctx.restore();
+}
+
+// The tail's position on the field, following the plane's pitch, so the trail always leaves from it.
+function tailPoint(s) {
+  const a = pitchOf(s), [x, y] = TAIL;
+  return [PLANE_X + (x * Math.cos(a) - y * Math.sin(a)) * S, s.y + (x * Math.sin(a) + y * Math.cos(a)) * S];
 }
 
 function hud(ctx, s, best, k, p) {
@@ -214,7 +254,7 @@ function hud(ctx, s, best, k, p) {
   ctx.textAlign = 'right'; ctx.fillStyle = ink; ctx.fillText(`BEST ${best}`, W - 20, 16); ctx.textAlign = 'left';
 }
 
-export function draw(ctx, s, fx, t, k, best) {
+export function draw(ctx, s, fx, t, k, best, paused = false) {
   const p = phaseAt(s.dist);
   ctx.save();
   if (fx.shake > 0.3) { ctx.translate((Math.random() - 0.5) * fx.shake, (Math.random() - 0.5) * fx.shake); fx.shake *= 0.9; }
@@ -230,24 +270,27 @@ export function draw(ctx, s, fx, t, k, best) {
   // Wind streaks, faster than the scenery.
   ctx.strokeStyle = p > 1.2 ? 'rgba(200,215,255,0.18)' : 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1;
   for (const w of fx.wind) {
-    if (!s.over) w.x -= s.speed * 2.2;
+    if (!s.over && !paused) w.x -= s.speed * 2.2;
     if (w.x + w.l < 0) { w.x = W + Math.random() * 200; w.y = CEIL + Math.random() * (GROUND - CEIL); }
     ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x + w.l, w.y); ctx.stroke();
   }
   for (const it of s.items) if (it.kind === 'pylon') pylon(ctx, it, p, t); else if (!it.got) pickup(ctx, it, t);
-  // Exhaust puffs while flying.
-  if (!s.over && Math.random() < 0.6) fx.parts.push({ x: PLANE_X - 44, y: s.y + 1, vx: -s.speed * 0.6, vy: (Math.random() - 0.5) * 0.4, life: 0.7, size: 2.5, c: p > 1.2 ? '#8892a8' : '#ffffff', g: 0, puff: true });
-  if (!s.over) plane(ctx, s, t);
+  // A trail from the tail: puffs drift back with the airflow, spread and fade (drawn behind the plane).
+  if (!s.over && !paused) {
+    const [tx, ty] = tailPoint(s);
+    fx.parts.push({ x: tx, y: ty, vx: -s.speed * 0.9, vy: (Math.random() - 0.5) * 0.3 - s.vy * 0.15, life: 0.8, size: 2.2, c: p > 1.2 ? '#8892a8' : '#ffffff', g: 0, puff: true });
+  }
   for (const q of fx.parts) {
-    q.x += q.vx; q.y += q.vy; q.vy += q.g; q.life -= q.puff ? 0.03 : 0.018;
+    if (!paused) { q.x += q.vx; q.y += q.vy; q.vy += q.g; q.life -= q.puff ? 0.028 : 0.018; }
     ctx.globalAlpha = clamp(q.life); ctx.fillStyle = q.c;
     ctx.beginPath(); ctx.arc(q.x, q.y, q.puff ? q.size * (2 - q.life) : q.size, 0, 7); ctx.fill();
   }
   fx.parts = fx.parts.filter((q) => q.life > 0);
   ctx.globalAlpha = 1;
+  if (!s.over) plane(ctx, s, t);
   // Pickup rewards arc up to the payload readout.
   for (const f of fx.floaters) {
-    f.t += 0.03;
+    if (!paused) f.t += 0.03;
     const u = clamp(f.t), x = f.x0 + (130 - f.x0) * u, y = f.y0 + (24 - f.y0) * u - Math.sin(u * Math.PI) * 60;
     ctx.globalAlpha = 1 - u * 0.6; ctx.fillStyle = f.c; ctx.font = `700 ${14 * k}px "IBM Plex Mono", monospace`;
     ctx.fillText(f.text, x, y);

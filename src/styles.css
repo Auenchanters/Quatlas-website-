@@ -122,6 +122,13 @@ html.lenis, html.lenis body { height: auto; }
   .display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.02; }
   .wide { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
   .data { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  /* Part names that follow the 3D plane's pieces when it is pulled apart (src/three/viewer.js). */
+  .plane-label {
+    position: absolute; top: 0; left: 0; pointer-events: none; white-space: nowrap; opacity: 0;
+    font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.15rem 0.4rem; background: var(--color-paper); border: 1px solid var(--color-ink); color: var(--color-ink);
+  }
+  .plane-label[data-on='1'] { border-color: var(--color-signal); color: var(--color-signal); }
   .section { padding-block: clamp(5rem, 10vw, 9rem); }
 
   /* Rolling numbers: one 1em-tall window per digit, the 0–9 stack slides behind it. */

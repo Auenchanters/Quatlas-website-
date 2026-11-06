@@ -86,6 +86,27 @@ export default function Aircraft() {
   const [theta, setTheta] = useState(0.5);
   const spin = useRef(0);
   const ref = useRef(null);
+  const stage = useRef(null);
+  const view = useRef(null);
+  const [live, setLive] = useState(false); // the 3D model is drawing; the SVG stays as the fallback
+
+  // The 3D model of the 012 loads after the page has, and takes over the drawing once its first frame is up.
+  useEffect(() => {
+    let dead = false, idle;
+    const go = () => import('../three/viewer').then(({ mountPlane }) => {
+      if (dead || !stage.current) return;
+      try {
+        view.current = mountPlane(stage.current, {
+          names: Object.fromEntries(Object.entries(PARTS).map(([id, p]) => [id, p.name])),
+          onPick: setActive, onReady: () => setLive(true),
+        });
+      } catch { /* no WebGL: keep the drawing */ }
+    });
+    const later = () => { idle = (window.requestIdleCallback ?? setTimeout)(go, { timeout: 1500 }); };
+    document.readyState === 'complete' ? later() : addEventListener('load', later, { once: true });
+    return () => { dead = true; removeEventListener('load', later); (window.cancelIdleCallback ?? clearTimeout)(idle); view.current?.destroy(); view.current = null; };
+  }, []);
+  useEffect(() => { view.current?.set({ active, exploded }); }, [active, exploded, live]);
 
   useEffect(() => {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -104,12 +125,12 @@ export default function Aircraft() {
 
   // The propeller turns only while the motor is the selected part.
   useEffect(() => {
-    if (active !== 'motor' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (live || active !== 'motor' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let last = performance.now();
     const tick = (now) => { setTheta((t) => t + (now - last) * 0.012); last = now; spin.current = requestAnimationFrame(tick); };
     spin.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(spin.current);
-  }, [active]);
+  }, [active, live]);
 
   const part = PARTS[active];
   return (
@@ -117,7 +138,8 @@ export default function Aircraft() {
       <div className="relative">
         {/* Drafting grid: this panel is a drawing, so it gets the paper's grid. */}
         <svg viewBox="-262 -200 430 305" className="block w-full h-auto" role="img"
-          aria-label="Isometric drawing of a Quatlas aircraft with wing, fuselage, payload bay, motor and propeller, tail and landing gear.">
+          aria-label="Drawing of the Quatlas 012 aircraft with wing, fuselage, payload bay, motor and propeller, tail and landing gear.">
+          {/* Once the 3D model is up, only the grid of this drawing shows; the shapes stay for screen readers. */}
           <defs>
             <pattern id="grid" width="15" height="15" patternUnits="userSpaceOnUse">
               <path d="M15 0H0V15" fill="none" stroke="var(--fig-grid)" strokeWidth="0.6" />
@@ -130,12 +152,13 @@ export default function Aircraft() {
             const hidden = id === 'payload' && !exploded && active !== 'payload';
             return (
               <g key={i} onPointerEnter={() => setActive(id)} onClick={() => setActive(id)}
-                style={{ transform: `translate(${d[0]}px, ${d[1]}px)`, transition: 'transform 900ms var(--ease-out-expo), opacity 400ms', opacity: hidden ? 0 : 1, cursor: 'pointer' }}>
+                style={{ transform: `translate(${d[0]}px, ${d[1]}px)`, transition: 'transform 900ms var(--ease-out-expo), opacity 400ms', opacity: live || hidden ? 0 : 1, cursor: 'pointer' }}>
                 {faces.map((f, j) => <Face key={j} f={f} on={id === active} />)}
               </g>
             );
           })}
         </svg>
+        <div ref={stage} className="absolute inset-0 overflow-hidden" />
       </div>
       <p className="data px-3 py-2 border-t border-rule text-ink-2">Fig. 1 — General arrangement, {exploded ? 'exploded' : 'assembled'}</p>
 

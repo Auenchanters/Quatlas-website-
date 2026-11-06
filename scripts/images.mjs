@@ -3,6 +3,7 @@
 import sharp from 'sharp';
 import { readdir, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { tone } from './tone.mjs';
 
 const SRC = 'assets-src';
 const OUT = 'public/img';
@@ -24,7 +25,7 @@ for (const file of await readdir(SRC)) {
       .webp(LOSSLESS.has(name) ? { lossless: true } : { quality: 72 })
       .toFile(path.join(OUT, `${name}-${w}.webp`));
   }
-  manifest[name] = { w: width, h: height, widths: [...new Set(widths)] };
+  manifest[name] = { w: width, h: height, widths: [...new Set(widths)], c: (await tone(img.clone())) ?? undefined };
 }
 
 await writeFile('src/content/images.json', JSON.stringify(manifest, null, 1));

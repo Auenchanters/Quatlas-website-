@@ -45,7 +45,8 @@ function sea() {
 }
 
 function clouds() {
-  const puffs = 70 * 5, mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshStandardMaterial({ color: '#ffffff', flatShading: true, roughness: 1 }), puffs);
+  // Lit partly from within (emissive), so clouds stay bright from every side instead of turning slate grey against the sun.
+  const puffs = 70 * 5, mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#e9d9cf', emissiveIntensity: 0.55, flatShading: true, roughness: 1 }), puffs);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   let n = 0;
   const r = (k) => { const x = Math.sin(k * 91.7) * 43758.5; return x - Math.floor(x); };

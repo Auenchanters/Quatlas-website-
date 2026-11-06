@@ -1,25 +1,33 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import { Toaster } from './lib/toast';
 
 // Home ships in the entry chunk; everything else loads with its route, so visitors never download admin code.
-const About = lazy(() => import('./pages/About'));
-const Achievements = lazy(() => import('./pages/Achievements'));
-const Team = lazy(() => import('./pages/Team'));
-const Subteam = lazy(() => import('./pages/Subteam'));
-const Events = lazy(() => import('./pages/Events'));
-const Support = lazy(() => import('./pages/Support'));
-const Hangar = lazy(() => import('./pages/Hangar'));
-const Contact = lazy(() => import('./pages/Contact'));
-const Alumni = lazy(() => import('./pages/Alumni'));
-const Gallery = lazy(() => import('./pages/Gallery'));
-const Recruitment = lazy(() => import('./pages/Recruitment'));
-const Legal = lazy(() => import('./pages/Legal'));
+// Once the first page is idle, the public pages' chunks are fetched ahead, so moving between pages
+// doesn't wait on the network (each is a few KB; the games and admin screens are left out).
+const PAGES = {
+  About: () => import('./pages/About'), Achievements: () => import('./pages/Achievements'), Team: () => import('./pages/Team'),
+  Subteam: () => import('./pages/Subteam'), Events: () => import('./pages/Events'), Support: () => import('./pages/Support'),
+  Hangar: () => import('./pages/Hangar'), Contact: () => import('./pages/Contact'), Alumni: () => import('./pages/Alumni'),
+  Gallery: () => import('./pages/Gallery'), Recruitment: () => import('./pages/Recruitment'), Legal: () => import('./pages/Legal'),
+  NotFound: () => import('./pages/NotFound'),
+};
+const { About, Achievements, Team, Subteam, Events, Support, Hangar, Contact, Alumni, Gallery, Recruitment, Legal, NotFound } =
+  Object.fromEntries(Object.entries(PAGES).map(([k, load]) => [k, lazy(load)]));
 const Results = lazy(() => import('./pages/Results'));
-const NotFound = lazy(() => import('./pages/NotFound'));
 const Auth = lazy(() => import('./pages/Auth'));
+
+function usePrefetch() {
+  useEffect(() => {
+    if (navigator.connection?.saveData) return;
+    let id;
+    const go = () => { id = (window.requestIdleCallback ?? setTimeout)(() => Object.values(PAGES).forEach((load) => load().catch(() => {})), { timeout: 4000 }); };
+    document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
+    return () => { removeEventListener('load', go); (window.cancelIdleCallback ?? clearTimeout)(id); };
+  }, []);
+}
 
 // Admin: one chunk per screen, behind AdminLayout's token check.
 const AdminLayout = lazy(() => import('./admin/AdminLayout'));
@@ -31,6 +39,7 @@ const Links = lazy(() => import('./admin/Links'));
 const Account = lazy(() => import('./admin/Account'));
 
 export default function App() {
+  usePrefetch();
   return (
     <>
       <Suspense fallback={<div className="min-h-dvh" />}>

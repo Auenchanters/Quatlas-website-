@@ -34,7 +34,7 @@ function startMotion() {
 const EASE = 'expo.out';
 const FROM = {
   up: () => ({ y: 24, opacity: 0, duration: 0.8 }),
-  image: () => ({ clipPath: 'inset(0% 0% 100% 0%)', scale: 1.08, duration: 1 }),
+  image: () => ({ clipPath: 'inset(0% 0% 100% 0%)', scale: 1.05, duration: 0.7 }),
 };
 
 // Sets up every [data-reveal] inside root; returns a cleanup that undoes all of it (route change).
@@ -67,7 +67,7 @@ export function revealPage(root) {
           if (entrance) gsap.from(targets, { ...vars, delay: 0.08 * n++ });
           else vars.onComplete?.(); // nothing to play: undo the split straight away
         }
-        else gsap.from(targets, { ...vars, scrollTrigger: { trigger: el, start: 'top 85%', once: true } });
+        else gsap.from(targets, { ...vars, scrollTrigger: { trigger: el, start: 'top 95%', once: true } });
       }
     }, root);
     // Lazy images change the page height after setup; keep trigger positions honest.

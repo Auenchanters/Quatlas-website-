@@ -7,6 +7,7 @@
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
+import { tone } from './tone.mjs';
 
 const API = 'https://quatlasserver.vercel.app/api';
 const OUT = 'public/img/r';
@@ -69,7 +70,7 @@ async function copy(url) {
     const widths = [...new Set(WIDTHS.filter((w) => w < width).concat(Math.min(width, 1600)))];
     for (const w of widths) await img.clone().resize({ width: w }).webp({ quality: 72 }).toFile(`${OUT}/${name}-${w}.webp`);
     const h = Math.round((height * Math.min(width, 1600)) / width);
-    manifest[url] = { name, w: Math.min(width, 1600), h, widths };
+    manifest[url] = { name, w: Math.min(width, 1600), h, widths, c: (await tone(img.clone())) ?? undefined };
     return 'copied';
   } catch (e) {
     // A dead link shows initials at once; anything else (5xx, timeout, a build server OneDrive won't

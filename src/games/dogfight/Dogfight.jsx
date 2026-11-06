@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-
-const focusOnMount = (el) => el?.focus({ preventScroll: true });
 import * as THREE from 'three';
 import Roll from '../../components/Roll';
 import { createAudio } from '../audio';
 import {
-  createPlane, fly, steerToward, forwardOf, upOf, fireBullet, stepBullets, createMissile, stepMissile,
+  createPlane, fly, steerToward, forwardOf, fireBullet, stepBullets, createMissile, stepMissile,
   lockCandidate, leadPoint, think, crashed, outOfBounds, groundAt, finalScore,
 } from './logic';
 import { createWorld, buildJet, createTracers, createEffects, buildMissile } from './scene';
 import { drawHud } from './hud';
+import { FULL, enterFull, exitFull, onDropOut } from '../fullscreen';
+
+const focusOnMount = (el) => el?.focus({ preventScroll: true });
 
 const KEY = 'dogfight-best';
 const best = () => { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } };
@@ -48,7 +49,11 @@ export default function Dogfight() {
     const hud = hudCanvas.current.getContext('2d');
     let g = newSortie(), audio = null, motor = null, stopMusic = null, raf = 0, last = performance.now();
     let jets = [], missileMeshes = new Map();
-    const input = { ndc: new THREE.Vector2(0, 0), fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null };
+    // Mouse aim, as in War Thunder: the mouse turns a world direction (yaw, pitch) that the camera looks
+    // along, and the jet flies toward it. The aim stays put when the mouse does, so the jet settles on it.
+    const input = { yaw: 0, pitch: 0, fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null };
+    const aimDir = (out = new THREE.Vector3()) => out.set(Math.sin(input.yaw) * Math.cos(input.pitch), Math.sin(input.pitch), Math.cos(input.yaw) * Math.cos(input.pitch));
+    const aimFrom = (p) => { const f = forwardOf(p, new THREE.Vector3()); input.yaw = Math.atan2(f.x, f.z); input.pitch = Math.asin(Math.max(-1, Math.min(1, f.y))); };
 
     const placeJets = () => {
       const free = (o) => { scene.remove(o); o.traverse((c) => { c.geometry?.dispose(); [].concat(c.material ?? []).forEach((m) => m.dispose()); }); };
@@ -91,15 +96,16 @@ export default function Dogfight() {
       setTimeout(() => setPhase(won ? 'won' : 'lost'), won ? 400 : 1600);
     };
 
-    const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), ray = new THREE.Raycaster();
+    const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), aim = new THREE.Vector3();
     const step = (dt) => {
       const P = g.player, live = g.enemies.filter((e) => e.alive);
       g.t += dt;
       // Throttle from W/S (sticky); aim from the pointer (or the touch stick).
       g.throttle = Math.max(0, Math.min(1, g.throttle + input.throttle * dt * 0.7));
-      const ndc = input.stick ?? input.ndc;
-      ray.setFromCamera(ndc, camera);
-      const ctl = steerToward(P, ray.ray.direction);
+      // The touch stick turns the aim at a rate; the mouse turns it directly (onMove).
+      if (input.stick) { input.yaw -= input.stick.x * 1.5 * dt; input.pitch += input.stick.y * 1.1 * dt; }
+      input.pitch = Math.max(-1.35, Math.min(1.35, input.pitch));
+      const ctl = steerToward(P, aimDir(aim));
       if (input.roll) ctl.roll = input.roll;
       if (P.alive) fly(P, { ...ctl, throttle: g.throttle }, dt);
 
@@ -165,7 +171,7 @@ export default function Dogfight() {
       motor?.set(g.throttle, !!P.alive);
     };
 
-    const camGoal = new THREE.Vector3(), look = new THREE.Vector3(), camUp = new THREE.Vector3(0, 1, 0);
+    const camGoal = new THREE.Vector3(), look = new THREE.Vector3();
     const frame = (now) => {
       const dt = Math.min(1 / 30, (now - last) / 1000); last = now;
       const ph = phaseRef.current, P = g.player;
@@ -175,11 +181,14 @@ export default function Dogfight() {
         P.pos.set(0, 900, -2600); P.quat.identity();
         const a = now / 6000; camera.position.set(Math.sin(a) * 40, 905, -2600 + Math.cos(a) * 40); camera.lookAt(P.pos);
       } else {
-        const f = forwardOf(P, tmp), u = upOf(P, tmp2);
-        camGoal.copy(P.pos).addScaledVector(f, input.look ? 34 : -30).addScaledVector(u, 9);
-        camera.position.lerp(camGoal, 1 - Math.exp(-dt * 7));
-        camUp.lerp(u, 1 - Math.exp(-dt * 3)).normalize(); camera.up.copy(camUp).lerp(new THREE.Vector3(0, 1, 0), 0.55);
-        camera.lookAt(look.copy(P.pos).addScaledVector(f, input.look ? -60 : 70));
+        // The camera sits behind the jet along the aim and keeps the horizon level (no roll), so loops
+        // and rolls never flip the view.
+        const a = aimDir(tmp);
+        camGoal.copy(P.pos).addScaledVector(a, input.look ? 34 : -32); camGoal.y += 10;
+        camera.position.lerp(camGoal, 1 - Math.exp(-dt * 10));
+        camera.position.y = Math.max(camera.position.y, groundAt(camera.position.x, camera.position.z) + 6);
+        camera.up.set(0, 1, 0);
+        camera.lookAt(look.copy(P.pos).addScaledVector(a, input.look ? -80 : 120));
       }
       [P, ...g.enemies].forEach((p, i) => {
         const j = jets[i]; j.visible = p.alive || p.wreck > 0;
@@ -190,7 +199,7 @@ export default function Dogfight() {
         if (!missileMeshes.has(m)) { const mesh = buildMissile(); scene.add(mesh); missileMeshes.set(m, mesh); }
         const mesh = missileMeshes.get(m); mesh.position.copy(m.pos); mesh.lookAt(tmp.copy(m.pos).add(m.dir));
       }
-      for (const [m, mesh] of missileMeshes) if (!g.missiles.includes(m)) { scene.remove(mesh); missileMeshes.delete(m); }
+      for (const [m, mesh] of missileMeshes) if (!g.missiles.includes(m)) { scene.remove(mesh); mesh.traverse((c) => { c.geometry?.dispose(); c.material?.dispose(); }); missileMeshes.delete(m); }
       playerTracers(g.bullets.filter((b) => b.owner === 'red')); enemyTracers(g.bullets.filter((b) => b.owner === 'blue'));
       effects.step(dt);
       renderer.render(scene, camera);
@@ -204,7 +213,7 @@ export default function Dogfight() {
         if (g.outT > 0) warnings.push(`RETURN TO THE COMBAT AREA  ${Math.ceil(12 - g.outT)}`);
         if (P.hp < 30) warnings.push('HEAVY DAMAGE');
         drawHud(hud, w, h, {
-          aim: input.stick ? { x: (input.stick.x + 1) / 2 * w, y: (1 - input.stick.y) / 2 * h } : { x: (input.ndc.x + 1) / 2 * w, y: (1 - input.ndc.y) / 2 * h },
+          aim: project(tmp2.copy(P.pos).addScaledVector(aimDir(aim), 500)),
           boresight: project(tmp.copy(P.pos).addScaledVector(f, 500)),
           enemies: g.enemies.filter((e) => e.alive).map((e) => { const s = project(e.pos); if (s.behind) { s.x = w - s.x; s.y = h - s.y; s.on = false; } return { ...s, dist: e.pos.distanceTo(P.pos), hp: e.hp / e.maxHp, locked: e === g.lockTarget && g.lockT > 1 }; }),
           lead: near && near.pos.distanceTo(P.pos) < 1100 ? (() => { const s = project(leadPoint(P.pos, near.pos, near.vel)); return s.on ? s : null; })() : null,
@@ -221,13 +230,17 @@ export default function Dogfight() {
 
     // Input.
     // Mouse only: touch drags on the stick and FIRE button must not move the aim point.
-    const onMove = (e) => { if (e.pointerType !== 'mouse') return; const r = el.getBoundingClientRect(); input.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
+    const onMove = (e) => {
+      if (e.pointerType !== 'mouse' || phaseRef.current !== 'playing') return;
+      const k = 0.0022; // radians of aim per pixel of mouse travel
+      input.yaw -= e.movementX * k; input.pitch = Math.max(-1.35, Math.min(1.35, input.pitch - e.movementY * k));
+    };
     const KEYS = { KeyW: ['throttle', 1], KeyS: ['throttle', -1], KeyA: ['roll', -1], KeyD: ['roll', 1], KeyC: ['look', true] };
     const onKey = (down) => (e) => {
       // Releases always count, so nothing stays held across a pause.
       if (!down && KEYS[e.code]) { const [k] = KEYS[e.code]; input[k] = k === 'look' ? false : 0; }
       if (!down && e.code === 'Space') input.fire = false;
-      if (phaseRef.current !== 'playing') { if (down && e.code === 'Escape' && phaseRef.current === 'paused') api.current.resume(); return; }
+      if (phaseRef.current !== 'playing') return; // the menu's buttons resume: browsers won't re-enter fullscreen from Esc
       if (KEYS[e.code]) { const [k, v] = KEYS[e.code]; input[k] = down ? v : (k === 'look' ? false : 0); e.preventDefault(); }
       if (e.code === 'Space') { input.fire = down; e.preventDefault(); }
       if (e.code === 'KeyF' && down && !e.repeat) input.missile = true;
@@ -236,6 +249,8 @@ export default function Dogfight() {
     const kd = onKey(true), ku = onKey(false);
     const clearInput = () => Object.assign(input, { fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null });
     const onHide = () => { if (document.hidden && phaseRef.current === 'playing') api.current.pause(); };
+    // Esc in fullscreen (or with the mouse locked) never reaches the page: dropping out is the pause.
+    const stopDropOut = onDropOut(() => { if (phaseRef.current === 'playing') api.current.pause(); });
     const onBlur = () => clearInput();
     const onUp = (e) => { if (e.pointerType === 'mouse') input.fire = false; }; // even when released outside the game
     el.addEventListener('pointermove', onMove);
@@ -248,13 +263,15 @@ export default function Dogfight() {
       start() {
         if (!audio) { audio = createAudio(); motor = audio.engine({ base: 70, kind: 'jet' }); }
         audio.resume();
-        g = newSortie(); placeJets(); clearInput(); input.ndc.set(0, 0);
+        enterFull(el, { lock: true });
+        g = newSortie(); placeJets(); clearInput(); aimFrom(g.player);
         camera.position.copy(g.player.pos).add(new THREE.Vector3(0, 9, -30));
         stopMusic?.(); stopMusic = audio.music();
         setResult(null); setPhase('playing');
       },
       pause() { clearInput(); motor?.set(0, false); stopMusic?.(); stopMusic = null; setPhase('paused'); },
-      resume() { audio?.resume(); if (!g.over) stopMusic = audio?.music(); setPhase('playing'); },
+      resume() { enterFull(el, { lock: true }); audio?.resume(); if (!g.over) stopMusic = audio?.music(); setPhase('playing'); },
+      leave() { exitFull(); clearInput(); motor?.set(0, false); stopMusic?.(); stopMusic = null; setResult(null); setPhase('menu'); },
     };
 
     return () => {
@@ -263,6 +280,7 @@ export default function Dogfight() {
       removeEventListener('keydown', kd); removeEventListener('keyup', ku);
       document.removeEventListener('visibilitychange', onHide);
       removeEventListener('blur', onBlur); removeEventListener('pointerup', onUp);
+      stopDropOut(); exitFull();
       stopMusic?.(); motor?.stop(); audio?.close();
       // Free the GPU memory now: browsers cap live WebGL contexts, and each visit would otherwise keep one.
       scene.traverse((o) => { o.geometry?.dispose(); [].concat(o.material ?? []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
@@ -279,10 +297,9 @@ export default function Dogfight() {
     const x = ((e.clientX - r.left) / r.width) * 2 - 1, y = -(((e.clientY - r.top) / r.height) * 2 - 1);
     i().stick = new THREE.Vector2(Math.max(-1, Math.min(1, x)) * 0.8, Math.max(-1, Math.min(1, y)) * 0.8);
   };
-  const full = () => (document.fullscreenElement ? document.exitFullscreen() : wrap.current.requestFullscreen?.());
 
   return (
-    <div ref={wrap} className="relative border border-ink bg-[#0b0d12] aspect-[16/9] pointer-coarse:portrait:aspect-[3/4] max-h-[85vh] w-full select-none touch-none overflow-hidden text-[#f2f3ef]"
+    <div ref={wrap} data-lenis-prevent className={`${phase === 'menu' ? 'relative border border-ink aspect-[16/9] pointer-coarse:portrait:aspect-[3/4] max-h-[85vh] w-full' : FULL} ${phase === 'playing' ? 'cursor-none' : ''} bg-[#0b0d12] select-none touch-none overflow-hidden text-[#f2f3ef]`}
       onPointerDown={(e) => { if (phase === 'playing' && e.pointerType === 'mouse' && e.button === 0) i().fire = true; }}
       onPointerUp={(e) => { if (e.pointerType === 'mouse') i().fire = false; }}
       onContextMenu={(e) => { e.preventDefault(); if (phase === 'playing') i().missile = true; }}>
@@ -292,14 +309,13 @@ export default function Dogfight() {
         <>
           {/* Touch controls (shown on touch screens only). */}
           <div className="hidden pointer-coarse:block absolute left-4 bottom-4 size-32 rounded-full border-2 border-white/40 bg-white/10"
-            onPointerDown={stick} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => { i().stick = null; i().ndc.set(0, 0); }} onPointerCancel={() => { i().stick = null; i().ndc.set(0, 0); }} aria-hidden="true" />
+            onPointerDown={stick} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => { i().stick = null; }} onPointerCancel={() => { i().stick = null; }} aria-hidden="true" />
           <div className="hidden pointer-coarse:flex absolute right-4 bottom-4 gap-3">
             <button type="button" className="size-16 rounded-full bg-white/15 border-2 border-white/50 data text-white" onPointerDown={() => (i().missile = true)}>MSL</button>
             <button type="button" className="size-20 rounded-full bg-[#c41e2c]/80 border-2 border-white/60 data text-white" onPointerDown={fire(true)} onPointerUp={fire(false)} onPointerCancel={fire(false)}>FIRE</button>
           </div>
           <div className="absolute right-3 top-3 flex gap-2">
             <button type="button" className="btn btn-sm border-white/60 text-white hover:bg-white hover:text-[#0b0d12]" onClick={() => api.current.pause()}>Pause</button>
-            <button type="button" className="btn btn-sm border-white/60 text-white hover:bg-white hover:text-[#0b0d12]" onClick={full}>Full screen</button>
           </div>
         </>
       )}
@@ -310,7 +326,7 @@ export default function Dogfight() {
             <>
               <p className="data text-[#ff8790]">Four bandits inbound</p>
               <p className="display text-[clamp(2.25rem,5vw,4rem)]">Dogfight</p>
-              <p className="max-w-md text-[#c9ced6]">Point with the mouse to fly. Click or Space to fire, hold on a target for a missile lock, then F or right-click. W / S throttle, A / D roll, C to look back, Esc to pause.</p>
+              <p className="max-w-md text-[#c9ced6]">Move the mouse to aim: the jet flies to the circle. Click or Space to fire, hold on a target for a missile lock, then F or right-click. W / S throttle, A / D roll, C to look back. Plays full screen; Esc for the menu.</p>
             </>
           )}
           {phase === 'paused' && <p className="display text-[clamp(2rem,4vw,3.5rem)]">Paused</p>}
@@ -329,6 +345,7 @@ export default function Dogfight() {
           <button type="button" ref={phase === 'menu' ? undefined : focusOnMount} className="btn btn-signal" onClick={() => (phase === 'paused' ? api.current.resume() : api.current.start())}>
             {phase === 'menu' ? 'Take off' : phase === 'paused' ? 'Resume' : 'Fly again'}
           </button>
+          {phase !== 'menu' && <button type="button" className="btn btn-sm border-white/60 text-white hover:bg-white hover:text-[#0b0d12]" onClick={() => api.current.leave()}>Leave the game</button>}
         </div>
       )}
     </div>
