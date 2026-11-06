@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import { buildPlane, dispose } from './quatlas012.js';
 
 // The home hero's 3D plane: it flies in, whole, the first time the site opens; then a slow turn, a lean toward the pointer, parts that fly apart along their
-// explode vectors (from the button, and as the figure scrolls up and away) with labels that follow them.
+// explode vectors when the model is clicked (a second click, or a click off it, brings them back) with labels
+// that follow them.
 // Draws only while on screen and while the tab is visible. Returns { set, destroy }.
 let flown = false; // the fly-in plays once per visit, not on every return to the home page
 
-export function mountPlane(el, { names, onPick, onReady, zoom = 1 }) {
+export function mountPlane(el, { names, onPick, onToggle, onReady, zoom = 1 }) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = Object.assign(document.createElement('canvas'), { className: 'absolute inset-0 size-full' });
   canvas.setAttribute('aria-hidden', 'true');
@@ -65,7 +66,8 @@ export function mountPlane(el, { names, onPick, onReady, zoom = 1 }) {
     return o?.userData.part;
   };
   const move = (e) => { const id = pick(e); if (id && e.pointerType === 'mouse') onPick(id); el.style.cursor = id ? 'pointer' : ''; };
-  const click = (e) => { const id = pick(e); if (id) onPick(id); };
+  // Clicking the model labels its parts (toggles); clicking beside it while apart puts it back together.
+  const click = (e) => { const id = pick(e); if (id) onPick(id); if (id || state.exploded) onToggle?.(id); };
   const leave = () => state.aim.set(0, 0);
   el.addEventListener('pointermove', move); el.addEventListener('click', click); el.addEventListener('pointerleave', leave);
 
@@ -79,18 +81,17 @@ export function mountPlane(el, { names, onPick, onReady, zoom = 1 }) {
   function frame(now) {
     raf = 0;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    // Scrolling the figure up past the middle of the screen pulls the parts apart.
-    const r = el.getBoundingClientRect();
-    const scrolled = still ? 0 : Math.min(1, Math.max(0, (innerHeight * 0.45 - (r.top + r.height / 2)) / (r.height * 0.55)));
     // Fly-in: from far behind and above, banked, it sweeps in along its own heading and levels out
     // over 2.4 s, with the prop at full chat. Parts stay together until it has arrived.
     introStart ??= now;
     const fly = Math.min(1, (now - introStart) / 2400), rest = (1 - fly) ** 3;
     plane.position.set(-6 * rest, 1.4 * rest * rest, -1.2 * rest);
     plane.rotation.set(-1.1 * rest, 0, 0.35 * rest);
-    const goal = fly < 1 ? 0 : Math.max(state.exploded ? 1 : 0, scrolled);
+    const goal = fly < 1 ? 0 : state.exploded ? 1 : 0;
     state.e += (goal - state.e) * (still ? 1 : 1 - Math.exp(-dt * 4));
     const ease = state.e * state.e * (3 - 2 * state.e);
+    // Pull back so the parts stay in frame when apart (less on a tall panel, which has the height already).
+    camera.zoom = zoom * (1 - (camera.aspect < 430 / 305 ? 0.1 : 0.4) * ease); camera.updateProjectionMatrix();
     for (const p of parts) p.position.copy(p.userData.explode).multiplyScalar(ease);
 
     if (!still) { if (fly === 1) state.yaw += dt * 0.25; prop.rotation.x += dt * (fly < 1 || state.active === 'motor' ? 40 : 9); }
@@ -113,8 +114,6 @@ export function mountPlane(el, { names, onPick, onReady, zoom = 1 }) {
     else if (fly < 1) introStart = null; // scrolled away mid-flight: replay it from the start when back
   }
   function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
-  const onScroll = () => kick();
-  addEventListener('scroll', onScroll, { passive: true });
   kick();
 
   return {
@@ -126,7 +125,7 @@ export function mountPlane(el, { names, onPick, onReady, zoom = 1 }) {
     },
     destroy() {
       cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
-      document.removeEventListener('visibilitychange', onVis); removeEventListener('scroll', onScroll);
+      document.removeEventListener('visibilitychange', onVis);
       el.removeEventListener('pointermove', move); el.removeEventListener('click', click); el.removeEventListener('pointerleave', leave);
       dispose(scene); renderer.dispose(); renderer.forceContextLoss();
       canvas.remove(); Object.values(labels).forEach((s) => s.remove());

@@ -109,6 +109,7 @@ export default function Aircraft({ hero = false, children }) {
         view.current = mountPlane(stage.current, {
           names: Object.fromEntries(Object.entries(PARTS).map(([id, p]) => [id, p.name])),
           onPick: setActive,
+          onToggle: (id) => setExploded((e) => (id ? !e : false)),
           zoom: hero ? 1.3 : 1,
         });
         view.current.set({ active: 'wing', exploded: false });
@@ -128,7 +129,6 @@ export default function Aircraft({ hero = false, children }) {
     return () => cancelAnimationFrame(spin.current);
   }, [active, live]);
 
-  const part = PARTS[active];
   return (
     <figure className="overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet">
       <div className={hero ? 'flex flex-col h-[calc(100svh-4rem-1.5rem)] min-h-[24rem]' : ''}>
@@ -149,7 +149,7 @@ export default function Aircraft({ hero = false, children }) {
             const faces = geo[0] === 'prop' ? propBlades(theta) : geo.flat();
             const hidden = id === 'payload' && !exploded && active !== 'payload';
             return (
-              <g key={i} className="fig-part" onPointerEnter={() => setActive(id)} onClick={() => setActive(id)}
+              <g key={i} className="fig-part" onPointerEnter={() => setActive(id)} onClick={() => { setActive(id); setExploded((e) => !e); }}
                 style={{ transform: `translate(${d[0]}px, ${d[1]}px)`, transition: 'transform 900ms var(--ease-out-expo), opacity 400ms', opacity: live || hidden ? 0 : 1, cursor: 'pointer' }}>
                 {faces.map((f, j) => <Face key={j} f={f} on={id === active} />)}
               </g>
@@ -157,33 +157,15 @@ export default function Aircraft({ hero = false, children }) {
           })}
         </svg>
         <div ref={stage} className="absolute inset-0 overflow-hidden" />
+        {/* Clicking the aircraft does the same; this is the way in for keyboards. */}
+        <button type="button" aria-pressed={exploded} onClick={() => setExploded((e) => !e)} className="data absolute left-3 top-3 text-ink-2 hover:text-signal">
+          {exploded ? 'Click to put it back together' : 'Click the aircraft to label its parts'}
+        </button>
         {/* Straight to the hidden hangar's games, without scrolling to the footer's link. */}
         <Link to="/hangar" className={`btn btn-signal absolute bottom-3 justify-center text-base ${hero ? 'left-1/2 -translate-x-1/2 px-10' : 'inset-x-3'}`}>Take flight</Link>
       </div>
       {children}
       </div>
-      <p className="data px-3 py-2 border-t border-rule text-ink-2">Fig. 1 — General arrangement, {exploded ? 'exploded' : 'assembled'}</p>
-
-      <figcaption className="grid md:grid-cols-[1fr_1.15fr] border-t border-ink">
-        <ul className="grid grid-cols-2 border-b md:border-b-0 md:border-r border-rule" aria-label="Parts">
-          {Object.entries(PARTS).map(([id, p]) => (
-            <li key={id} className="border-b border-rule odd:border-r [&:nth-last-child(-n+2)]:border-b-0">
-              <button type="button" aria-pressed={id === active} onClick={() => setActive(id)} onFocus={() => setActive(id)}
-                className={`w-full text-left px-4 py-3 text-[0.9375rem] font-[650] whitespace-nowrap overflow-hidden text-ellipsis transition-colors ${id === active ? 'text-signal' : 'hover:text-signal'}`}>
-                {p.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="p-5 grid gap-2 content-start" aria-live="polite">
-          <p className="data text-signal">{part.quality}</p>
-          <p className="wide text-xl">{part.name}</p>
-          <p className="text-ink-2">{part.text}</p>
-          <button type="button" className="btn btn-sm justify-self-start mt-2" onClick={() => setExploded(!exploded)}>
-            {exploded ? 'Assemble' : 'Explode the drawing'}
-          </button>
-        </div>
-      </figcaption>
     </figure>
   );
 }
