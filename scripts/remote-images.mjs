@@ -51,7 +51,8 @@ try {
   console.warn(`remote-images: API unreachable (${e.message}); keeping the existing copies.`);
   process.exit(0);
 }
-urls = [...new Set(urls.filter((u) => /^https?:\/\//.test(u ?? '')))];
+// Links to the site's own photos (the roster, as the dashboard stores it) are already here: nothing to copy.
+urls = [...new Set(urls.filter((u) => /^https?:\/\//.test(u ?? '') && !/^https:\/\/quatlas-website\.vercel\.app\/img\//.test(u)))];
 await mkdir(OUT, { recursive: true });
 
 async function copy(url) {

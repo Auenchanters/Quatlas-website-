@@ -3,7 +3,7 @@ import { Field, Loading, Failed, useSubmit } from '../components/ui';
 import { RemoteImg } from '../components/RemoteImg';
 
 // Why a photo link would show blank on the site, or null if it looks fine.
-function linkProblem(url = '') {
+export function linkProblem(url = '') {
   if (!url) return null;
   if (!/^https?:\/\//.test(url)) return 'Not a web link: it must start with https://';
   const u = new URL(url);
@@ -14,7 +14,7 @@ function linkProblem(url = '') {
 }
 
 // Live preview of a photo link: the photo if it loads, else why it would show blank on the site.
-function ImgCheck({ url }) {
+export function ImgCheck({ url }) {
   if (!url) return null;
   const why = linkProblem(url) ?? 'This link did not open as an image. Check it is shared as “Anyone with the link”.';
   return (
