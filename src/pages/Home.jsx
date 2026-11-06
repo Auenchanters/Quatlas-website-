@@ -20,7 +20,7 @@ function Quotes() {
     return () => clearInterval(t);
   }, []);
   return (
-    <p className="text-lg md:text-xl text-ink-2 min-h-[2lh] md:min-h-[1lh]" aria-live="off">
+    <p className="text-base md:text-lg text-ink-2 min-h-[2lh] md:min-h-[1lh]" aria-live="off">
       <span key={i} className="inline-block animate-[quote_700ms_var(--ease-out-expo)]">{QUOTES[i]}</span>
     </p>
   );
@@ -45,20 +45,21 @@ function Stats() {
 export default function Home() {
   return (
     <>
-      <section className="wrap pt-[clamp(3rem,7vw,6rem)] pb-[clamp(3rem,6vw,5rem)] grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center">
-        <div className="grid gap-6 content-center">
-          <p data-reveal="up" className="data text-signal">{HERO.label}</p>
-          <h1 data-reveal="words" className="display text-[clamp(2.75rem,6vw,5.5rem)]">
-            {HERO.title.map((line) => <span key={line} className="block">{line}</span>)}
-          </h1>
-          <p data-reveal="up" className="wide text-lg">{HERO.place}</p>
-          <div data-reveal="up"><Quotes /></div>
-          <div data-reveal="up" className="flex flex-wrap gap-3">
-            <Link to="/recruitment" className="btn btn-signal">Join the team</Link>
-            <Link to="/support" className="btn">Support the build</Link>
-          </div>
+      {/* First screen: the aircraft, big and centred, with the club's name under it. */}
+      <section aria-label="The Quatlas 012" className="px-3 md:px-5 pt-3">
+        <div data-reveal="up">
+          <Aircraft hero>
+            <h1 className="display text-center text-balance text-[clamp(1.75rem,4.2vw,3.75rem)] px-4 py-[clamp(0.75rem,2vh,1.5rem)] border-t border-ink">{HERO.place}</h1>
+          </Aircraft>
         </div>
-        <div data-reveal="up"><Aircraft /></div>
+      </section>
+
+      <section className="wrap py-[clamp(2.5rem,5vw,4rem)]">
+        <div className="grid gap-3 max-w-3xl">
+          <p data-reveal="up" className="data text-signal">{HERO.label}</p>
+          <h2 data-reveal="words" className="display text-[clamp(1.75rem,3.2vw,2.5rem)]">{HERO.title.join(' ')}</h2>
+          <div data-reveal="up"><Quotes /></div>
+        </div>
       </section>
 
       <Stats />

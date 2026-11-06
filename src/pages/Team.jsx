@@ -4,7 +4,7 @@ import TeamArt from '../components/TeamArt';
 import { Img } from '../components/Img';
 import Roll from '../components/Roll';
 import { Person, PhotoStrip } from '../components/ui';
-import { TEAM_INTRO, TILES, SUBTEAMS, byRole, isAlumni, isCore, membersOf, subteamOf, useTeams } from '../content/teams';
+import { TEAM_INTRO, TILES, SUBTEAMS, byRole, isAlumni, isCore, isCoreLead, membersOf, subteamOf, useTeams } from '../content/teams';
 
 // A team's people as a strip you scroll through (not an auto-ticker).
 function Strip({ people, label }) {
@@ -17,10 +17,7 @@ function Strip({ people, label }) {
 }
 
 // Everyone comes from the dashboard (the admin panel).
-const countOf = (dashboard = [], slug) => {
-  if (slug !== 'alumni') return membersOf(dashboard, SUBTEAMS.find((s) => s.slug === slug)).length;
-  return dashboard?.filter((t) => isAlumni(t.roleName)).reduce((n, t) => n + t.roleData.length, 0) ?? 0;
-};
+const countOf = (dashboard = [], slug) => membersOf(dashboard, SUBTEAMS.find((s) => s.slug === slug)).length;
 
 // One big button per subteam. The name carries over into the team page's title (view transition).
 function Tile({ tile, n, count }) {
@@ -33,7 +30,7 @@ function Tile({ tile, n, count }) {
         </span>
         <span className="flex items-end justify-between gap-4 p-5">
           <span className="display text-[clamp(1.75rem,3vw,2.5rem)] group-hover:text-signal transition-colors" style={{ viewTransitionName: `team-${tile.slug}` }}>{tile.name}</span>
-          <span className="data text-ink-2 text-right"><Roll value={count} /><span className="block">{tile.slug === 'alumni' ? 'alumni' : 'members'}</span></span>
+          <span className="data text-ink-2 text-right"><Roll value={count} /><span className="block">members</span></span>
         </span>
       </Link>
     </li>
@@ -43,7 +40,8 @@ function Tile({ tile, n, count }) {
 export default function Team() {
   const { data: dashboard = [] } = useTeams();
   const core = byRole(dashboard.filter((t) => isCore(t.roleName)).flatMap((t) => t.roleData));
-  const lead = core.slice(0, 2); // captain and vice-captain
+  const lead = core.filter(isCoreLead); // captain, vice-captain, non-technical head
+  const rest = core.filter((p) => !isCoreLead(p));
   // Dashboard teams that match no subteam still show, so nobody disappears.
   const other = dashboard.filter((t) => t.roleData.length && !isCore(t.roleName) && !isAlumni(t.roleName) && !subteamOf(t.roleName));
   return (
@@ -57,12 +55,12 @@ export default function Team() {
 
       <section aria-labelledby="core" className="wrap section border-b border-rule grid gap-10">
         <h2 id="core" data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Core team</h2>
-        <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 md:max-w-3xl">
+        <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 sm:grid-cols-3 md:max-w-4xl">
           {lead.map((p) => <li key={p._id ?? p.name}><Person p={p} big sizes="(min-width: 768px) 28vw, 46vw" /></li>)}
         </ul>
-        {core.length > 2 && (
+        {rest.length > 0 && (
           <ul data-reveal="stagger" className="grid gap-x-5 gap-y-10 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {core.slice(lead.length).map((p) => <li key={p._id ?? p.name}><Person p={p} /></li>)}
+            {rest.map((p) => <li key={p._id ?? p.name}><Person p={p} /></li>)}
           </ul>
         )}
       </section>

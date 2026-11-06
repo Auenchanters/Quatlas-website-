@@ -6,7 +6,7 @@ import { buildPlane, dispose } from './quatlas012.js';
 // Draws only while on screen and while the tab is visible. Returns { set, destroy }.
 let flown = false; // the fly-in plays once per visit, not on every return to the home page
 
-export function mountPlane(el, { names, onPick, onReady }) {
+export function mountPlane(el, { names, onPick, onReady, zoom = 1 }) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = Object.assign(document.createElement('canvas'), { className: 'absolute inset-0 size-full' });
   canvas.setAttribute('aria-hidden', 'true');
@@ -20,7 +20,7 @@ export function mountPlane(el, { names, onPick, onReady }) {
   const key = new THREE.DirectionalLight('#fff4e6', 2.6); key.position.set(2, 4, 3); scene.add(key);
   const rim = new THREE.DirectionalLight('#cfe0ff', 1.1); rim.position.set(-3, 1.5, -2); scene.add(rim);
   const camera = new THREE.PerspectiveCamera(28, 430 / 305, 0.1, 50);
-  camera.position.set(2.45, 1.15, 2.7); camera.lookAt(0, 0.02, 0);
+  camera.position.set(2.45, 1.15, 2.7); camera.lookAt(0, 0.02, 0); camera.zoom = zoom;
 
   const plane = buildPlane(), pivot = new THREE.Group();
   pivot.add(plane); scene.add(pivot);
@@ -44,7 +44,13 @@ export function mountPlane(el, { names, onPick, onReady }) {
   const tint = new THREE.Color('#c41e2c');
   const highlight = () => parts.forEach((p) => p.traverse((o) => o.material?.emissive?.copy(p.userData.part === state.active ? tint : new THREE.Color(0)).multiplyScalar(0.22)));
 
-  const size = () => { const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+  // A panel narrower than the drawing (a phone) widens the view, so the wings stay in frame.
+  const size = () => {
+    const w = el.clientWidth, h = el.clientHeight, a = w / h, wide = 430 / 305;
+    renderer.setSize(w, h, false); camera.aspect = a;
+    camera.fov = a < wide ? (2 * Math.atan(Math.tan((14 * Math.PI) / 180) * (wide / a)) * 180) / Math.PI : 28;
+    camera.updateProjectionMatrix();
+  };
   const ro = new ResizeObserver(size); ro.observe(el); size();
 
   // Pointer: lean toward it, and pick the part under it.

@@ -17,11 +17,12 @@ export default function Subteam() {
   const s = SUBTEAMS[i];
   const next = SUBTEAMS[(i + 1) % SUBTEAMS.length];
   const people = membersOf(teams, s);
-  const leads = people.filter((p) => /lead|head/i.test(p.role ?? ''));
+  // Big photos for the leads (on a oneRow subteam, for everyone), smaller ones for the rest.
+  const leads = s.oneRow ? people : people.filter((p) => /lead|head/i.test(p.role ?? ''));
   const rest = people.filter((p) => !leads.includes(p));
   return (
     <div ref={page}>
-      {/* Each subteam's own live background, full page (Alumni keeps the plain sheet). */}
+      {/* Each subteam's own background, full page. */}
       <TeamBackdrop slug={s.slug} />
       <SheetHead title={s.name} name={`team-${s.slug}`}><p>{s.about}</p></SheetHead>
       <section className="wrap section border-b border-rule grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
@@ -38,8 +39,8 @@ export default function Subteam() {
         <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">The team</h2>
         {!people.length && <p className="text-ink-2">Members are being added.</p>}
         {leads.length > 0 && (
-          <ul className="grid gap-x-5 gap-y-10 grid-cols-2 md:grid-cols-3 md:max-w-4xl">
-            {leads.map((p) => <li key={p._id ?? p.name}><Person p={p} big sizes="(min-width: 768px) 28vw, 46vw" /></li>)}
+          <ul className={`grid gap-x-5 gap-y-10 grid-cols-2 ${leads.length > 3 ? 'md:grid-cols-4' : 'md:grid-cols-3 md:max-w-4xl'}`}>
+            {leads.map((p) => <li key={p._id ?? p.name}><Person p={p} big sizes={leads.length > 3 ? '(min-width: 768px) 22vw, 46vw' : '(min-width: 768px) 28vw, 46vw'} /></li>)}
           </ul>
         )}
         {rest.length > 0 && (

@@ -81,7 +81,8 @@ function Face({ f, on }) {
   return <polygon points={pts(f.pts)} fill={(on ? FILL_ON : FILL)[f.shade]} stroke="var(--color-ink)" strokeWidth="0.9" strokeLinejoin="round" />;
 }
 
-export default function Aircraft() {
+// hero: the drawing fills the first screen (less the header), with `children` (the page title) under it.
+export default function Aircraft({ hero = false, children }) {
   const [active, setActive] = useState('wing');
   const [exploded, setExploded] = useState(false);
   const [theta, setTheta] = useState(0.5);
@@ -108,6 +109,7 @@ export default function Aircraft() {
         view.current = mountPlane(stage.current, {
           names: Object.fromEntries(Object.entries(PARTS).map(([id, p]) => [id, p.name])),
           onPick: setActive,
+          zoom: hero ? 1.3 : 1,
         });
         view.current.set({ active: 'wing', exploded: false });
       } catch { fail(); } // no usable WebGL after all: keep the drawing
@@ -129,9 +131,10 @@ export default function Aircraft() {
   const part = PARTS[active];
   return (
     <figure className="overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet">
-      <div className="relative">
+      <div className={hero ? 'flex flex-col h-[calc(100svh-4rem-1.5rem)] min-h-[24rem]' : ''}>
+      <div className={hero ? 'relative flex-1 min-h-[14rem]' : 'relative'}>
         {/* Drafting grid: this panel is a drawing, so it gets the paper's grid. */}
-        <svg viewBox="-262 -200 430 305" className="block w-full h-auto" role="img"
+        <svg viewBox="-262 -200 430 305" className={hero ? 'absolute inset-0 size-full' : 'block w-full h-auto'} role="img"
           aria-label="Drawing of the Quatlas 012 aircraft with wing, fuselage, payload bay, motor and propeller, tail and landing gear.">
           {/* Once the 3D model is up, only the grid of this drawing shows; the shapes stay for screen readers. */}
           <defs>
@@ -139,7 +142,8 @@ export default function Aircraft() {
               <path d="M15 0H0V15" fill="none" stroke="var(--fig-grid)" strokeWidth="0.6" />
             </pattern>
           </defs>
-          <rect x="-262" y="-200" width="430" height="305" fill="url(#grid)" />
+          {/* Oversized, so the grid still fills the panel when it is wider or taller than the drawing. */}
+          <rect x="-4262" y="-4200" width="8430" height="8305" fill="url(#grid)" />
           {PIECES.map(([id, ...geo], i) => {
             const d = exploded ? P(...PARTS[id].explode) : [0, 0];
             const faces = geo[0] === 'prop' ? propBlades(theta) : geo.flat();
@@ -154,7 +158,9 @@ export default function Aircraft() {
         </svg>
         <div ref={stage} className="absolute inset-0 overflow-hidden" />
         {/* Straight to the hidden hangar's games, without scrolling to the footer's link. */}
-        <Link to="/hangar" className="btn btn-signal absolute inset-x-3 bottom-3 justify-center text-base">Take flight</Link>
+        <Link to="/hangar" className={`btn btn-signal absolute bottom-3 justify-center text-base ${hero ? 'left-1/2 -translate-x-1/2 px-10' : 'inset-x-3'}`}>Take flight</Link>
+      </div>
+      {children}
       </div>
       <p className="data px-3 py-2 border-t border-rule text-ink-2">Fig. 1 — General arrangement, {exploded ? 'exploded' : 'assembled'}</p>
 

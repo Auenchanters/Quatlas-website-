@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Img } from './Img';
 
 // The picture on each team tile, gently animated, all original and drawn in code (except the Social
-// Media globe video and the Alumni photo of the college). Animations run only while a tile is on
+// Media globe video and the Pilots photo of the aircraft in flight). Animations run only while a tile is on
 // screen; with reduced motion each shows one still frame.
 
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -16,13 +16,15 @@ function useCanvas(draw, fps = 60) {
     const t0 = performance.now(), gap = 1000 / fps;
     const size = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
-      w = c.clientWidth; h = c.clientHeight; c.width = w * dpr; c.height = h * dpr;
+      w = c.clientWidth; h = c.clientHeight;
+      if (!w || !h) return; // not laid out yet (hidden): drawing at zero size throws
+      c.width = w * dpr; c.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (!on || still()) draw(ctx, w, h, still() ? 3 : (performance.now() - t0) / 1000);
     };
     const frame = (now) => {
       raf = on ? requestAnimationFrame(frame) : 0;
-      if (now - last < gap - 1) return;
+      if (now - last < gap - 1 || !w || !h) return;
       last = now; draw(ctx, w, h, (now - t0) / 1000);
     };
     const io = new IntersectionObserver(([e]) => {
@@ -269,12 +271,12 @@ function Social() {
   return <video ref={ref} src="/video/social.mp4" poster="/video/social.webp" muted loop playsInline preload="metadata" aria-hidden="true" className="absolute inset-0 size-full object-cover" />;
 }
 
-// --- Alumni: the college at night, drifting slowly closer.
-function Alumni() {
-  return <Img name="tile-alumni" sizes="(min-width: 1024px) 30vw, 100vw" className="art-kenburns art-anim absolute inset-0 size-full object-cover rounded-none!" />;
+// --- Pilots: the aircraft in flight over the field, drifting slowly closer.
+function Pilots() {
+  return <Img name="gg03" sizes="(min-width: 1024px) 30vw, 100vw" className="art-kenburns art-anim absolute inset-0 size-full object-cover rounded-none!" />;
 }
 
-const ART = { aerodynamics: Aero, avionics: Avionics, 'social-media': Social, design: Design, 'web-development': Web, alumni: Alumni };
+const ART = { aerodynamics: Aero, avionics: Avionics, 'social-media': Social, design: Design, 'web-development': Web, pilots: Pilots };
 
 export default function TeamArt({ slug }) {
   const Art = ART[slug];
