@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router';
-import { SheetGrid, SheetHead } from '../components/Layout';
+import { SheetHead } from '../components/Layout';
+import TeamBackdrop, { decodeOnScroll } from '../components/TeamBackdrop';
 import { Person } from '../components/ui';
 import { SUBTEAMS, membersOf } from '../content/teams';
 import { TEAMS } from '../content/roster';
@@ -7,6 +9,9 @@ import NotFound from './NotFound';
 
 export default function Subteam() {
   const { slug } = useParams();
+  const page = useRef(null);
+  // Web Development's text decodes out of code as it scrolls in.
+  useEffect(() => (slug === 'web-development' && page.current ? decodeOnScroll(page.current) : undefined), [slug]);
   const i = SUBTEAMS.findIndex((s) => s.slug === slug);
   if (i < 0) return <NotFound />;
   const s = SUBTEAMS[i];
@@ -15,8 +20,10 @@ export default function Subteam() {
   const leads = people.filter((p) => /lead|head/i.test(p.role ?? ''));
   const rest = people.filter((p) => !leads.includes(p));
   return (
-    <>
-      <SheetHead title={s.name} name={`team-${s.slug}`} backdrop={<SheetGrid />}><p>{s.about}</p></SheetHead>
+    <div ref={page}>
+      {/* Each subteam's own live background, full page (Alumni keeps the plain sheet). */}
+      <TeamBackdrop slug={s.slug} />
+      <SheetHead title={s.name} name={`team-${s.slug}`}><p>{s.about}</p></SheetHead>
       <section className="wrap section border-b border-rule grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">What we do</h2>
         <ul data-reveal="stagger" className="grid sm:grid-cols-2 border-t border-l border-rule">
@@ -47,6 +54,6 @@ export default function Subteam() {
         </ul>
         <Link to={`/team/${next.slug}`} className="btn btn-sm">Next: {next.name}</Link>
       </nav>
-    </>
+    </div>
   );
 }

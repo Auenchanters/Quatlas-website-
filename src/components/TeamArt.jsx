@@ -38,7 +38,7 @@ function useCanvas(draw, fps = 60) {
 
 // --- Aerodynamics: CFD-style streamlines flowing past the 012, coloured by speed, over a deep blue field.
 const SPEED = [[0, '#1d4fd8'], [0.25, '#18b8e6'], [0.5, '#29d17a'], [0.72, '#f3e64a'], [1, '#ff3b2f']];
-const speedColour = (v) => {
+export const speedColour = (v) => {
   const i = SPEED.findIndex(([s]) => s >= v);
   if (i <= 0) return SPEED[0][1];
   const [a, ca] = SPEED[i - 1], [b, cb] = SPEED[i], t = (v - a) / (b - a);
@@ -166,7 +166,7 @@ function Avionics() {
 }
 
 // --- Design: a blueprint three-view of the 012 that draws itself, holds, and draws again.
-function Design() {
+export function Design() {
   // Each stroke's real length, for the dash that draws it on (CSS can't scale a dash to pathLength reliably).
   const ref = useRef(null);
   useEffect(() => { ref.current.querySelectorAll('.bp-draw').forEach((p) => p.style.setProperty('--len', Math.ceil(p.getTotalLength()))); }, []);
