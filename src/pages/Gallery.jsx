@@ -126,7 +126,7 @@ export default function Gallery() {
                 return (
                   <li key={g._id} className="mb-3 break-inside-avoid">
                     <button type="button" data-photo={g._id} onClick={(e) => openAt(i, e.currentTarget)} style={{ aspectRatio: `${w} / ${h}` }}
-                      className="press block w-full overflow-hidden border border-ink bg-sheet hover:border-signal focus-visible:border-signal"
+                      className="press block w-full overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet hover:border-signal focus-visible:border-signal"
                       aria-label={`Open photo ${i + 1} of ${items.length}`}>
                       <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={i < 4} className="size-full object-cover" />
                     </button>

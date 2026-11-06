@@ -26,3 +26,15 @@ export const LOGOS = [
   ['sps01', 'Supporter logo'],
   ['dhd', 'Supporter logo'],
 ];
+
+// The photo wall on the home page: columns drifting in opposite directions. photos: names from
+// src/content/images.json (assets-src/), in the order they're dealt across the columns.
+export const WALL = {
+  title: 'Off the drawing board',
+  text: 'Build nights in the workshop, flight days on the field, and the events in between.',
+  photos: [
+    'event-chennai-planes', 'event-field-1', 'event-workshop', 'quatlas-05', 'event-pradarshana-1', 'event-chennai-pilot',
+    'Copy_of_DSC_5785', 'event-orientation', 'event-field-2', 'Picture62k18', 'event-pradarshana-2', 'event-team-seated',
+    'gg03', 'Picture22k19', 'gg05',
+  ],
+};

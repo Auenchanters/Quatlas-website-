@@ -69,6 +69,7 @@ html.theme-flip::view-transition-old(root), html.theme-flip::view-transition-new
    rope length is fixed (176px), so the anchor sits above the page to leave a short drop below the header. */
 :root {
   --gutter: 1rem;
+  --radius-photo: 10px; /* photos and the frames that hold them: slightly rounded, not boxy */
   --pullcord-top: -76px;
   --pullcord-right: calc(max(0px, (100vw - 78rem) / 2) + var(--gutter) - 10px);
   --pullcord-z: 45;
@@ -129,6 +130,12 @@ html.lenis, html.lenis body { height: auto; }
     padding: 0.15rem 0.4rem; background: var(--color-paper); border: 1px solid var(--color-ink); color: var(--color-ink);
   }
   .plane-label[data-on='1'] { border-color: var(--color-signal); color: var(--color-signal); }
+  main img:not(.logo) { border-radius: var(--radius-photo); }
+  /* Photo wall (components/PhotoWall.jsx): faded at top and bottom, half a list per loop, held on hover. */
+  .wall { mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+  .wall-col { animation: wall linear infinite; will-change: transform; }
+  .wall:hover .wall-col { animation-play-state: paused; }
+  @media (prefers-reduced-motion: reduce) { .wall-col { animation: none !important; } }
   /* Where the 3D plane will draw, the flat drawing's shapes never show; its grid stays as the sheet. */
   [data-webgl] .fig-part { opacity: 0 !important; pointer-events: none; }
   .section { padding-block: clamp(5rem, 10vw, 9rem); }
@@ -206,3 +213,5 @@ html.lenis, html.lenis body { height: auto; }
   .table td { padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--color-rule); vertical-align: top; }
   .table tr:hover td { background: var(--color-sheet); }
 }
+
+@keyframes wall { to { transform: translateY(calc(-50% - 0.375rem)); } } /* half the list plus half a gap */

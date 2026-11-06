@@ -26,7 +26,7 @@ const countOf = (dashboard, slug) => {
 function Tile({ tile, n, count }) {
   return (
     <li>
-      <Link to={tile.to} className="press group grid h-full border border-ink no-underline hover:border-signal">
+      <Link to={tile.to} className="press group grid h-full overflow-hidden rounded-[var(--radius-photo)] border border-ink no-underline hover:border-signal">
         <span className="relative aspect-[16/10] overflow-hidden border-b border-ink bg-sheet">
           {/* Part 2 puts each team's live background here. */}
           <SheetGrid className="transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-105" />

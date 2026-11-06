@@ -73,7 +73,7 @@ function Picker() {
         <ul data-reveal="stagger" className="grid gap-6 md:grid-cols-2">
           {HANGAR.games.map((g) => (
             <li key={g.slug}>
-              <Link to={`/hangar/${g.slug}`} className="press group grid border border-ink no-underline hover:border-signal h-full">
+              <Link to={`/hangar/${g.slug}`} className="press group grid overflow-hidden rounded-[var(--radius-photo)] border border-ink no-underline hover:border-signal h-full">
                 <span className="border-b border-ink overflow-hidden bg-[#0b0d12]">{previews[g.slug]}</span>
                 <span className="grid gap-2 p-5">
                   <span className="data text-signal">{g.label}</span>

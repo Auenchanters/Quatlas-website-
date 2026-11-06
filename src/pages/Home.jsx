@@ -3,11 +3,12 @@ import { Link } from 'react-router';
 import Aircraft from '../components/Aircraft';
 import { Img } from '../components/Img';
 import Marquee from '../components/Marquee';
+import PhotoWall from '../components/PhotoWall';
 import Roll from '../components/Roll';
 import { RECORD, FIRST_YEAR, LATEST_YEAR } from '../content/achievements';
 import { OVERVIEW } from '../content/overview';
 import { UPCOMING, when } from '../content/events';
-import { HERO, QUOTES, PATHS, LOGOS } from '../content/home';
+import { HERO, QUOTES, PATHS, LOGOS, WALL } from '../content/home';
 import { homeStats } from '../content/stats';
 import { ROSTER_SIZE } from '../content/roster';
 
@@ -83,6 +84,15 @@ export default function Home() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="wall" className="wrap pb-[clamp(5rem,10vw,9rem)] grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-center">
+        <div className="grid gap-5 content-center">
+          <h2 id="wall" data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">{WALL.title}</h2>
+          <p data-reveal="up" className="text-lg text-ink-2 max-w-md">{WALL.text}</p>
+          <Link to="/gallery" className="btn justify-self-start">See the gallery</Link>
+        </div>
+        <PhotoWall photos={WALL.photos} />
       </section>
 
       <section className="border-y border-ink bg-sheet">

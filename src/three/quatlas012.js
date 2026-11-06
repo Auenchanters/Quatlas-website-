@@ -155,11 +155,17 @@ export function buildPlane() {
   const cyl = (r, l, m, x) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, 24).rotateZ(Math.PI / 2), m); c.position.x = x; return c; };
   motor.add(cyl(0.036, 0.008, alu, 0.565), cyl(0.03, 0.04, black, 0.59), cyl(0.031, 0.012, std(C.gold, { metalness: 0.7, roughness: 0.3 }), 0.6), cyl(0.006, 0.05, alu, 0.625));
   const prop = new THREE.Group(); prop.position.x = 0.63;
-  const blade = new THREE.Shape([new THREE.Vector2(0, -0.012), new THREE.Vector2(0.17, -0.014), new THREE.Vector2(0.18, 0), new THREE.Vector2(0.17, 0.01), new THREE.Vector2(0, 0.012)]);
+  // Each blade is an arm turning about the nose axis; the blade lies in the prop disc, root to tip
+  // along the arm, twisted a little for pitch, with its red tip painted on the same arm so it stays put.
+  const blade = new THREE.Shape([new THREE.Vector2(-0.012, 0), new THREE.Vector2(-0.014, 0.165), new THREE.Vector2(0, 0.18), new THREE.Vector2(0.01, 0.165), new THREE.Vector2(0.012, 0)]);
+  const bladeGeo = new THREE.ExtrudeGeometry(blade, { depth: 0.006, bevelEnabled: false }).rotateY(Math.PI / 2).translate(-0.003, 0, 0);
+  const tipGeo = new THREE.Shape([new THREE.Vector2(-0.0142, 0.15), new THREE.Vector2(-0.014, 0.165), new THREE.Vector2(0, 0.18), new THREE.Vector2(0.01, 0.165), new THREE.Vector2(0.0108, 0.15)]);
+  const tipMesh = new THREE.ExtrudeGeometry(tipGeo, { depth: 0.0064, bevelEnabled: false }).rotateY(Math.PI / 2).translate(-0.0032, 0, 0);
   for (const a of [0, Math.PI]) {
-    const b = new THREE.Mesh(new THREE.ExtrudeGeometry(blade, { depth: 0.006, bevelEnabled: false }), std(C.wood, { roughness: 0.4 }));
-    b.rotation.set(a, Math.PI / 2, 0.25); prop.add(b);
-    const tipM = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.03, 0.022), std(C.red)); tipM.position.set(0, Math.cos(a) * 0.165, 0); prop.add(tipM);
+    const arm = new THREE.Group(); arm.rotation.x = a;
+    const b = new THREE.Mesh(bladeGeo, std(C.wood, { roughness: 0.4 })); b.rotation.y = 0.25;
+    const tipM = new THREE.Mesh(tipMesh, std(C.red)); tipM.rotation.y = 0.25;
+    arm.add(b, tipM); prop.add(arm);
   }
   prop.add(new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.02, 12).rotateZ(Math.PI / 2), black));
   motor.add(prop);

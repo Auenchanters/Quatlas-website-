@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { PARTS } from '../content/aircraft';
 
 // Isometric general-arrangement drawing of a high-wing SAE Regular-class aircraft.
@@ -127,7 +128,7 @@ export default function Aircraft() {
 
   const part = PARTS[active];
   return (
-    <figure className="border border-ink bg-sheet">
+    <figure className="overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet">
       <div className="relative">
         {/* Drafting grid: this panel is a drawing, so it gets the paper's grid. */}
         <svg viewBox="-262 -200 430 305" className="block w-full h-auto" role="img"
@@ -152,6 +153,8 @@ export default function Aircraft() {
           })}
         </svg>
         <div ref={stage} className="absolute inset-0 overflow-hidden" />
+        {/* Straight to the hidden hangar's games, without scrolling to the footer's link. */}
+        <Link to="/hangar" className="btn btn-signal absolute inset-x-3 bottom-3 justify-center text-base">Take flight</Link>
       </div>
       <p className="data px-3 py-2 border-t border-rule text-ink-2">Fig. 1 — General arrangement, {exploded ? 'exploded' : 'assembled'}</p>
 
