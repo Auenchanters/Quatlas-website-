@@ -12,7 +12,7 @@ export const HANGAR = {
     {
       slug: 'dogfight', label: '3D · air combat', name: 'Dogfight',
       about: 'You against four. Arcade air combat over the islands, with guns and missiles.',
-      how: 'Move the mouse to aim and the jet flies there. W / S for throttle, A / D to roll. Click or Space to fire guns, F for missiles once locked. On a phone, use the stick and the fire buttons. The game plays full screen; Esc opens the menu.',
+      how: 'Move the mouse to aim and the jet flies there; A / D or the arrow keys turn too. W / S for throttle, Q / E to roll. Click or Space to fire guns, F for missiles once locked. On a phone, use the stick and the fire buttons. The game plays full screen; Esc opens the menu.',
       note: 'Down all four to win. Score: time, accuracy and health left.',
     },
   ],

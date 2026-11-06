@@ -3,11 +3,19 @@ import { onSoundChange, soundOn } from '../lib/sound';
 // Game sound, synthesised with Web Audio: nothing to download. Respects the site's sound toggle.
 // One AudioContext per game screen: create on the first press (browsers only allow audio after a gesture),
 // close() on the way out.
-export function createAudio() {
+// Runs fn at most once every ms milliseconds (a hit sound per bullet would be a wall of static).
+const limit = (fn, ms) => { let last = 0; return () => { const t = performance.now(); if (t - last >= ms) { last = t; fn(); } }; };
+
+export function createAudio({ limiter: limited = false } = {}) {
   const ctx = new AudioContext();
   const master = ctx.createGain();
   master.gain.value = soundOn() ? 0.5 : 0;
-  master.connect(ctx.destination);
+  // Dogfight adds a limiter on the way out: guns, hits and explosions stacking up get held down, never clip.
+  if (limited) {
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -14; limiter.knee.value = 8; limiter.ratio.value = 8; limiter.attack.value = 0.003; limiter.release.value = 0.2;
+    master.connect(limiter).connect(ctx.destination);
+  } else master.connect(ctx.destination);
   const off = onSoundChange((on) => master.gain.setTargetAtTime(on ? 0.5 : 0, ctx.currentTime, 0.05));
 
   const noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
@@ -36,8 +44,37 @@ export function createAudio() {
     s.connect(f).connect(g).connect(master); s.start(t, Math.random()); s.stop(t + d + 0.05);
   };
 
+  // A jet: a low rumble of filtered noise, a soft body tone and a faint turbine whine, all rising with throttle.
+  function jet({ base = 70 } = {}) {
+    const n = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    n.buffer = noise; n.loop = true; lp.type = 'lowpass'; lp.Q.value = 0.4; ng.gain.value = 0;
+    n.connect(lp).connect(ng).connect(master);
+    const body = ctx.createOscillator(), bg = ctx.createGain(); body.type = 'sine'; bg.gain.value = 0;
+    body.connect(bg).connect(master);
+    const whine = ctx.createOscillator(), wg = ctx.createGain(); whine.type = 'sine'; wg.gain.value = 0;
+    whine.connect(wg).connect(master);
+    n.start(); body.start(); whine.start();
+    let last = -1;
+    return {
+      set(level, on = true) {
+        const v = on ? level : -1;
+        if (Math.abs(v - last) < 0.01) return; // per-frame calls only move the sound when the throttle does
+        last = v;
+        const t = now(), k = on ? 1 : 0;
+        lp.frequency.setTargetAtTime(260 + level * 520, t, 0.15);
+        ng.gain.setTargetAtTime(k * (0.16 + level * 0.14), t, 0.15);
+        body.frequency.setTargetAtTime(base * (1 + level * 0.5), t, 0.2);
+        bg.gain.setTargetAtTime(k * 0.06, t, 0.15);
+        whine.frequency.setTargetAtTime(base * 14 * (1 + level * 0.45), t, 0.25);
+        wg.gain.setTargetAtTime(k * (0.004 + level * 0.008), t, 0.2);
+      },
+      stop() { try { n.stop(); body.stop(); whine.stop(); } catch { /* already stopped */ } },
+    };
+  }
+
   // A continuous motor: a buzzy oscillator plus filtered noise for the prop or jet wash.
   function engine({ base = 90, kind = 'prop' } = {}) {
+    if (kind === 'jet') return jet({ base });
     const o = ctx.createOscillator(), og = ctx.createGain(), lp = ctx.createBiquadFilter();
     o.type = kind === 'jet' ? 'triangle' : 'sawtooth';
     lp.type = 'lowpass'; lp.frequency.value = kind === 'jet' ? 500 : 900;
@@ -91,5 +128,10 @@ export function createAudio() {
     warn: () => { tone(740, { type: 'square', d: 0.12, peak: 0.07 }); tone(554, { type: 'square', at: 0.16, d: 0.12, peak: 0.07 }); },
     win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, { at: i * 0.11, d: 0.4, peak: 0.12, type: 'triangle' })),
     close() { off(); ctx.close(); },
+    // Dogfight's combat sounds: rounded thumps instead of raw noise, and rate-limited where they repeat fast.
+    cannon: () => { burst({ d: 0.07, peak: 0.28, freq: 1400, sweep: 260 }); tone(120, { d: 0.06, peak: 0.16, to: 60 }); },
+    struck: limit(() => { burst({ d: 0.12, peak: 0.3, freq: 900, sweep: 200 }); tone(240, { type: 'triangle', d: 0.08, peak: 0.08, to: 140 }); }, 90),
+    tick: () => tone(1320, { d: 0.05, peak: 0.035 }),
+    alarm: () => { tone(740, { type: 'triangle', d: 0.14, peak: 0.09 }); tone(554, { type: 'triangle', at: 0.18, d: 0.14, peak: 0.09 }); },
   };
 }
