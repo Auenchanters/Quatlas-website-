@@ -44,7 +44,9 @@ const routes = [
   ['POST', '/auth/signup', false, () => [200, { msg: 'Signed up (mock). Verify your email to continue.' }]],
   ['GET', '/auth/dashboard', true, () => [200, { username: USER.username, email: USER.email, id: USER.id }]],
   ['POST', '/auth/loginpasswordreset', false, () => [200, { msg: 'OTP sent (mock)' }]],
-  ['PUT', '/auth/resetpassword', false, (b) => b.userotp === '123456' ? [200, { msg: 'Password reset (mock)' }] : [400, { msg: 'Invalid OTP. The mock OTP is 123456.' }]],
+  // Like the hardened server: the code is checked together with the account's email.
+  ['PUT', '/auth/resetpassword', false, (b) => !b.userEmail ? [400, { msg: 'The OTP you entered is invalid or has expired.' }]
+    : b.userotp === '123456' ? [200, { msg: 'Password reset (mock)' }] : [400, { msg: 'Invalid OTP. The mock OTP is 123456.' }]],
   ['POST', '/auth/otpverification/:id', true, () => [200, { msg: 'OTP sent (mock)' }]],
   ['PUT', '/auth/updateEmailOrPassword/:id', true, (b) => b.userotp === '123456' ? [200, { msg: 'Updated (mock)' }] : [400, { msg: 'Invalid OTP. The mock OTP is 123456.' }]],
   ['PUT', '/auth/updateUsername/:id', true, (b) => typeof b.NewName === 'string' && b.NewName ? (USER.username = b.NewName, [200, { msg: 'Name updated', username: b.NewName }]) : [400, { msg: 'NewName must be a non-empty string' }]],

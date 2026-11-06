@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { Field, Submit, useSubmit } from '../components/ui';
 import { api, session } from '../lib/api';
@@ -52,7 +52,7 @@ function Signup() {
       <form onSubmit={submit} className="grid gap-5">
         <Field label="Username" name="name" required autoComplete="nickname" value={f.name} onChange={set('name')} />
         <Field label="Email" name="email" type="email" required autoComplete="email" value={f.email} onChange={set('email')} />
-        <Field label="Password" name="password" type="password" required autoComplete="new-password" value={f.password} onChange={set('password')} />
+        <Field label="Password (8 characters or more)" name="password" type="password" required minLength={8} autoComplete="new-password" value={f.password} onChange={set('password')} />
         <Submit busy={busy}>Sign Up</Submit>
       </form>
       <p className="text-ink-2">Already registered? <Link to="/login" className="text-signal">Login</Link></p>
@@ -66,6 +66,8 @@ function ResetPassword() {
   const [submit, busy] = useSubmit(async () => {
     try {
       const res = await api('/auth/loginpasswordreset', { method: 'POST', body: f });
+      // The server checks the code against this account, so the next step needs the email too.
+      try { sessionStorage.setItem('resetEmail', f.userEmail); } catch { /* falls back to asking again */ }
       navigate('/verifyUser');
       return res;
     } catch (e) { reset(); throw e; }
@@ -74,7 +76,7 @@ function ResetPassword() {
     <Panel title="Reset Password" lede="You’ll use this password to sign in, and recover your account.">
       <form onSubmit={submit} className="grid gap-5">
         <Field label="Registered email" name="userEmail" type="email" required autoComplete="email" value={f.userEmail} onChange={set('userEmail')} />
-        <Field label="New password" name="newPassword" type="password" required autoComplete="new-password" value={f.newPassword} onChange={set('newPassword')} />
+        <Field label="New password (8 characters or more)" name="newPassword" type="password" required minLength={8} autoComplete="new-password" value={f.newPassword} onChange={set('newPassword')} />
         <p className="text-sm text-ink-2">A verification code will be sent to your registered email to reset your password.</p>
         <Submit busy={busy}>Reset</Submit>
       </form>
@@ -99,10 +101,13 @@ export function Otp({ onVerify }) {
 
 function VerifyUser() {
   const navigate = useNavigate();
+  const email = (() => { try { return sessionStorage.getItem('resetEmail'); } catch { return null; } })();
+  if (!email) return <Navigate to="/resetPassword" replace />;
   return (
     <Panel title="OTP Verification">
       <Otp onVerify={async (userotp) => {
-        const res = await api('/auth/resetpassword', { method: 'PUT', body: { userotp } });
+        const res = await api('/auth/resetpassword', { method: 'PUT', body: { userotp, userEmail: email } });
+        try { sessionStorage.removeItem('resetEmail'); } catch { /* nothing to clear */ }
         toast.success('Now you can login with new password.');
         navigate('/login');
         return res;
