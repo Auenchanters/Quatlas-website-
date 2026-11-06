@@ -129,6 +129,8 @@ html.lenis, html.lenis body { height: auto; }
     padding: 0.15rem 0.4rem; background: var(--color-paper); border: 1px solid var(--color-ink); color: var(--color-ink);
   }
   .plane-label[data-on='1'] { border-color: var(--color-signal); color: var(--color-signal); }
+  /* Where the 3D plane will draw, the flat drawing's shapes never show; its grid stays as the sheet. */
+  [data-webgl] .fig-part { opacity: 0 !important; pointer-events: none; }
   .section { padding-block: clamp(5rem, 10vw, 9rem); }
 
   /* Rolling numbers: one 1em-tall window per digit, the 0–9 stack slides behind it. */

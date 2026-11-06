@@ -82,46 +82,39 @@ function Face({ f, on }) {
 
 export default function Aircraft() {
   const [active, setActive] = useState('wing');
-  const [exploded, setExploded] = useState(true); // starts apart; assembles once on mount
+  const [exploded, setExploded] = useState(false);
   const [theta, setTheta] = useState(0.5);
   const spin = useRef(0);
-  const ref = useRef(null);
   const stage = useRef(null);
   const view = useRef(null);
-  const [live, setLive] = useState(false); // the 3D model is drawing; the SVG stays as the fallback
+  // live: the 3D model takes the drawing's place. Where WebGL exists the flat shapes clear straight
+  // away, so the sheet is empty when the model flies in; the SVG stays for no-JS, no-WebGL and readers.
+  const [live, setLive] = useState(false);
 
-  // The 3D model of the 012 loads after the page has, and takes over the drawing once its first frame is up.
+  // The 3D model of the 012: its code starts downloading at once, and it mounts once the page has loaded.
   useEffect(() => {
-    let dead = false, idle;
-    const go = () => import('../three/viewer').then(({ mountPlane }) => {
+    // index.html marks <html data-webgl> before first paint, so the shapes are cleared (styles.css) even
+    // in the prerendered HTML; if the model can't start after all, the mark goes and the drawing returns.
+    const root = document.documentElement;
+    if (!('webgl' in root.dataset)) return;
+    setLive(true);
+    const fail = () => { delete root.dataset.webgl; setLive(false); };
+    let dead = false;
+    const code = import('../three/viewer');
+    const go = () => code.then(({ mountPlane }) => {
       if (dead || !stage.current) return;
       try {
         view.current = mountPlane(stage.current, {
           names: Object.fromEntries(Object.entries(PARTS).map(([id, p]) => [id, p.name])),
-          onPick: setActive, onReady: () => setLive(true),
+          onPick: setActive,
         });
-      } catch { /* no WebGL: keep the drawing */ }
-    });
-    const later = () => { idle = (window.requestIdleCallback ?? setTimeout)(go, { timeout: 1500 }); };
-    document.readyState === 'complete' ? later() : addEventListener('load', later, { once: true });
-    return () => { dead = true; removeEventListener('load', later); (window.cancelIdleCallback ?? clearTimeout)(idle); view.current?.destroy(); view.current = null; };
+        view.current.set({ active: 'wing', exploded: false });
+      } catch { fail(); } // no usable WebGL after all: keep the drawing
+    }, () => !dead && fail());
+    document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
+    return () => { dead = true; removeEventListener('load', go); view.current?.destroy(); view.current = null; };
   }, []);
-  useEffect(() => { view.current?.set({ active, exploded }); }, [active, exploded, live]);
-
-  useEffect(() => {
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) { setExploded(false); return; }
-    // Assemble once the page has settled and the drawing is on screen, so the move is seen and costs nothing at load.
-    let t;
-    const io = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      io.disconnect();
-      const go = () => { t = setTimeout(() => setExploded(false), 300); };
-      document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
-    }, { threshold: 0.4 });
-    io.observe(ref.current);
-    return () => { io.disconnect(); clearTimeout(t); };
-  }, []);
+  useEffect(() => { view.current?.set({ active, exploded }); }, [active, exploded]);
 
   // The propeller turns only while the motor is the selected part.
   useEffect(() => {
@@ -134,7 +127,7 @@ export default function Aircraft() {
 
   const part = PARTS[active];
   return (
-    <figure ref={ref} className="border border-ink bg-sheet">
+    <figure className="border border-ink bg-sheet">
       <div className="relative">
         {/* Drafting grid: this panel is a drawing, so it gets the paper's grid. */}
         <svg viewBox="-262 -200 430 305" className="block w-full h-auto" role="img"
@@ -151,7 +144,7 @@ export default function Aircraft() {
             const faces = geo[0] === 'prop' ? propBlades(theta) : geo.flat();
             const hidden = id === 'payload' && !exploded && active !== 'payload';
             return (
-              <g key={i} onPointerEnter={() => setActive(id)} onClick={() => setActive(id)}
+              <g key={i} className="fig-part" onPointerEnter={() => setActive(id)} onClick={() => setActive(id)}
                 style={{ transform: `translate(${d[0]}px, ${d[1]}px)`, transition: 'transform 900ms var(--ease-out-expo), opacity 400ms', opacity: live || hidden ? 0 : 1, cursor: 'pointer' }}>
                 {faces.map((f, j) => <Face key={j} f={f} on={id === active} />)}
               </g>

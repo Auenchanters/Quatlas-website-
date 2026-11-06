@@ -64,6 +64,7 @@ export default function Dogfight() {
     placeJets();
 
     const size = () => {
+      if (!hudCanvas.current) return; // a last resize can land after unmount
       const w = el.clientWidth, h = el.clientHeight, dpr = Math.min(devicePixelRatio || 1, 2);
       renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
       hudCanvas.current.width = w * dpr; hudCanvas.current.height = h * dpr; hud.setTransform(dpr, 0, 0, dpr, 0, 0);
