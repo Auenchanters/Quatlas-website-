@@ -38,12 +38,13 @@ export default function About() {
   return (
     <>
       <SheetHead title="About"><p>{lede.text}</p></SheetHead>
-      <section className="wrap section grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start">
-        <div className="grid gap-6">
+      {/* The photo centred across the page, the write-up under it (as on the team pages). */}
+      <section className="wrap section grid gap-10">
+        <Img name="groupPhoto" sizes="(min-width: 1280px) 1200px, 100vw" alt="The Quatlas team in team shirts behind their aircraft at an exhibition stall." className="w-full h-auto border border-ink" />
+        <div className="grid gap-6 max-w-3xl">
           <h2 data-reveal="words" className="wide text-2xl md:text-[1.75rem]">Club overview</h2>
           <div data-reveal="up" className="copy">{OVERVIEW.map((t) => <p key={t}>{t}</p>)}<p>{second.text}</p></div>
         </div>
-        <Img name="groupPhoto" sizes="(min-width: 1024px) 45vw, 100vw" alt="The Quatlas team in team shirts behind their aircraft at an exhibition stall." className="w-full h-auto border border-ink" />
       </section>
 
       <section id="history" className="wrap section border-t border-rule grid gap-8">

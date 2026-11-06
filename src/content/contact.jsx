@@ -2,9 +2,7 @@
 import { Link } from 'react-router';
 
 export const PEOPLE = [
-  // The old page listed "urstrulypuneethgmail.com" (missing the @); corrected here.
-  ['Team leader - Puneeth L', 'urstrulypuneeth@gmail.com', '+91 91488 43472'],
-  ['Non Tech - Pavan A', 'pavan.aashok1234gh@gmail.com', '+91 7676475397'],
+  ['Non Tech Head - Kartik', 'kartikmashetty@gmail.com', '+91 85508 40787'],
 ];
 
 export const TYPES = ['General query', 'Sponsorship', 'Joining the team', 'Collaboration or workshop', 'Media'];

@@ -4,6 +4,11 @@
 // payloadKg (optional): payload lifted that year, as the points state it; the home stats strip uses the largest.
 export const RECORD = [
   {
+    year: '2026', title: 'Aircraft Olympics', summary: 'Secured 4th place',
+    points: ['Secured 4th place in the Aircraft Olympics.'],
+    caption: 'Glimpse of Pradarshana', photos: ['Copy_of_DSC_5785'], // the same photo as 2024 for now
+  },
+  {
     year: '2024', event: 'Technoxian World Cup', title: 'Pradarshana-24', summary: 'Cleared every round of the Technoxian World Cup 2024',
     points: ['Took part in national competition TECHNOXIAN WORLD CUP -2024 and cleared all the rounds.', 'Presented the model in PRADARSHANA-24'],
     caption: 'Glimpse of Pradarshana', photos: ['Copy_of_DSC_5785'],

@@ -2,18 +2,12 @@
 // Past competitions come from achievements.js, so they never need entering twice.
 export const UPCOMING = [
   {
-    title: 'Recruitment drive', date: null, place: 'Ramaiah Institute of Technology',
-    text: 'Applications open for first and second years across every subteam. Register, take the test, meet the team.',
-    link: ['/recruitment', 'Register'],
+    title: 'Techfest, IIT Bombay', date: null, place: 'IIT Bombay, Mumbai',
+    text: 'The annual science and technology festival of IIT Bombay.',
   },
   {
-    title: 'SAE Aero Design', date: null, place: 'United States',
-    text: 'The international design-build-fly competition the team builds for every year: design report, presentation and flight rounds.',
-    link: ['https://www.saeaerodesign.com/', 'Competition site'],
-  },
-  {
-    title: 'Pradarshana', date: null, place: 'Ramaiah Institute of Technology',
-    text: 'The college project exhibition, where the current aircraft goes on show.',
+    title: 'Boeing Competition', date: null, place: 'IIT Kanpur',
+    text: 'The Boeing competition, held at IIT Kanpur.',
   },
 ];
 

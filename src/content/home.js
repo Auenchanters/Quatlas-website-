@@ -6,6 +6,9 @@ export const HERO = {
   place: 'Quatlas Aeromodelling, Ramaiah Institute of Technology',
 };
 
+// The home stats strip's running totals, shown as "25+" and "50+". Update them here as they grow.
+export const COUNTS = { competitions: 25, members: 50 };
+
 export const QUOTES = [
   'Pioneering the skies with precision and passion',
   'Where innovation takes flight',

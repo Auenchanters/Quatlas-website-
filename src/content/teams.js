@@ -62,5 +62,3 @@ export const membersOf = (teams, sub) => byRole(teams.filter((t) => sub.match.in
 // Every team in the dashboard (the admin panel edits it), prerendered from the build-time snapshot.
 export const useTeams = () => useApi('/members/memberData', { initial: snapshot.members, map: (d) => d[0].teams });
 
-// Headcount for the home page: each current member once, however many teams they're in.
-export const memberCount = (teams = []) => new Set(teams.filter((t) => !isAlumni(t.roleName)).flatMap((t) => t.roleData.map((p) => p.name.trim().toLowerCase()))).size;

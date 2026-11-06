@@ -70,10 +70,6 @@ export default function Contact() {
             <h2 data-reveal="words" className="wide text-xl mb-2">Club inbox</h2>
             <p><a href="mailto:aeromodellingquatlas@gmail.com" className="break-all hover:text-signal">aeromodellingquatlas@gmail.com</a></p>
           </div>
-          <div className="border-t border-ink pt-4">
-            <h2 data-reveal="words" className="wide text-xl mb-2">Registered Address</h2>
-            <p className="text-ink-2 max-w-md">ESB II , 119, R&amp;D - 1 Laboratory, Quatlas-RIT Ramaiah Institute of Technology MSR Nagar, MSRIT Post, Mathikere Bangalore-560054</p>
-          </div>
           <Map />
         </div>
 
