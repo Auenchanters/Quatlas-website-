@@ -24,7 +24,7 @@ const rowsOf = (logos) => (logos.length < 8 ? [logos, [...logos].reverse()] : [l
 function Tile({ s }) {
   return (
     <a href={s.link?.startsWith('http') ? s.link : undefined} target="_blank" rel="noreferrer"
-      className="press grid place-items-center h-28 w-56 shrink-0 p-5 bg-[var(--color-plate)] border border-rule hover:border-ink transition-colors">
+      className="press logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">
       <RemoteImg src={s.img} width={320} alt={host(s.link) || 'Supporter'} className="logo max-h-20 max-w-full object-contain" />
     </a>
   );

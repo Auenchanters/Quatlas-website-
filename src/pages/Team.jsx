@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
-import { SheetGrid, SheetHead } from '../components/Layout';
+import { SheetHead } from '../components/Layout';
+import TeamArt from '../components/TeamArt';
 import { Img } from '../components/Img';
 import Roll from '../components/Roll';
 import { Person, PhotoStrip } from '../components/ui';
@@ -28,9 +29,8 @@ function Tile({ tile, n, count }) {
     <li>
       <Link to={tile.to} className="press group grid h-full overflow-hidden rounded-[var(--radius-photo)] border border-ink no-underline hover:border-signal">
         <span className="relative aspect-[16/10] overflow-hidden border-b border-ink bg-sheet">
-          {/* Part 2 puts each team's live background here. */}
-          <SheetGrid className="transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-105" />
-          <span className="absolute left-4 top-4 data text-ink-2">Fig. {String(n + 1).padStart(2, '0')}</span>
+          <span className="absolute inset-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-105"><TeamArt slug={tile.slug} /></span>
+          <span className="absolute left-3 top-3 data text-white bg-black/45 rounded px-1.5 py-0.5">Fig. {String(n + 1).padStart(2, '0')}</span>
         </span>
         <span className="flex items-end justify-between gap-4 p-5">
           <span className="display text-[clamp(1.75rem,3vw,2.5rem)] group-hover:text-signal transition-colors" style={{ viewTransitionName: `team-${tile.slug}` }}>{tile.name}</span>

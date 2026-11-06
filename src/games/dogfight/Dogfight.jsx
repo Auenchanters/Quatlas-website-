@@ -124,7 +124,8 @@ export default function Dogfight() {
       if (cand && (g.lockBeep -= dt) <= 0) { audio?.tick(); g.lockBeep = locked ? 0.12 : 0.35; }
       if (input.missile) {
         input.missile = false;
-        if (locked && g.mslLeft > 0) { g.missiles.push(createMissile(P, g.lockTarget)); g.mslLeft--; audio?.missile(); }
+        // Locked: it homes on the lock. Not locked yet: it still flies, chasing whatever is in the sights, or straight on.
+        if (P.alive && g.mslLeft > 0) { g.missiles.push(createMissile(P, locked ? g.lockTarget : cand)); g.mslLeft--; audio?.missile(); }
       }
 
       // Enemy pilots get sharper as their wingmen fall.
@@ -317,7 +318,10 @@ export default function Dogfight() {
         if (e.button === 0) i().fire = true;
       }}
       onPointerUp={(e) => { if (e.pointerType === 'mouse') i().fire = false; }}
-      onContextMenu={(e) => { e.preventDefault(); if (phase === 'playing') i().missile = true; }}>
+      /* Right button launches on mousedown: with the mouse locked there is no contextmenu event, and on
+         Windows contextmenu only fires on release. The menu itself is always suppressed. */
+      onMouseDown={(e) => { if (phase === 'playing' && e.button === 2) i().missile = true; }}
+      onContextMenu={(e) => e.preventDefault()}>
       <canvas ref={hudCanvas} className="absolute inset-0 size-full pointer-events-none" aria-hidden="true" />
 
       {phase === 'playing' && (
@@ -341,7 +345,7 @@ export default function Dogfight() {
             <>
               <p className="data text-[#ff8790]">Four bandits inbound</p>
               <p className="display text-[clamp(2.25rem,5vw,4rem)]">Dogfight</p>
-              <p className="max-w-md text-[#c9ced6]">Move the mouse to aim: the jet flies to the circle. A / D or the arrow keys turn too. Click or Space to fire, hold on a target for a missile lock, then F or right-click. W / S throttle, Q / E roll, C to look back. Plays full screen; Esc for the menu.</p>
+              <p className="max-w-md text-[#c9ced6]">Move the mouse to aim: the jet flies to the circle. A / D or the arrow keys turn too. Click or Space to fire; right-click or F launches a missile, which homes best once the lock ring closes. W / S throttle, Q / E roll, C to look back. Plays full screen; Esc for the menu.</p>
             </>
           )}
           {phase === 'paused' && <p className="display text-[clamp(2rem,4vw,3.5rem)]">Paused</p>}

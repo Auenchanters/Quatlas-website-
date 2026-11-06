@@ -135,7 +135,7 @@ export default function Home() {
         <p className="wrap data text-ink-2">Supported by</p>
         <Marquee label="Supporters">
           {LOGOS.map(([name, alt]) => (
-            <span key={name} className="grid place-items-center h-28 w-56 shrink-0 p-5 bg-[var(--color-plate)] border border-rule">
+            <span key={name} className="logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">
               <Img name={name} alt={alt} sizes="200px" className="logo max-h-20 w-auto max-w-full object-contain" />
             </span>
           ))}
