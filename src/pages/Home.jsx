@@ -8,7 +8,7 @@ import Roll from '../components/Roll';
 import { RECORD, FIRST_YEAR, LATEST_YEAR } from '../content/achievements';
 import { OVERVIEW } from '../content/overview';
 import { UPCOMING, when } from '../content/events';
-import { HERO, QUOTES, PATHS, LOGOS, WALL, COUNTS } from '../content/home';
+import { HERO, QUOTES, PATHS, LOGOS, WALL, COUNTS, HIGHLIGHT } from '../content/home';
 import { homeStats } from '../content/stats';
 
 function Quotes() {
@@ -29,7 +29,7 @@ function Stats() {
   return (
     <section aria-label="Quatlas in numbers" className="border-y border-ink">
       <dl className="wrap grid grid-cols-2 lg:grid-cols-4">
-        {homeStats(RECORD, COUNTS).map((s, i) => (
+        {homeStats(RECORD, COUNTS, HIGHLIGHT).map((s, i) => (
           <div key={s.label} className={`py-8 md:py-10 pr-4 grid gap-3 content-start border-rule ${i % 2 ? 'pl-4 md:pl-6 border-l' : ''} ${i > 1 ? 'border-t lg:border-t-0' : ''} ${i === 2 ? 'lg:border-l lg:pl-6' : ''}`}>
             <dt className="data text-ink-2 order-2">{s.label}{s.note && <span className="block mt-1 text-signal">{s.note}</span>}</dt>
             <dd className="display text-[clamp(2.5rem,5vw,4.25rem)] order-1"><Roll value={s.value} suffix={s.suffix} /></dd>

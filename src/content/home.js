@@ -8,6 +8,8 @@ export const HERO = {
 
 // The home stats strip's running totals, shown as "25+" and "50+". Update them here as they grow.
 export const COUNTS = { competitions: 25, members: 50 };
+// The result shown last in that strip: value (big), label, note (small, in red).
+export const HIGHLIGHT = { value: '5th', label: 'Place · SAE Competition', note: '2019' };
 
 export const QUOTES = [
   'Pioneering the skies with precision and passion',

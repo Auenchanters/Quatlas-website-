@@ -7,8 +7,8 @@ Pages only lay content out. To update the site, edit these files. You don't need
 | File | Feeds | Notes |
 |---|---|---|
 | `home.js` | Home hero, rotating quotes, the three "paths" links | `HERO.label`, `HERO.title` (lines), `HERO.place` |
-| `stats.js` | Home stats strip | Works these out itself from `achievements.js` and the member count. Don't type numbers here. |
-| `achievements.js` | Achievements timeline, Home "record" table | Per year: `year`, `summary` and `points` are required. `title`, `caption`, `photos` and `payloadKg` are optional, and anything left out is hidden. The largest `payloadKg` is shown on Home. |
+| `stats.js` | Home stats strip | Takes the first year from `achievements.js`; the totals (`COUNTS`) and the highlighted result (`HIGHLIGHT`) are set in `home.js`. |
+| `achievements.js` | Achievements timeline, Home "record" table | Per year: `year`, `summary` and `points` are required. `title`, `caption` and `photos` are optional, and anything left out is hidden. |
 | `aircraft.js` | Aircraft drawing / 3D model part labels, Design blueprint | `SPECS` in mm. `null` hides that dimension. |
 | `support.js` | Support intro, crowdfunding text, UPI payee | `UPI.pa` = UPI ID, `UPI.pn` = name |
 | `sponsors.json` | "Three ways to sponsor" | |

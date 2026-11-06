@@ -1,7 +1,6 @@
 // Copy from the original achievements page. Photos are the ones that still exist on the old host;
 // Picture32k19, Picture32k18, gg04, gg010, gg011 and DSC_5786–57810 were already missing there.
 // 2016's 30th overall is from the team's "Performance over the years" slide.
-// payloadKg (optional): payload lifted that year, as the points state it; the home stats strip uses the largest.
 export const RECORD = [
   {
     year: '2026', title: 'Aircraft Olympics', summary: 'Secured 4th place',
@@ -31,7 +30,7 @@ export const RECORD = [
     photos: ['Picture12k19', 'Picture22k19'],
   },
   {
-    year: '2018', payloadKg: 7.25, summary: '7.25 kg lifted, highest in Asia for the third round',
+    year: '2018', summary: '7.25 kg lifted, highest in Asia for the third round',
     points: [
       'Ranked 7th in the flight rounds, with the first ever successful flight round in the history of the team.',
       'Total payload lifted - 7.25kgs / 16lbs, highest in Asia for the third round.',
@@ -51,7 +50,7 @@ export const RECORD = [
     photos: ['gg01', 'gg02', 'gg03', 'gg05', 'gg06', 'gg07', 'gg08', 'gg09'],
   },
   {
-    year: '2016', payloadKg: 12.5, summary: '30th overall, 5th globally in payload lifting',
+    year: '2016', summary: '30th overall, 5th globally in payload lifting',
     points: [
       '30th overall; 5th place globally in payload lifting',
       'Carried a payload of 12.5Kg, a record for the team',
@@ -61,7 +60,7 @@ export const RECORD = [
     photos: ['Picture31'],
   },
   {
-    year: '2015', payloadKg: 13.6, summary: '13.6 kg lifted, highest by an Indian team',
+    year: '2015', summary: '13.6 kg lifted, highest by an Indian team',
     points: [
       'The first year of the team',
       '15th place worldwide overall',
