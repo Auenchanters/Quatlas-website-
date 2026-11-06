@@ -5,9 +5,9 @@ import { Failed, Loading } from '../components/ui';
 import { api, session, useApi } from '../lib/api';
 import { toast } from '../lib/toast';
 import { SUBTEAMS } from '../content/teams';
-import { MemberCards, RosterSync } from './Members';
+import { CLUB_LINKEDIN, MemberCards, RosterSync } from './Members';
 
-const IMG_HINT = `Photo links: a Google Drive file shared as “Anyone with the link”, a OneDrive embed link ending in ?width=…, or a photo already on the site (https://quatlas-website.vercel.app/img/…). Check the preview: if it says “No image”, the site shows initials instead. The team name decides where a member appears: Core, ${SUBTEAMS.map((t) => t.name).join(', ')}, or Alumini. Someone in two teams is added once per team.`;
+const IMG_HINT = `Photo links: a Google Drive file shared as “Anyone with the link”, a OneDrive embed link ending in ?width=…, or a photo already on the site (https://quatlas-website.vercel.app/img/…). Check the preview: if it says “No image”, the site shows initials instead. The team name decides where a member appears: Core, ${SUBTEAMS.map((t) => t.name).join(', ')}, or Alumini. Someone in two teams is added once per team. Left empty, LinkedIn points to the club’s page.`;
 
 const ORDER = ['core', ...SUBTEAMS.map((t) => t.name.toLowerCase())];
 const rank = (name) => { const n = name.trim().toLowerCase(), i = ORDER.indexOf(n); return /^alumi?ni$/.test(n) ? 99 : i < 0 ? 50 : i; };
@@ -36,7 +36,7 @@ export default function Dashboard() {
         <AddForm hint={IMG_HINT}
           fields={[{ key: 'roleName', label: 'Team name', list: 'team-names' }, { key: 'name', label: 'Name' }, { key: 'role', label: 'Role' }, { key: 'img', label: 'Image link', preview: true }, { key: 'linkedin', label: 'LinkedIn link (optional)', required: false }]}
           onAdd={async (v) => {
-            await api('/members/addMember', { method: 'POST', auth: true, body: v });
+            await api('/members/addMember', { method: 'POST', auth: true, body: { ...v, linkedin: v.linkedin || CLUB_LINKEDIN } });
             await members.reload();
             return { msg: `Successfully added ${v.name} to teamInfo data` };
           }} />

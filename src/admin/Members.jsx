@@ -10,9 +10,14 @@ import manifest from '../content/images.json';
 // The site's own address: roster photos are stored in the database as links to the copies the site
 // already serves, so they work from any page and RemoteImg treats them as local photos.
 export const SITE = 'https://quatlas-website.vercel.app';
+// The live server won't add a member without a LinkedIn link, so anyone without their own gets the club's page.
+export const CLUB_LINKEDIN = 'https://www.linkedin.com/company/quatlas-aeromodelling';
+// The live server needs a photo link for everyone; someone without a photo yet gets NO_PHOTO, which the
+// site shows as their initials (RemoteImg).
+export const NO_PHOTO = `${SITE}/img/none`;
 const photoLink = (name) => {
   const m = manifest[name];
-  return m ? `${SITE}/img/${name}-${m.widths.find((w) => w >= 960) ?? m.widths.at(-1)}.webp` : '';
+  return m ? `${SITE}/img/${name}-${m.widths.find((w) => w >= 960) ?? m.widths.at(-1)}.webp` : NO_PHOTO;
 };
 const initials = (n = '') => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 const FIELDS = [['name', 'Name'], ['role', 'Role'], ['img', 'Photo link'], ['linkedin', 'LinkedIn link (optional)']];
@@ -94,19 +99,24 @@ export function RosterSync({ teams, reload }) {
   const wanted = ROSTER.flatMap((t) => t.roleData.map((p) => ({ roleName: t.roleName, ...p })));
   const missing = wanted.filter((p) => !inDb.has(key(p.roleName, p)));
   const extra = current.flatMap((t) => t.roleData.filter((p) => !wanted.some((w) => key(w.roleName, w) === key(t.roleName, p))).map((p) => ({ ...p, roleName: t.roleName })));
+  // Already in the database but with an old photo (or no LinkedIn): refreshed from the roster.
+  const body = (p) => ({ img: photoLink(p.img), linkedin: p.linkedin || CLUB_LINKEDIN });
+  const stale = current.flatMap((t) => t.roleData.map((m) => ({ m, p: wanted.find((w) => key(w.roleName, w) === key(t.roleName, m)) })))
+    .filter(({ m, p }) => p && (m.img !== body(p).img || (p.linkedin && m.linkedin !== p.linkedin)));
   const people = new Set(wanted.map((p) => p.name)).size;
 
   const [run, running] = useSubmit(async () => {
-    const old = current.flatMap((t) => t.roleData);
-    if (!confirm(`Replace the current team in the database?\n\nThis deletes ${old.length} current members (Alumini stays as it is) and adds the ${wanted.length} roster entries (${people} people) with their photos. It can’t be undone.`)) return;
+    if (!confirm(`Replace the current team in the database?\n\nThis adds the ${missing.length} missing roster entries with their photos, refreshes ${stale.length} photos, then deletes the ${extra.length} current members who aren’t on the sheet (Alumini stays as it is). It can’t be undone.`)) return;
     let step = '';
     const say = (s) => { step = s; setProgress(s); };
+    // Adds first, deletes last: if anything fails, the site still has a team (old, new or both), never none.
     try {
-      for (const [i, m] of old.entries()) { say(`Removing ${i + 1} of ${old.length}: ${m.name}`); await api(`/members/deleteMember/${m._id}`, { method: 'DELETE', auth: true }); }
-      for (const [i, p] of wanted.entries()) {
-        say(`Adding ${i + 1} of ${wanted.length}: ${p.name} (${p.roleName})`);
-        await api('/members/addMember', { method: 'POST', auth: true, body: { roleName: p.roleName, name: p.name, role: p.role, img: photoLink(p.img), linkedin: p.linkedin ?? '' } });
+      for (const [i, p] of missing.entries()) {
+        say(`Adding ${i + 1} of ${missing.length}: ${p.name} (${p.roleName})`);
+        await api('/members/addMember', { method: 'POST', auth: true, body: { roleName: p.roleName, name: p.name, role: p.role, ...body(p) } });
       }
+      for (const [i, { m, p }] of stale.entries()) { say(`Refreshing photo ${i + 1} of ${stale.length}: ${m.name}`); await api(`/members/updateMember/${m._id}`, { method: 'PUT', auth: true, body: body(p) }); }
+      for (const [i, m] of extra.entries()) { say(`Removing ${i + 1} of ${extra.length}: ${m.name}`); await api(`/members/deleteMember/${m._id}`, { method: 'DELETE', auth: true }); }
     } catch (e) {
       // Whatever was done stays done; running it again starts from the database as it now is.
       throw new Error(`Stopped while ${step.toLowerCase()}: ${e.message} Press the button again to finish.`);
@@ -116,12 +126,12 @@ export function RosterSync({ teams, reload }) {
     return { msg: `Done: the database now holds the roster’s ${wanted.length} entries.` };
   });
 
-  if (!missing.length && !extra.length) return <p className="text-ink-2">The database matches the roster sheet: {people} people across {ROSTER.length} teams.</p>;
+  if (!missing.length && !extra.length && !stale.length) return <p className="text-ink-2">The database matches the roster sheet: {people} people across {ROSTER.length} teams.</p>;
   return (
     <div className="grid gap-4 border border-rule bg-sheet rounded-[var(--radius-photo)] p-4">
       <p>
         The database differs from the club’s roster sheet: <strong>{missing.length}</strong> roster {missing.length === 1 ? 'entry is' : 'entries are'} missing
-        and <strong>{extra.length}</strong> current {extra.length === 1 ? 'member is' : 'members are'} not on the sheet.
+        and <strong>{extra.length}</strong> current {extra.length === 1 ? 'member is' : 'members are'} not on the sheet; <strong>{stale.length}</strong> {stale.length === 1 ? 'photo needs' : 'photos need'} refreshing.
         Replacing loads the roster ({people} people in {ROSTER.length} teams) with the new photos; Alumini is left as it is.
       </p>
       <details className="text-sm text-ink-2">

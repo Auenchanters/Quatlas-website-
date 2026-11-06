@@ -50,7 +50,8 @@ function Photo({ src, width = 800, sizes, alt = '', className = '', placeholder 
   const c = local(src);
   const sized = remoteSrc(src, width);
   const [step, setStep] = useState(0);
-  if ((!c && !/^https?:\/\//.test(src ?? '')) || copies[src]?.failed) return placeholder;
+  // …/img/none is the dashboard's "no photo yet" (the server needs some link): straight to the initials.
+  if ((!c && !/^https?:\/\//.test(src ?? '')) || copies[src]?.failed || src.endsWith('/img/none')) return placeholder;
   const load = { loading: eager ? 'eager' : 'lazy', fetchPriority: eager ? 'high' : undefined, decoding: 'async', alt, className };
   if (c) {
     return <img {...load} src={sized} width={c.w} height={c.h} sizes={sizes ?? `${width}px`} style={c.c ? { backgroundColor: c.c } : undefined}
