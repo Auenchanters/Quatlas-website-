@@ -8,7 +8,7 @@ import { RECORD, FIRST_YEAR } from '../content/achievements';
 export default function Achievements() {
   return (
     <>
-      <SheetHead title="Iconic achievements"><p>Every competition since the team’s first entry in {FIRST_YEAR}.</p></SheetHead>
+      <SheetHead title="Achievements"><p>Every competition since the team’s first entry in {FIRST_YEAR}.</p></SheetHead>
       <ol className="wrap section grid gap-[clamp(4rem,8vw,7rem)]">
         {RECORD.map((r, n) => (
           <li key={r.year} aria-labelledby={`y${r.year}`}

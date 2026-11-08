@@ -63,7 +63,7 @@ export default function Contact() {
             <div key={name} className="border-t border-ink pt-4 grid gap-1">
               <h2 data-reveal="words" className="wide text-xl mb-2">{name}</h2>
               <p><span className="font-[650]">Email: </span><a href={`mailto:${mail}`} className="break-all hover:text-signal">{mail}</a></p>
-              <p><span className="font-[650]">Contact Number: </span><a href={`tel:${phone.replace(/\s/g, '')}`} className="data text-[0.9375rem] hover:text-signal">{phone}</a></p>
+              <p><span className="font-[650]">Phone: </span><a href={`tel:${phone.replace(/\s/g, '')}`} className="data text-[0.9375rem] hover:text-signal">{phone}</a></p>
             </div>
           ))}
           <div className="border-t border-ink pt-4 grid gap-1">
@@ -83,7 +83,7 @@ export default function Contact() {
           </Field>
           <Field label="Name" name="name" required autoComplete="name" value={f.name} onChange={set('name')} />
           <Field label="Email" name="email" type="email" required autoComplete="email" value={f.email} onChange={set('email')} />
-          <Field label="Contact Number" name="ConNumber" type="tel" required autoComplete="tel" value={f.ConNumber} onChange={set('ConNumber')} />
+          <Field label="Phone" name="ConNumber" type="tel" required autoComplete="tel" value={f.ConNumber} onChange={set('ConNumber')} />
           <Field label="USN (students only)" name="usn" value={f.usn} onChange={set('usn')} placeholder="e.g. 1MS22ME002" />
           <Field label="Message" as="textarea" name="message" rows={6} required value={f.message} onChange={set('message')} />
           <Submit busy={busy}>Send request</Submit>

@@ -1,7 +1,7 @@
 // Home page copy. Fields: HERO.label (mono figure label), HERO.title (headline lines),
 // HERO.place, HERO.lede (optional). QUOTES rotate under the headline. PATHS: [link, title, text].
 export const HERO = {
-  label: 'Fig. 01 — Quatlas 012',
+  label: 'Fig. 01 · Quatlas 012',
   title: ['Designed on paper.', 'Proven in the air.'],
   place: 'Quatlas Aeromodelling, Ramaiah Institute of Technology',
 };
@@ -12,16 +12,16 @@ export const COUNTS = { competitions: 25, members: 50 };
 export const HIGHLIGHT = { value: '5th', label: 'Place · SAE Competition', note: '2019' };
 
 export const QUOTES = [
-  'Pioneering the skies with precision and passion',
-  'Where innovation takes flight',
-  'Charting new horizons in aerospace excellence',
-  'Innovating the blueprint of tomorrow’s aviation',
+  'Designing, building and flying since 2015',
+  'A new cargo aircraft every season',
+  'From a blank sheet to the flight line',
+  'Built by students from every branch',
 ];
 
 export const PATHS = [
-  ['/team', 'Our Team', 'Embark on an exciting career journey with Quatlas today! Exploring the endless skies, one propeller at a time.'],
-  ['/support', 'Official Supporters', 'Join us in pioneering the future of aerospace modeling. Sponsor our project and gain access to unique opportunities and advanced technological insights.'],
-  ['/support#crowdfunding', 'Crowd Funding', 'Support our mission to innovate and create new possibilities in aerospace modeling. Your contribution will help us push the boundaries of technology and design, shaping the future of the industry.'],
+  ['/team', 'Our team', 'Meet the core team and the six subteams behind the aircraft.'],
+  ['/support', 'Official supporters', 'Sponsor us with parts, money or services, and put your company in front of students, faculty and industry.'],
+  ['/support#crowdfunding', 'Crowdfunding', 'Chip in any amount over UPI. It goes into materials, parts and travel to competitions.'],
 ];
 
 // Logos in the Home supporters strip: [image name in assets-src, alt text].

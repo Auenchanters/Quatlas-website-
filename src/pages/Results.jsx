@@ -12,7 +12,7 @@ function Lookup() {
     setError('');
     try {
       const res = await api('/results/check', { method: 'POST', body: { usn: usn.trim().toUpperCase() } });
-      if (res.msg === 'Usn not found!!') return setError(res.msg);
+      if (res.msg === 'Usn not found!!') return setError('We couldn’t find that USN. Check it and try again.');
       navigate('/resultPage', { state: { resultData: res } });
     } catch (e) {
       setError(e.message);
@@ -20,12 +20,12 @@ function Lookup() {
   });
   return (
     <>
-      <SheetHead title="Quatlas Results">
-        <p>For example, use the USN 1MS22ME002-T to search for results, and if any issues arise, please contact the captain for assistance.</p>
+      <SheetHead title="Recruitment results">
+        <p>Enter your USN in this format: 1MS22ME002-T. If something looks wrong, contact the captain.</p>
       </SheetHead>
       <section className="wrap section">
         <form onSubmit={submit} className="grid gap-4 max-w-md">
-          <Field label="USN" name="usn" required value={usn} onChange={(e) => setUsn(e.target.value)} placeholder="Enter your usn"
+          <Field label="USN" name="usn" required value={usn} onChange={(e) => setUsn(e.target.value)} placeholder="1MS22ME002-T"
             className="[&_.input]:data [&_.input]:text-base [&_.input]:uppercase" aria-invalid={!!error} aria-describedby={error ? 'usn-error' : undefined} />
           {error && <p id="usn-error" role="alert" className="text-signal-ink">{error}</p>}
           <Submit busy={busy} className="btn btn-signal justify-self-start">Search</Submit>
@@ -45,8 +45,8 @@ function Result() {
       <section className="wrap section grid gap-6 justify-items-start">
         <p className="copy text-xl">
           {selected
-            ? `${r.name}(${r.usn}) you are selected for an interview round for the Quatlas Aeromodelling team in the role of ${r.role} and your test score is ${r.score}. Interview timings and dates will be announced shortly.`
-            : 'Sorry to inform you that you have not been selected for an interview'}
+            ? `${r.name} (${r.usn}), you’re through to the interview round for ${r.role}. Your test score is ${r.score}. We’ll announce interview dates and times soon.`
+            : 'You haven’t been selected for an interview this time. Thank you for applying.'}
         </p>
         <Link to="/results" className="btn">Search another USN</Link>
       </section>

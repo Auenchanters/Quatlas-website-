@@ -96,7 +96,7 @@ function Crowdfunding() {
         <p className="text-ink-2">{CROWDFUNDING.after}</p>
         <Field label="Name" name="name" required autoComplete="name" value={f.name} onChange={set('name')} />
         <Field label="Email" name="email" type="email" required autoComplete="email" value={f.email} onChange={set('email')} />
-        <Field label="Contact Number" name="mobile" type="tel" required autoComplete="tel" value={f.mobile} onChange={set('mobile')} />
+        <Field label="Phone" name="mobile" type="tel" required autoComplete="tel" value={f.mobile} onChange={set('mobile')} />
         <Submit busy={busy}>Submit</Submit>
       </form>
     </section>

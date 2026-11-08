@@ -13,7 +13,7 @@ export const SUBTEAMS = [
   },
   {
     slug: 'avionics', name: 'Avionics', match: ['avionics', 'electronics', 'electrical'], oneRow: true,
-    about: 'Wires the aircraft and makes it fly: motor and battery selection, receivers, servos, power distribution and the payload release. Avionics owns every bench test before the first flight.',
+    about: 'Wires the aircraft: motor and battery, receiver, servos, power and the payload release. Every bench test before the first flight is theirs.',
     work: ['Propulsion and battery sizing', 'Servo, receiver and ESC integration', 'Wiring harness and power budget', 'Bench and range tests'],
   },
   {
@@ -28,12 +28,12 @@ export const SUBTEAMS = [
   },
   {
     slug: 'social-media', name: 'Social Media', match: ['social media', 'social-media'],
-    about: 'Tells the team’s story: the posts, photos and videos that follow every build, flight and competition, and the face Quatlas shows sponsors and new members.',
+    about: 'Tells the team’s story in posts, photos and videos from every build, flight and competition. It’s how most sponsors and new members first see Quatlas.',
     work: ['Posts from the workshop and the field', 'Photo and video coverage at events', 'Content for sponsors and outreach', 'Recruitment campaigns'],
   },
   {
     slug: 'pilots', name: 'Pilots', match: ['pilot', 'pilots'], oneRow: true,
-    about: 'Fly the aircraft. The pilots take every airframe up at test flights and at competitions, and bring what it did in the air back to the people who designed and wired it.',
+    about: 'Fly the aircraft at test flights and competitions, then tell Design and Avionics how it handled.',
     work: ['Flying at test flights and competitions', 'Pre-flight checks on the field', 'Trimming and flight testing', 'Flight feedback to Design and Avionics'],
   },
 ];

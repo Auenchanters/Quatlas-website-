@@ -40,7 +40,8 @@ function useBackdrop({ setup, frame, onDown, onUp, hover }) {
     };
     const loop = (now) => {
       raf = document.hidden ? 0 : requestAnimationFrame(loop);
-      frame(ctx, w, h, Math.min(0.05, (now - last) / 1000), (now - t0) / 1000); last = now;
+      // A frame's timestamp can predate the performance.now() taken when the loop started: never let time run backwards.
+      frame(ctx, w, h, Math.max(0, Math.min(0.05, (now - last) / 1000)), Math.max(0, (now - t0) / 1000)); last = Math.max(last, now);
     };
     const wake = () => { if (!document.hidden && !raf && !once) { last = performance.now(); raf = requestAnimationFrame(loop); } };
     const press = (e) => {
