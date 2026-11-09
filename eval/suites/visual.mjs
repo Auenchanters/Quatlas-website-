@@ -125,8 +125,11 @@ export async function run({ check, base, launch, here }) {
       const ctx = await browser.createBrowserContext();
       const p = await ctx.newPage();
       await p.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
-      const reqs = [];
-      p.on('response', (r) => { if (r.url().startsWith(base)) reqs.push({ url: r.url(), type: r.request().resourceType(), n: +(r.headers()['content-length'] ?? 0) }); });
+      // Bytes as transferred (Chrome's own count): a CDN streaming compressed files sends no content-length.
+      const seen = new Map(), reqs = [], cdp = await p.createCDPSession();
+      await cdp.send('Network.enable');
+      cdp.on('Network.responseReceived', (e) => { if (e.response.url.startsWith(base)) seen.set(e.requestId, { url: e.response.url, type: e.type.toLowerCase(), head: e.response.encodedDataLength }); });
+      cdp.on('Network.loadingFinished', (e) => { const r = seen.get(e.requestId); if (r) reqs.push({ ...r, n: e.encodedDataLength - r.head }); }); // body only, as the budgets were set
       await p.goto(base + '/', { waitUntil: 'load' });
       await new Promise((r) => setTimeout(r, ms));
       await ctx.close();

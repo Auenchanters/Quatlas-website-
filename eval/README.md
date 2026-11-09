@@ -8,6 +8,7 @@ cd eval && npm install        # once: puppeteer-core, lighthouse, axe-core (kept
 cd .. && npm run eval         # build, then every suite (~35 min)
 npm run eval -- --only pages,games --no-build   # some suites, reuse dist/
 npm run eval -- --quick       # fewer viewports/themes, mobile-only Lighthouse except home (~12 min)
+npm run eval -- --no-build --only pages,visual,games,backend,lighthouse --base https://quatlas-website.vercel.app   # the deployed site
 ```
 
 Uses the installed Chrome (`CHROME=` to point elsewhere). Results: `eval/reports/latest.md` (failures with

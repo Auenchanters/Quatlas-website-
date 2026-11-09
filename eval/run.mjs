@@ -33,8 +33,11 @@ if (!args.includes('--no-build') && only.some((s) => SUITES[s].needsBuild)) {
 }
 await mkdir(path.join(HERE, 'reports'), { recursive: true });
 
-const server = await start(PORT);
-const base = `http://localhost:${PORT}`;
+// --base https://…: test a deployed site instead of the local build (the browser suites; static and model read
+// local files, and backend tests the live API and a local mock either way).
+const remote = args.includes('--base') ? args[args.indexOf('--base') + 1].replace(/\/$/, '') : null;
+const server = remote ? { close() {} } : await start(PORT);
+const base = remote ?? `http://localhost:${PORT}`;
 const launch = (extra = {}) => puppeteer.launch({
   executablePath: CHROME, headless: true, protocolTimeout: 240000,
   args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11', '--enable-unsafe-swiftshader', '--no-first-run', '--hide-scrollbars', '--autoplay-policy=no-user-gesture-required', ...(extra.args ?? [])],
