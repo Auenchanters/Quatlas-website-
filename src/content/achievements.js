@@ -5,7 +5,7 @@ export const RECORD = [
   {
     year: '2026', title: 'Aircraft Olympics', summary: '4th place',
     points: ['4th place at the Aircraft Olympics.'],
-    caption: 'The team at the Aircraft Olympics', photos: ['event-field-2'],
+    caption: 'The team at the Aircraft Olympics', photos: ['event-olympics-team'],
   },
   {
     year: '2024', event: 'Technoxian World Cup', title: 'Technoxian World Cup 2024', summary: 'Cleared every round of the Technoxian World Cup 2024',
