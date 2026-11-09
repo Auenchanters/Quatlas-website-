@@ -5,12 +5,12 @@ export const RECORD = [
   {
     year: '2026', title: 'Aircraft Olympics', summary: '4th place',
     points: ['4th place at the Aircraft Olympics.'],
-    caption: 'At Pradarshana', photos: ['Copy_of_DSC_5785'], // the same photo as 2024 for now
+    caption: 'The team at the Aircraft Olympics', photos: ['event-field-2'],
   },
   {
-    year: '2024', event: 'Technoxian World Cup', title: 'Pradarshana-24', summary: 'Cleared every round of the Technoxian World Cup 2024',
-    points: ['Cleared every round of the Technoxian World Cup 2024, a national competition.', 'Showed the aircraft at Pradarshana-24.'],
-    caption: 'At Pradarshana', photos: ['Copy_of_DSC_5785'],
+    year: '2024', event: 'Technoxian World Cup', title: 'Technoxian World Cup 2024', summary: 'Cleared every round of the Technoxian World Cup 2024',
+    points: ['Cleared every round of the Technoxian World Cup 2024, a national competition.'],
+    caption: 'At the Technoxian World Cup', photos: ['https://1drv.ms/i/c/4577d5d6291c48d0/IQQRZYvLf241TbDmAEVOIHpHAXg4cMn6YhBh5doUb-4PMiE?width=6000&height=4000'],
   },
   {
     // From the plaque and field photos in the gallery (Apollo XI field, Van Nuys).
