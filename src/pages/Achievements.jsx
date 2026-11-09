@@ -1,5 +1,5 @@
 import { SheetHead } from '../components/Layout';
-import { Pic } from '../components/RemoteImg';
+import { Pic, widthAt } from '../components/RemoteImg';
 import Roll from '../components/Roll';
 import { PhotoStrip } from '../components/ui';
 import { RECORD, FIRST_YEAR } from '../content/achievements';
@@ -25,7 +25,7 @@ export default function Achievements() {
                   <PhotoStrip label={`Photos from ${r.year}`}>
                     {r.photos.map((p, i) => (
                       <div key={p} data-reveal="image" className="max-w-[85%]">
-                        <Pic name={p} sizes="(min-width: 1024px) 34vw, 80vw" alt={`${r.title ?? r.year}, photo ${i + 1} of ${r.photos.length}`}
+                        <Pic name={p} sizes={widthAt(p, 384) ? `(min-width: 768px) ${widthAt(p, 384)}px, ${widthAt(p, 288)}px` : '(min-width: 1024px) 34vw, 80vw'} alt={`${r.title ?? r.year}, photo ${i + 1} of ${r.photos.length}`}
                           className="h-72 md:h-96 w-auto object-cover border border-ink" />
                       </div>
                     ))}

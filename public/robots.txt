@@ -3,6 +3,8 @@ Disallow: /Data
 Disallow: /admin
 Disallow: /forms
 Disallow: /links
-Disallow: /team
+Disallow: /teamData
 Disallow: /recruitdata
 Disallow: /recruitmentData
+
+Sitemap: https://quatlas-website.vercel.app/sitemap.xml

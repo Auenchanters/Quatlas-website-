@@ -5,10 +5,7 @@
 /* Hallmark · reworded "Quatlas Aeromodelling" to "Quatlas Aeromodelling Ramaiah Institute of Technology" · 58 named the separate place line; it joined the headline lockup */
 /* Hallmark · waive 83 · the gallery and achievements pages are the club's photo record of each competition season · photographs are the content */
 @import "tailwindcss";
-@import "@fontsource-variable/montserrat/wght.css";
-@import "@fontsource-variable/inter-tight/wght.css";
-@import "@fontsource/ibm-plex-mono/latin-400.css";
-@import "@fontsource/ibm-plex-mono/latin-500.css";
+/* The web fonts are in fonts.css, loaded after the first paint (see scripts/prerender.mjs). */
 
 /* Drawing-sheet palette: drafting white, graphite ink, and the red of the 038 airframe. */
 @theme {
@@ -19,11 +16,22 @@
   --color-rule: #c4c7c0;
   --color-signal: #c41e2c;
   --color-signal-ink: #9e1622;
-  --font-sans: "Inter Tight Variable", system-ui, sans-serif;
-  --font-display: "Montserrat Variable", "Inter Tight Variable", system-ui, sans-serif;
+  --font-sans: "Inter Tight Variable", "Inter Tight Fallback", system-ui, sans-serif;
+  --font-display: "Montserrat Variable", "Montserrat Fallback", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Until the web fonts arrive, text is set in a local font scaled to the same widths and line metrics
+   (measured: Montserrat 600 is 8.2% wider than Arial Bold, Inter Tight 4.2% / 5.8% narrower than Arial /
+   Arial Bold). Lines then break in the same places, so the swap neither moves the page nor makes the browser
+   lay it all out again. */
+@font-face { font-family: "Montserrat Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Roboto Bold"), local("Roboto-Bold"); font-weight: 100 900;
+  size-adjust: 108.2%; ascent-override: 89.5%; descent-override: 23.2%; line-gap-override: 0%; }
+@font-face { font-family: "Inter Tight Fallback"; src: local("Arial"), local("ArialMT"), local("Roboto"), local("Roboto-Regular"); font-weight: 100 549;
+  size-adjust: 95.8%; ascent-override: 101.1%; descent-override: 25.3%; line-gap-override: 0%; }
+@font-face { font-family: "Inter Tight Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Roboto Bold"), local("Roboto-Bold"); font-weight: 550 900;
+  size-adjust: 94.2%; ascent-override: 102.8%; descent-override: 25.7%; line-gap-override: 0%; }
 
 /* Drawing faces and other colours the utilities don't cover. */
 :root {
@@ -110,9 +118,15 @@ html.lenis, html.lenis body { height: auto; }
   ::selection { background: var(--color-signal); color: var(--color-on-signal); }
   :focus-visible { outline: 2px solid var(--color-signal); outline-offset: 3px; }
   a { text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+  /* A link in running text must look like one, not only on hover (WCAG 1.4.1): a quiet underline. */
+  main p a:not(.btn) { text-decoration-line: underline; text-decoration-color: color-mix(in srgb, currentColor 50%, transparent); }
   h1, h2, h3 { text-wrap: balance; line-height: 1.05; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
   p { text-wrap: pretty; }
   table { font-variant-numeric: tabular-nums; }
+  /* Sections after a page's first are laid out only as they near the screen: on a phone the first layout
+     of a long page drops from ~300 ms to ~100 ms of main-thread work. `auto` keeps each one's real height
+     once it has been seen, so scrolling back up doesn't jump. */
+  main section ~ section, footer { content-visibility: auto; contain-intrinsic-size: auto 700px; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   }
@@ -144,8 +158,7 @@ html.lenis, html.lenis body { height: auto; }
   .roll { display: inline-flex; align-items: flex-end; line-height: 1; font-variant-numeric: tabular-nums; vertical-align: baseline; }
   .roll > span { height: 1em; }
   .roll-col { display: inline-block; overflow: hidden; }
-  .roll-col > span { display: flex; flex-direction: column; will-change: transform; }
-  .roll-col > span > span { height: 1em; }
+  .roll-col > span { display: block; white-space: pre; }
 
   .wrap { width: 100%; max-width: 78rem; margin-inline: auto; padding-inline: 1rem; }
   @media (min-width: 768px) { .wrap { padding-inline: 2.5rem; } }
@@ -171,9 +184,10 @@ html.lenis, html.lenis body { height: auto; }
   .marquee-set { display: flex; gap: 1rem; padding-right: 1rem; flex-shrink: 0; }
   @media (prefers-reduced-motion: reduce) {
     .marquee { mask-image: none; }
-    .marquee-track { animation: none; width: auto; }
-    .marquee-set { flex-wrap: wrap; flex-shrink: 1; }
-    .marquee-set + .marquee-set { display: none; }
+    .marquee-track { animation: none; width: auto; justify-content: center; }
+    /* Still: one centred, wrapping set inside the page gutters; a row that only repeats another goes. */
+    .marquee-set { flex-wrap: wrap; flex-shrink: 1; justify-content: center; padding-inline: var(--gutter); }
+    .marquee-set + .marquee-set, .marquee[data-decorative] { display: none; }
   }
 
   /* Two icons in one spot: the outgoing one fades and blurs (data-state a = first child shown). */

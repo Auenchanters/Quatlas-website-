@@ -251,7 +251,12 @@ function hud(ctx, s, best, k, p) {
     ctx.fillStyle = lit ? (s.battery < 0.2 ? '#ff4b55' : s.battery < 0.45 ? '#ffb547' : '#3fd486') : 'rgba(127,127,127,0.35)';
     ctx.fillRect(bx + i * seg, 17, seg - 3, 14 * k - 6);
   }
-  ctx.textAlign = 'right'; ctx.fillStyle = ink; ctx.fillText(`BEST ${best}`, W - 20, 16); ctx.textAlign = 'left';
+  // Best score: under the readout, on the left (the top right is the Pause button's).
+  const by = 10 + 28 * k + 6;
+  ctx.fillStyle = p > 1.2 ? 'rgba(8,12,24,0.55)' : 'rgba(255,255,255,0.6)';
+  ctx.beginPath(); ctx.roundRect(12, by, 120 * k, 24 * k, 6); ctx.fill();
+  ctx.fillStyle = ink; ctx.font = `600 ${12 * k}px "IBM Plex Mono", monospace`;
+  ctx.fillText(`BEST ${best}`, 22, by + 6 * k);
 }
 
 export function draw(ctx, s, fx, t, k, best, paused = false) {

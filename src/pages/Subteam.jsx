@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
+import Meta from '../components/Meta';
 import TeamBackdrop, { decodeOnScroll } from '../components/TeamBackdrop';
 import { Person } from '../components/ui';
 import { SUBTEAMS, membersOf, useTeams } from '../content/teams';
@@ -23,8 +24,10 @@ export default function Subteam() {
   return (
     <div ref={page}>
       {/* Each subteam's own background, full page. */}
+      <Meta title={`${s.name} subteam`} description={s.about} />
       <TeamBackdrop slug={s.slug} />
-      <SheetHead title={s.name} name={`team-${s.slug}`}><p>{s.about}</p></SheetHead>
+      {/* Avionics' cockpit panel starts at 45% of the window: on a wide screen its intro stops short of it. */}
+      <SheetHead title={s.name} name={`team-${s.slug}`}><p className={s.slug === 'avionics' ? 'lg:max-w-[min(28rem,calc(45vw-6.5rem))]' : undefined}>{s.about}</p></SheetHead>
       <section className="wrap section border-b border-rule grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <h2 data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">What we do</h2>
         <ul data-reveal="stagger" className="grid sm:grid-cols-2 border-t border-l border-rule">

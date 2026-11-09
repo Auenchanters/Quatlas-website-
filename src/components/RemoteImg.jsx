@@ -65,6 +65,9 @@ function Photo({ src, width = 800, sizes, alt = '', className = '', placeholder 
 }
 
 // A photo by local name ('gg01') or by dashboard link, for lists that mix both.
+// Width-for-height: the CSS width (px) a photo shown at a fixed height h takes, from its known aspect.
+export const widthAt = (name, h) => { const d = /^https?:\/\//.test(name) ? dims(name) : manifest[name] && [manifest[name].w, manifest[name].h]; return d ? Math.round((h * d[0]) / d[1]) : null; };
+
 export function Pic({ name, width = 800, ...p }) {
   return /^https?:\/\//.test(name) ? <RemoteImg src={name} width={width} {...p} /> : <Img name={name} {...p} />;
 }

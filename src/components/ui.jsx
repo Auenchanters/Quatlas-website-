@@ -57,11 +57,11 @@ export function Failed({ error, retry }) {
 const initials = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
 // One member card: photo, name, role, LinkedIn. `big` for the captain's row.
-export function Person({ p, big = false, sizes }) {
+export function Person({ p, big = false, sizes, eager = false }) {
   return (
     <div className="grid gap-2 content-start">
       <div className="aspect-[4/5] rounded-[var(--radius-photo)] border border-ink bg-sheet overflow-hidden">
-        <RemoteImg src={p.img} width={big ? 640 : 480} sizes={sizes ?? '(min-width: 1280px) 18vw, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 47vw'} alt={p.name} className="size-full object-cover object-top"
+        <RemoteImg src={p.img} width={big ? 640 : 480} sizes={sizes ?? '(min-width: 1280px) 18vw, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 47vw'} alt={p.name} eager={eager} className="size-full object-cover object-top"
           placeholder={<span aria-hidden="true" className="size-full grid place-items-center display text-4xl text-ink-2">{initials(p.name)}</span>} />
       </div>
       <p className={`wide leading-tight mt-1 ${big ? 'text-xl' : ''}`}>{p.name}</p>
@@ -79,7 +79,8 @@ export function Person({ p, big = false, sizes }) {
 export function People({ people }) {
   return (
     <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-5 gap-y-10">
-      {people.map((p) => <li key={p._id ?? p.name}><Person p={p} /></li>)}
+      {/* The first two photos are on a phone's first screen: they load at once (more would compete with them). */}
+      {people.map((p, i) => <li key={p._id ?? p.name}><Person p={p} eager={i < 2} /></li>)}
     </ul>
   );
 }

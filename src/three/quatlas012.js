@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // The Quatlas 012, built in code from the team's photos: a boxy navy-and-white balsa airframe with a
 // parasol upper wing on four struts, a low lower wing with winglets, a swept fin, a wooden two-blade prop
@@ -12,9 +13,12 @@ const C = {
 // Double-sided: the hand-built lofts and flat plates don't need consistent winding.
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, side: THREE.DoubleSide, ...o });
 
+// A canvas to paint a decal on: in a worker (no document) an OffscreenCanvas.
+const paper = (w, h) => (typeof document === 'undefined' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h }));
+
 // A decal: navy covering with a white border and optional lettering, drawn once on a canvas.
 function decal(words = [], { w = 1024, h = 256, border = 0.1, flip = false } = {}) {
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const c = paper(w, h);
   const x = c.getContext('2d');
   x.fillStyle = C.white; x.fillRect(0, 0, w, h);
   const b = h * border;
@@ -78,6 +82,8 @@ const box = (sx, sy, sz, m, x = 0, y = 0, z = 0) => { const b = new THREE.Mesh(n
 const part = (id, explode, ...children) => { const g = new THREE.Group(); if (children.length) g.add(...children); g.userData = { part: id, explode: new THREE.Vector3(...explode) }; return g; };
 
 export function buildPlane() {
+  // The plain navy panels (no lettering) are painted once per width and shared: fewer canvases to draw and upload.
+  const plain = {}, flat = (w = 1024) => (plain[w] ??= decal([], { w }));
   const navy = std(C.navy, { roughness: 0.3, metalness: 0.1 }), white = std(C.white), balsa = std(C.balsa, { roughness: 0.8 });
   const alu = std(C.alu, { metalness: 0.8, roughness: 0.35 }), black = std(C.black, { roughness: 0.4 });
   const plane = new THREE.Group();
@@ -95,18 +101,18 @@ export function buildPlane() {
   for (const x of [0.42, 0.33, 0.24, 0.15, 0.07]) fus.add(box(0.008, 0.012, 0.16, balsa, x, TOP - 0.006, 0));
   // Cabane struts up to the parasol wing (they stay with the fuselage when the wing lifts off).
   for (const x of [0.07, -0.1]) for (const z of [-1, 1]) {
-    const s = box(0.022, 0.27, 0.012, white, x, TOP + 0.135, z * 0.1); s.rotation.x = -z * 0.12; fus.add(s);
+    const s = box(0.022, 0.27, 0.012, white, x, TOP + 0.135, z * 0.1); s.rotation.x = z * 0.12; fus.add(s); // feet on the fuselage, splayed out to the wing
   }
   fus.userData.anchor = new THREE.Vector3(-0.45, 0.06, 0); // label on the tail boom, clear of the payload's
   plane.add(fus);
 
   // Upper wing: a flat centre panel and two outer panels angled up, white tip plates.
   const UY = TOP + 0.27, UC = 0.3, UX = -0.03;
-  const centre = panel({ chord: UC, span: 0.9, top: decal([['QUATLAS', 0.27, 0.42], ['012', 0.76, 0.55]]), bottom: decal() });
+  const centre = panel({ chord: UC, span: 0.9, top: decal([['QUATLAS', 0.27, 0.42], ['012', 0.76, 0.55]]), bottom: flat() });
   centre.position.set(UX, UY, -0.45);
   const upper = part('wing', [0, 0.3, 0], centre);
   for (const side of [-1, 1]) {
-    const outer = panel({ chord: UC * 0.9, span: 0.42, top: decal([], { w: 512 }), bottom: decal([], { w: 512 }) });
+    const outer = panel({ chord: UC * 0.9, span: 0.42, top: flat(512), bottom: flat(512) });
     const pivot = new THREE.Group();
     pivot.position.set(UX - 0.01, UY, side * 0.45);
     pivot.rotation.x = side * -0.24; // dihedral
@@ -120,12 +126,12 @@ export function buildPlane() {
 
   // Lower wing at the bottom of the fuselage, with upturned white winglets.
   const LC = 0.26, LX = 0.13, LY = BOT + 0.012;
-  const lowerPanel = panel({ chord: LC, span: 1.24, thick: 0.026, top: decal([['012', 0.2, 0.5], ['QUATLAS', 0.76, 0.38]]), bottom: decal() });
+  const lowerPanel = panel({ chord: LC, span: 1.24, thick: 0.026, top: decal([['012', 0.2, 0.5], ['QUATLAS', 0.76, 0.38]]), bottom: flat() });
   lowerPanel.position.set(LX, LY, -0.62);
   const lower = part('wing', [0, -0.12, 0], lowerPanel);
   for (const side of [-1, 1]) {
     const wl = box(LC * 0.75, 0.13, 0.008, white, LX - 0.02, LY + 0.065, side * 0.62);
-    wl.rotation.x = -side * 0.18; lower.add(wl);
+    wl.rotation.x = side * 0.18; lower.add(wl); // canted out, root on the wing tip
   }
   plane.add(lower);
 
@@ -175,7 +181,8 @@ export function buildPlane() {
   // Bow landing gear in bent aluminium, two white wheels, and a little tail skid.
   const gear = part('gear', [0, -0.28, 0]);
   for (const side of [-1, 1]) {
-    const leg = box(0.03, 0.2, 0.006, alu, 0.3, BOT - 0.09, side * 0.09); leg.rotation.x = side * 0.62; gear.add(leg);
+    // Each leg runs from the fuselage floor down and out to its wheel hub.
+    const leg = box(0.03, 0.215, 0.006, alu, 0.3, BOT - 0.085, side * 0.1); leg.rotation.x = -side * 0.615; gear.add(leg);
     const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.026, 24).rotateX(Math.PI / 2), std('#eeeeea', { roughness: 0.7 }));
     wheel.position.set(0.3, BOT - 0.17, side * 0.17); gear.add(wheel);
     gear.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 12).rotateX(Math.PI / 2), black).translateX(0.3).translateY(BOT - 0.17).translateZ(side * 0.17));
@@ -194,8 +201,42 @@ export function buildPlane() {
   return plane;
 }
 
+// For drawing: within each part, the fixed pieces that share a look become one mesh (58 draw calls and
+// material switches a frame drop to about 20; on a phone each frame was a long task). The model looks the
+// same and its parts still move and highlight on their own. Left alone: the prop (it spins), and pieces
+// with a decal or a one-sided material (baking a mirrored transform would turn those inside out).
+export function compact(plane) {
+  plane.updateMatrixWorld(true);
+  const rel = new THREE.Matrix4();
+  for (const part of plane.children) {
+    const inv = part.matrixWorld.clone().invert(), prop = part.userData.prop, groups = new Map();
+    part.traverse((o) => {
+      if (!o.isMesh || o.material.map || o.material.side !== THREE.DoubleSide) return;
+      for (let p = o; p; p = p.parent) if (p === prop) return;
+      const m = o.material, key = [m.color.getHex(), m.roughness, m.metalness, m.polygonOffset].join('|');
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(o);
+    });
+    for (const meshes of groups.values()) {
+      if (meshes.length < 2) continue;
+      const geos = meshes.map((o) => {
+        const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+        g.clearGroups();
+        if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+        for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+        return g.applyMatrix4(rel.multiplyMatrices(inv, o.matrixWorld));
+      });
+      const merged = new THREE.Mesh(mergeGeometries(geos), meshes[0].material);
+      for (const o of meshes) { o.parent.remove(o); o.geometry.dispose(); }
+      geos.forEach((g) => g.dispose());
+      part.add(merged);
+    }
+  }
+  return plane;
+}
+
 function numberTex(mirror) {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 112;
+  const c = paper(256, 112);
   const x = c.getContext('2d');
   if (mirror) { x.translate(256, 0); x.scale(-1, 1); }
   x.fillStyle = C.white; x.font = '700 96px Georgia, "Times New Roman", serif'; x.textAlign = 'center'; x.textBaseline = 'middle';

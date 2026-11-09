@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // VITE_API lets the admin screens run against scripts/mock-api.mjs instead of live data.
 export const API = import.meta.env.VITE_API ?? 'https://quatlasserver.vercel.app/api';
@@ -31,15 +31,23 @@ export async function api(path, { method = 'GET', body, auth = false, url } = {}
 // and in the prerendered HTML; the fetch then replaces it.
 export function useApi(path, { auth = false, url, map = (d) => d, initial } = {}) {
   const [state, setState] = useState(() => initial ? { data: map(initial), error: null, loading: false } : { data: null, error: null, loading: true });
-  const load = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true }));
+  // The last raw answer: a refresh that brings the same data back (the usual case for a page prerendered with
+  // `initial`) changes nothing, so it doesn't re-render the page.
+  const last = useRef(initial ? JSON.stringify(initial) : null);
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setState((s) => ({ ...s, loading: true }));
     try {
-      setState({ data: map(await api(path, { auth, url })), error: null, loading: false });
+      const raw = await api(path, { auth, url }), key = JSON.stringify(raw);
+      if (key === last.current) return setState((s) => (s.loading ? { ...s, loading: false } : s));
+      last.current = key;
+      setState({ data: map(raw), error: null, loading: false });
     } catch (e) {
       setState((s) => (s.data && initial ? { ...s, loading: false } : { data: null, error: e.message, loading: false }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, auth, url]);
-  useEffect(() => { load(); }, [load]);
-  return { ...state, reload: load };
+  // With data already on screen the first fetch is a quiet refresh: no loading state, no re-render for it.
+  useEffect(() => { load(!!initial); }, [load]);
+  const reload = useCallback(() => load(false), [load]);
+  return { ...state, reload };
 }

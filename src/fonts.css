@@ -1,0 +1,6 @@
+/* The web fonts. Loaded after the first paint: on a slow phone they would otherwise share the connection with the
+ * page's own stylesheet and HTML. The metric-matched fallback faces in styles.css keep the swap from moving text. */
+@import "@fontsource-variable/montserrat/wght.css";
+@import "@fontsource-variable/inter-tight/wght.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";

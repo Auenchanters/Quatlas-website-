@@ -19,11 +19,16 @@ export function drawHud(ctx, w, h, d) {
   if (d.aim) { ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(d.aim.x, d.aim.y, 13, 0, 7); ctx.stroke(); ctx.fillStyle = WHITE; ctx.fillRect(d.aim.x - 1, d.aim.y - 1, 2, 2); }
 
   // Enemies: a diamond with range and health on screen, an arrow on the edge when off it.
-  for (const e of d.enemies) {
+  // Bunched up (as at the start), only the nearest of overlapping ones gets its range and health tag.
+  const tags = [];
+  for (const e of [...d.enemies].sort((a, b) => a.dist - b.dist)) {
     if (e.on) {
       const s = 9;
       ctx.strokeStyle = e.locked ? AMBER : RED;
       ctx.beginPath(); ctx.moveTo(e.x, e.y - s); ctx.lineTo(e.x + s, e.y); ctx.lineTo(e.x, e.y + s); ctx.lineTo(e.x - s, e.y); ctx.closePath(); ctx.stroke();
+      const tag = { x: e.x + 12, y: e.y - 14, w: 56 * k, h: 24 };
+      if (tags.some((t) => tag.x < t.x + t.w && t.x < tag.x + tag.w && tag.y < t.y + t.h && t.y < tag.y + tag.h)) continue;
+      tags.push(tag);
       text(ctx, km(e.dist), e.x + 14, e.y - 6, { size: 11 * k, color: e.locked ? AMBER : RED });
       ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(e.x + 14, e.y + 4, 34, 3);
       ctx.fillStyle = RED; ctx.fillRect(e.x + 14, e.y + 4, 34 * Math.max(0, e.hp), 3);
@@ -56,14 +61,15 @@ export function drawHud(ctx, w, h, d) {
   text(ctx, `THR ${Math.round(d.throttle * 100)}%`, 30, h / 2 + 28, { size: 11 * k, color: 'rgba(255,255,255,0.7)' });
 
   // Bottom: health, guns, missiles.
-  const bw = 220 * k, bx = w / 2 - bw / 2, by = h - 40;
+  // On a touch screen the stick and fire buttons fill the bottom 150 px: the bar sits above them.
+  const bw = 220 * k, bx = w / 2 - bw / 2, by = d.touch ? h - 175 : h - 40;
   ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(bx, by, bw, 8);
   ctx.fillStyle = d.hp < 0.3 ? RED : d.hp < 0.6 ? AMBER : GREEN; ctx.fillRect(bx, by, bw * Math.max(0, d.hp), 8);
   text(ctx, `GUN ${d.ammo}`, bx, by - 12, { size: 11 * k });
   text(ctx, `MSL ${'▮'.repeat(d.missiles)}${'▯'.repeat(4 - d.missiles)}`, bx + bw, by - 12, { size: 11 * k, align: 'right' });
 
-  // Radar, bottom left: you at the centre, nose up.
-  const R = 62 * k, rx = 24 + R, ry = h - 24 - R;
+  // Radar, bottom left (top left on a touch screen, clear of the stick): you at the centre, nose up.
+  const R = 62 * k, rx = 24 + R, ry = d.touch ? 24 + R : h - 24 - R;
   ctx.fillStyle = 'rgba(8,16,24,0.45)'; ctx.beginPath(); ctx.arc(rx, ry, R, 0, 7); ctx.fill();
   ctx.strokeStyle = 'rgba(141,255,180,0.35)'; ctx.beginPath(); ctx.arc(rx, ry, R, 0, 7); ctx.arc(rx, ry, R / 2, 0, 7); ctx.moveTo(rx - R, ry); ctx.lineTo(rx + R, ry); ctx.moveTo(rx, ry - R); ctx.lineTo(rx, ry + R); ctx.stroke();
   for (const b of d.radar) {

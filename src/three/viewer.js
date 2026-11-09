@@ -1,133 +1,95 @@
-import * as THREE from 'three';
-import { buildPlane, dispose } from './quatlas012.js';
-
-// The home hero's 3D plane: it flies in, whole, the first time the site opens; then a slow turn, a lean toward the pointer, parts that fly apart along their
-// explode vectors when the model is clicked (a second click, or a click off it, brings them back) with labels
-// that follow them.
+// The page side of the home hero's 3D plane (the scene itself is plane-scene.js): the canvas, the part
+// labels, pointer and size and visibility. Where the browser can (OffscreenCanvas), the scene runs in a
+// worker, so three.js never touches the page's main thread; otherwise it runs here, one step later.
 // Draws only while on screen and while the tab is visible. Returns { set, destroy }.
 let flown = false; // the fly-in plays once per visit, not on every return to the home page
 
-export function mountPlane(el, { names, onPick, onToggle, onReady, zoom = 1 }) {
+export function mountPlane(el, { names, onPick, onToggle, onReady, onFail, zoom = 1 }) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = Object.assign(document.createElement('canvas'), { className: 'absolute inset-0 size-full' });
   canvas.setAttribute('aria-hidden', 'true');
   el.append(canvas);
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-
-  const scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight('#ffffff', '#8a8f99', 1.6));
-  const key = new THREE.DirectionalLight('#fff4e6', 2.6); key.position.set(2, 4, 3); scene.add(key);
-  const rim = new THREE.DirectionalLight('#cfe0ff', 1.1); rim.position.set(-3, 1.5, -2); scene.add(rim);
-  const camera = new THREE.PerspectiveCamera(28, 430 / 305, 0.1, 50);
-  camera.position.set(2.45, 1.15, 2.7); camera.lookAt(0, 0.02, 0); camera.zoom = zoom;
-
-  const plane = buildPlane(), pivot = new THREE.Group();
-  pivot.add(plane); scene.add(pivot);
-  const parts = plane.children, prop = parts.find((p) => p.userData.part === 'motor').userData.prop;
-  // Label anchors: the centre of each part id's pieces, before any explode.
-  const anchors = {};
-  plane.updateMatrixWorld(true);
-  for (const p of parts) {
-    const c = p.userData.anchor ?? new THREE.Box3().setFromObject(p).getCenter(new THREE.Vector3());
-    (anchors[p.userData.part] ??= []).push({ p, c });
-  }
-  const labels = Object.fromEntries(Object.keys(anchors).map((id) => {
-    const s = Object.assign(document.createElement('span'), { textContent: names[id], className: 'plane-label' });
+  const labels = Object.fromEntries(Object.entries(names).map(([id, name]) => {
+    const s = Object.assign(document.createElement('span'), { textContent: name, className: 'plane-label' });
     el.append(s);
     return [id, s];
   }));
 
-  const state = { active: null, exploded: false, e: 0, yaw: 0, lean: new THREE.Vector2(), aim: new THREE.Vector2() };
-  let introStart = still || flown ? -Infinity : null; // set on the first frame drawn
-  flown = true;
-  const tint = new THREE.Color('#c41e2c');
-  const highlight = () => parts.forEach((p) => p.traverse((o) => o.material?.emissive?.copy(p.userData.part === state.active ? tint : new THREE.Color(0)).multiplyScalar(0.22)));
-
-  // A panel narrower than the drawing (a phone) widens the view, so the wings stay in frame.
-  const size = () => {
-    const w = el.clientWidth, h = el.clientHeight, a = w / h, wide = 430 / 305;
-    renderer.setSize(w, h, false); camera.aspect = a;
-    camera.fov = a < wide ? (2 * Math.atan(Math.tan((14 * Math.PI) / 180) * (wide / a)) * 180) / Math.PI : 28;
-    camera.updateProjectionMatrix();
-  };
-  const ro = new ResizeObserver(size); ro.observe(el); size();
-
-  // Pointer: lean toward it, and pick the part under it.
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  const pick = (e) => {
-    const r = el.getBoundingClientRect();
-    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    state.aim.copy(ndc);
-    ray.setFromCamera(ndc, camera);
-    let o = ray.intersectObject(plane, true)[0]?.object;
-    while (o && !o.userData.part) o = o.parent;
-    return o?.userData.part;
-  };
-  const move = (e) => { const id = pick(e); if (id && e.pointerType === 'mouse') onPick(id); el.style.cursor = id ? 'pointer' : ''; };
-  // Clicking the model labels its parts (toggles); clicking beside it while apart puts it back together.
-  const click = (e) => { const id = pick(e); if (id) onPick(id); if (id || state.exploded) onToggle?.(id); };
-  const leave = () => state.aim.set(0, 0);
-  el.addEventListener('pointermove', move); el.addEventListener('click', click); el.addEventListener('pointerleave', leave);
-
-  let visible = true, raf = 0, last = performance.now(), ready = false;
-  const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kick(); }, { rootMargin: '100px' });
-  io.observe(el);
-  const onVis = () => { if (!document.hidden) kick(); };
-  document.addEventListener('visibilitychange', onVis);
-
-  const v = new THREE.Vector3();
-  function frame(now) {
-    raf = 0;
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    // Fly-in: from far behind and above, banked, it sweeps in along its own heading and levels out
-    // over 2.4 s, with the prop at full chat. Parts stay together until it has arrived.
-    introStart ??= now;
-    const fly = Math.min(1, (now - introStart) / 2400), rest = (1 - fly) ** 3;
-    plane.position.set(-6 * rest, 1.4 * rest * rest, -1.2 * rest);
-    plane.rotation.set(-1.1 * rest, 0, 0.35 * rest);
-    const goal = fly < 1 ? 0 : state.exploded ? 1 : 0;
-    state.e += (goal - state.e) * (still ? 1 : 1 - Math.exp(-dt * 4));
-    const ease = state.e * state.e * (3 - 2 * state.e);
-    // Pull back so the parts stay in frame when apart (less on a tall panel, which has the height already).
-    camera.zoom = zoom * (1 - (camera.aspect < 430 / 305 ? 0.1 : 0.4) * ease); camera.updateProjectionMatrix();
-    for (const p of parts) p.position.copy(p.userData.explode).multiplyScalar(ease);
-
-    if (!still) { if (fly === 1) state.yaw += dt * 0.25; prop.rotation.x += dt * (fly < 1 || state.active === 'motor' ? 40 : 9); }
-    state.lean.lerp(state.aim, 1 - Math.exp(-dt * 3));
-    pivot.rotation.set(state.lean.y * -0.18, -0.6 + Math.sin(state.yaw) * 0.7 + state.lean.x * 0.35, 0);
-    if (!still) pivot.position.y = Math.sin(now / 1400) * 0.03;
-    renderer.render(scene, camera);
-
-    // Labels sit on their parts once the parts are apart.
-    const w = el.clientWidth, h = el.clientHeight, show = Math.min(1, Math.max(0, (ease - 0.45) / 0.4));
-    for (const [id, list] of Object.entries(anchors)) {
-      v.copy(list[0].c).add(list[0].p.position).applyMatrix4(plane.matrixWorld).project(camera);
+  // Labels: on their parts, slid up or down off any they would cover (a narrow panel bunches the parts
+  // up), and kept inside the panel.
+  const place = ({ show, active, at }) => {
+    const w = el.clientWidth, h = el.clientHeight, placed = [];
+    for (const [id, px, py] of at) {
       const s = labels[id];
+      if (!s) continue;
       s.style.opacity = show;
-      s.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-50%, -50%)`;
-      s.dataset.on = id === state.active ? '1' : '';
+      s.dataset.on = id === active ? '1' : '';
+      if (!show) continue;
+      const lw = s.offsetWidth, lh = s.offsetHeight;
+      let x = Math.min(w - lw / 2 - 4, Math.max(lw / 2 + 4, px)), y = py;
+      for (let i = 0; i < 6; i++) {
+        const p = placed.find((q) => Math.abs(q.x - x) < (q.w + lw) / 2 + 4 && Math.abs(q.y - y) < (q.h + lh) / 2 + 3);
+        if (!p) break;
+        y = p.y + Math.sign(y - p.y || 1) * ((p.h + lh) / 2 + 3);
+      }
+      y = Math.min(h - lh / 2 - 4, Math.max(lh / 2 + 4, y));
+      placed.push({ x, y, w: lw, h: lh });
+      s.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
     }
-    if (!ready) { ready = true; onReady?.(); }
-    if (visible && !document.hidden && (!still || Math.abs(goal - state.e) > 0.001)) raf = requestAnimationFrame(frame);
-    else if (fly < 1) introStart = null; // scrolled away mid-flight: replay it from the start when back
+  };
+  const receive = (m) => {
+    if (m.type === 'ready') onReady?.();
+    else if (m.type === 'labels') place(m);
+    else if (m.type === 'fail') onFail?.();
+    else if (m.type === 'pick') {
+      // Clicking the model labels its parts (toggles); clicking beside it while apart puts it back together.
+      if (m.click) { if (m.id) onPick(m.id); if (m.id || m.exploded) onToggle?.(m.id); }
+      else { if (m.id && m.mouse) onPick(m.id); el.style.cursor = m.id ? 'pointer' : ''; }
+    }
+  };
+
+  const init = { type: 'init', w: el.clientWidth || 1, h: el.clientHeight || 1, dpr: devicePixelRatio || 1, still, zoom, flown };
+  flown = true;
+  let send, worker = null, here = null, dead = false;
+  const queue = [];
+  if ('transferControlToOffscreen' in HTMLCanvasElement.prototype && typeof Worker === 'function') {
+    worker = new Worker(new URL('./plane.worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = ({ data }) => receive(data);
+    worker.onerror = () => onFail?.();
+    const off = canvas.transferControlToOffscreen();
+    worker.postMessage({ ...init, canvas: off }, [off]);
+    send = (m) => worker.postMessage(m);
+  } else {
+    send = (m) => (here ? here.handle(m) : queue.push(m));
+    import('./plane-scene.js').then(({ createScene }) => {
+      if (dead) return;
+      try { here = createScene(canvas, init, receive); } catch { onFail?.(); return; }
+      queue.splice(0).forEach((m) => here.handle(m));
+    }, () => onFail?.());
   }
-  function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
-  kick();
+
+  const ro = new ResizeObserver(() => el.clientWidth && send({ type: 'resize', w: el.clientWidth, h: el.clientHeight }));
+  ro.observe(el);
+  const ndc = (e) => { const r = el.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }; };
+  const move = (e) => send({ type: 'pointer', kind: 'move', mouse: e.pointerType === 'mouse', ...ndc(e) });
+  const click = (e) => send({ type: 'pointer', kind: 'click', mouse: e.pointerType === 'mouse', ...ndc(e) });
+  const leave = () => send({ type: 'pointer', kind: 'leave' });
+  el.addEventListener('pointermove', move); el.addEventListener('click', click); el.addEventListener('pointerleave', leave);
+  let onScreen = true;
+  const vis = () => send({ type: 'visible', on: onScreen && !document.hidden });
+  const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; vis(); }, { rootMargin: '100px' });
+  io.observe(el);
+  document.addEventListener('visibilitychange', vis);
 
   return {
-    set({ active, exploded }) {
-      // The legend starts on a part; the model only tints a part once someone points at one.
-      if (active !== undefined && active !== state.active) { const first = state.active === null; state.active = active; if (!first) highlight(); }
-      if (exploded !== undefined) state.exploded = exploded;
-      kick();
-    },
+    set(v) { send({ type: 'set', ...v }); },
     destroy() {
-      cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
-      document.removeEventListener('visibilitychange', onVis);
+      dead = true;
+      send({ type: 'destroy' });
+      if (worker) setTimeout(() => worker.terminate(), 100);
+      ro.disconnect(); io.disconnect();
+      document.removeEventListener('visibilitychange', vis);
       el.removeEventListener('pointermove', move); el.removeEventListener('click', click); el.removeEventListener('pointerleave', leave);
-      dispose(scene); renderer.dispose(); renderer.forceContextLoss();
       canvas.remove(); Object.values(labels).forEach((s) => s.remove());
     },
   };

@@ -19,6 +19,7 @@ Pages only lay content out. To update the site, edit these files. You don't need
 | `overview.js`, `about.json`, `terms.json` | About, Home overview, Terms | |
 | `gallery-tags.js` | Which gallery photos show under **Aircraft**, and the gallery photos kept in the repo (`REPO_PHOTOS`) | Every photo not listed shows under **People**. Repo photos live in `assets-src`. |
 | `snapshot.json` | Build-time copy of dashboard data (members, gallery, sponsor logos) | Refreshed from the API. Don't hand-edit. |
+| `meta.js` | Each page's browser-tab title and the description search engines and link previews show | `noindex: true` keeps a page out of search and the sitemap. The share image is `public/og.jpg` (1200 × 630). |
 
 Short one-line intros under page titles still live in the page files in `src/pages/`.
 

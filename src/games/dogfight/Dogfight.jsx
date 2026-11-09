@@ -216,6 +216,7 @@ export default function Dogfight() {
         if (P.alive && P.pos.y - groundAt(P.pos.x, P.pos.z) < 150 && f.y < 0) warnings.push('PULL UP');
         if (g.outT > 0) warnings.push(`RETURN TO THE COMBAT AREA  ${Math.ceil(12 - g.outT)}`);
         if (P.hp < 30) warnings.push('HEAVY DAMAGE');
+        const coarse = matchMedia('(pointer: coarse)').matches; // the touch controls own the bottom corners
         drawHud(hud, w, h, {
           aim: project(tmp2.copy(P.pos).addScaledVector(aimDir(aim), 500)),
           boresight: project(tmp.copy(P.pos).addScaledVector(f, 500)),
@@ -225,7 +226,7 @@ export default function Dogfight() {
           kills: g.kills, time: mmss(g.t), speed: P.speed, alt: P.pos.y, throttle: g.throttle,
           hp: P.hp / P.maxHp, ammo: g.ammo, missiles: g.mslLeft,
           radar: g.enemies.filter((e) => e.alive).map((e) => { const l = e.pos.clone().sub(P.pos).applyQuaternion(inv); return { x: -l.x, y: l.z }; }),
-          warnings, blink: now / 1000, hurt: g.hurt,
+          warnings, blink: now / 1000, hurt: g.hurt, touch: coarse,
         });
       } else hud.clearRect(0, 0, w, h);
       raf = requestAnimationFrame(frame);

@@ -91,7 +91,7 @@ export function buildJet({ body = '#eceff2', accent = '#c41e2c' } = {}) {
     const wing = new THREE.Mesh(flat([[0.8, 2.5], [7.5, -2.8], [7.5, -4.2], [0.8, -4.6]]).rotateX(Math.PI / 2), mBody);
     const tip = new THREE.Mesh(flat([[6.4, -2], [7.5, -2.8], [7.5, -4.2], [6.4, -4.3]], 0.27).rotateX(Math.PI / 2), mAccent);
     const tail = new THREE.Mesh(flat([[0.6, -5], [3.6, -7.4], [3.6, -8.2], [0.6, -8.1]]).rotateX(Math.PI / 2), mBody);
-    const fin = new THREE.Mesh(flat([[-7.8, 0], [-5.2, 0], [-6.6, 3.6], [-7.9, 3.6]], 0.2).rotateY(-Math.PI / 2), mAccent);
+    const fin = new THREE.Mesh(flat([[-7.8, 0], [-5.2, 0], [-6.6, 3.6], [-7.9, 3.6]], 0.2).rotateY(-Math.PI / 2).translate(0.1, 0, 0), mAccent); // centred on its root
     for (const m of [wing, tip, tail]) { m.scale.x = side; m.position.y = -0.1; g.add(m); }
     fin.position.set(side * 0.75, 0.5, 0); fin.rotation.z = -side * 0.28; g.add(fin);
   }

@@ -93,7 +93,8 @@ export default function Aircraft({ hero = false, children }) {
   // away, so the sheet is empty when the model flies in; the SVG stays for no-JS, no-WebGL and readers.
   const [live, setLive] = useState(false);
 
-  // The 3D model of the 012: its code starts downloading at once, and it mounts once the page has loaded.
+  // The 3D model of the 012: its code is fetched and mounted once the page has loaded (fetched earlier, it
+  // would compete with the page's own first paint on a slow connection; the model runs in a worker).
   useEffect(() => {
     // index.html marks <html data-webgl> before first paint, so the shapes are cleared (styles.css) even
     // in the prerendered HTML; if the model can't start after all, the mark goes and the drawing returns.
@@ -102,14 +103,14 @@ export default function Aircraft({ hero = false, children }) {
     setLive(true);
     const fail = () => { delete root.dataset.webgl; setLive(false); };
     let dead = false;
-    const code = import('../three/viewer');
-    const go = () => code.then(({ mountPlane }) => {
+    const go = () => import('../three/viewer').then(({ mountPlane }) => {
       if (dead || !stage.current) return;
       try {
         view.current = mountPlane(stage.current, {
           names: Object.fromEntries(Object.entries(PARTS).map(([id, p]) => [id, p.name])),
           onPick: setActive,
           onToggle: (id) => setExploded((e) => (id ? !e : false)),
+          onFail: () => { if (!dead) { view.current?.destroy(); view.current = null; fail(); } },
           zoom: hero ? 1.3 : 1,
         });
         view.current.set({ active: 'wing', exploded: false });
@@ -158,11 +159,11 @@ export default function Aircraft({ hero = false, children }) {
         </svg>
         <div ref={stage} className="absolute inset-0 overflow-hidden" />
         {/* Clicking the aircraft does the same; this is the way in for keyboards. */}
-        <button type="button" aria-pressed={exploded} onClick={() => setExploded((e) => !e)} className="data absolute left-3 top-3 text-ink-2 hover:text-signal">
+        <button type="button" aria-pressed={exploded} onClick={() => setExploded((e) => !e)} className="data absolute left-3 top-3 max-w-[calc(100%-5rem)] text-left text-ink-2 hover:text-signal">
           {exploded ? 'Click to put it back together' : 'Click the aircraft to label its parts'}
         </button>
         {/* Straight to the hidden hangar's games, without scrolling to the footer's link. */}
-        <Link to="/hangar" className={`btn btn-signal absolute bottom-3 justify-center text-base ${hero ? 'left-1/2 -translate-x-1/2 px-10' : 'inset-x-3'}`}>Take flight</Link>
+        <Link to="/hangar" className={`btn btn-signal absolute bottom-3 justify-center text-base whitespace-nowrap ${hero ? 'left-1/2 -translate-x-1/2 px-10' : 'inset-x-3'}`}>Take flight</Link>
       </div>
       {children}
       </div>

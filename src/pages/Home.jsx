@@ -133,7 +133,7 @@ export default function Home() {
 
       <section aria-label="Supporters" className="pb-[clamp(5rem,10vw,9rem)] grid gap-8">
         <p className="wrap data text-ink-2">Supported by</p>
-        <Marquee label="Supporters">
+        <Marquee label="Supporter logos">
           {LOGOS.map(([name, alt]) => (
             <span key={name} className="logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">
               <Img name={name} alt={alt} sizes="200px" className="logo max-h-20 w-auto max-w-full object-contain" />

@@ -42,12 +42,17 @@ function play(name, spread = 0) {
 export async function playSound(name) { await unlock(); play(name); }
 
 export function initSounds() {
-  addEventListener('pointerdown', unlock, { capture: true, passive: true });
-  addEventListener('keydown', unlock, { capture: true, passive: true });
+  // Opening the audio device can take ~200 ms: do it just after the first press, not inside it, so the
+  // press itself paints at once. The page keeps its user activation, so the context is still allowed to play
+  // (and the click that follows resumes it, which Safari wants inside a gesture).
+  const soon = () => setTimeout(unlock, 0);
+  addEventListener('pointerdown', soon, { capture: true, passive: true });
+  addEventListener('keydown', soon, { capture: true, passive: true });
 
   document.addEventListener('click', async (e) => {
     const el = e.target.closest?.(CLICKABLE);
     if (!el || el.disabled || el.type === 'submit' || el.closest('.pullcord')) return; // the cord plays its own // a submit button gets the submit note instead
+    if (!ctx) return; // a click with no press before it (a script's): no sound, and no device to open
     await unlock(); // the very first click waits the few ms it takes to decode
     play('click', 0.03);
   }, true);

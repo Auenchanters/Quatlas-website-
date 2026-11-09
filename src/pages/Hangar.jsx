@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
+import Meta from '../components/Meta';
 import { HANGAR } from '../content/hangar';
 import NotFound from './NotFound';
 
@@ -96,6 +97,7 @@ export default function Hangar() {
   if (!Game) return <NotFound />;
   return (
     <>
+      <Meta title={info.name} description={info.about} noindex />
       <SheetHead title={info.name}><p>{info.how}</p></SheetHead>
       <section className="wrap pt-10 pb-16 grid gap-4">
         <Suspense fallback={<div className="aspect-[16/9] border border-ink grid place-items-center data text-ink-2">Fuelling up…</div>}>

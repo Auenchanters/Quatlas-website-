@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, ViewTransition } from 're
 import { revealPage, scrollToTop } from '../lib/motion';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Img } from './Img';
+import Meta from './Meta';
+import { META } from '../content/meta';
 import Particles from './Particles';
 import SoundToggle from './SoundToggle';
 import ThemeCord from './ThemeCord';
@@ -34,6 +36,13 @@ function Header() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   useEffect(() => setOpen(false), [pathname]);
+  // Esc closes the open menu and puts focus back on its button.
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e) => { if (e.key === 'Escape') { setOpen(false); document.querySelector('[aria-controls="nav"]')?.focus(); } };
+    addEventListener('keydown', esc);
+    return () => removeEventListener('keydown', esc);
+  }, [open]);
   const link = ({ isActive }) =>
     `block py-2 xl:py-0 no-underline wide text-[0.9375rem] ${isActive ? 'text-signal' : 'hover:text-signal'}`;
   return (
@@ -73,7 +82,10 @@ const FOOT = [
 
 function Footer() {
   const { pathname } = useLocation();
-  const n = SHEET_KEYS.indexOf(pathname);
+  // A subteam's page is a detail of the Team sheet: same number, named for the subteam.
+  const sub = pathname.match(/^\/team\/([a-z-]+)$/)?.[1];
+  const n = SHEET_KEYS.indexOf(sub ? '/team' : pathname);
+  const sheet = sub ? `Team · ${sub.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}` : SHEETS[pathname] ?? 'Quatlas';
   const pad = (v) => String(v).padStart(2, '0');
   return (
     <footer className="mt-24 border-t border-ink bg-sheet">
@@ -119,7 +131,7 @@ function Footer() {
           </div>
           <div className="py-4 md:px-4 border-t md:border-t-0 md:border-r border-rule">
             <dt className="data text-ink-2">Sheet</dt>
-            <dd className="mt-1 wide">{SHEETS[pathname] ?? 'Quatlas'}</dd>
+            <dd className="mt-1 wide">{sheet}</dd>
           </div>
           <div className="py-4 pl-4 md:px-4 border-t md:border-t-0 border-l md:border-l-0 md:border-r border-rule">
             <dt className="data text-ink-2">No.</dt>
@@ -149,12 +161,21 @@ function PageMotion({ children }) {
 
 export default function Layout() {
   const { pathname, hash } = useLocation();
-  useEffect(() => {
+  // Before paint, so a new page never shows a frame at the old page's scroll position.
+  const first = useRef(true);
+  useLayoutEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
     else scrollToTop();
+    // After a move within the site, focus goes to the new page's heading, so a screen reader announces it
+    // and Tab continues from the top of the page (not on the first load: the page starts there anyway).
+    if (first.current) { first.current = false; return; }
+    const h1 = !hash && document.querySelector('main h1');
+    if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
   }, [pathname, hash]);
+  const meta = META[pathname];
   return (
     <>
+      {meta && <Meta {...meta} />}
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 btn bg-paper">Skip to content</a>
       <Particles />
       <Header />

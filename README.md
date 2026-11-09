@@ -8,6 +8,7 @@ npm run dev          # http://localhost:5173, against the live API
 npm run build        # dist/: static files, public pages prerendered
 npm run preview      # serve dist/ at http://localhost:4173
 npm test             # unit tests (node --test): stats, gallery split, motion gate, games, image relay
+npm run eval         # the full benchmark (needs `cd eval && npm install` once): see eval/README.md
 ```
 
 ## Testing the dashboard without touching real data
@@ -25,7 +26,8 @@ Mock login and OTP are in `scripts/mock-api.mjs`. No email is sent; `http://loca
 |---|---|
 | `src/pages/` | public pages and the auth flows |
 | `src/admin/` | dashboard; `AdminLayout` redirects to `/login` without a token |
-| `src/components/Aircraft.jsx` | the isometric figure on the home page |
+| `src/components/Aircraft.jsx` | the home page's hero: the 3D model of the 012 (`src/three/`: `quatlas012.js` builds it, `plane-scene.js` draws it in a worker, `viewer.js` is the page side), with the flat drawing as the no-WebGL fallback |
+| `src/components/backdrop-scenes.js` | the subteam pages' animated backgrounds, drawn in a worker (`backdrop.worker.js`); `TeamBackdrop.jsx` is the page side |
 | `CONTENT.md` | where every piece of copy, every number and every image lives |
 | `src/content/` | page copy and the achievements record (edit text here) |
 | `src/content/events.js` | upcoming events: add a line, set `date: 'YYYY-MM-DD'` once announced |

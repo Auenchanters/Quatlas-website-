@@ -6,3 +6,5 @@ dist-ssr
 .vercel
 .env*
 .hallmark
+eval/reports
+dist-prof

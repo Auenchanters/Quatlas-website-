@@ -99,6 +99,8 @@ export default function PayloadRun() {
       {state === 'flying' && (
         <button type="button" className={`${MENU_BTN} absolute right-3 top-3`} onClick={pause}>Pause</button>
       )}
+      {/* A wide game on a phone held upright plays in a strip: say how to get it bigger, in the empty band below. */}
+      {full && <p className="hidden pointer-coarse:portrait:block pointer-events-none absolute inset-x-0 bottom-[12vh] text-center data text-white/60">Turn your phone sideways for a bigger view</p>}
       {state !== 'flying' && (
         <div className="absolute inset-0 grid place-content-center justify-items-center gap-3 text-center bg-[#0b0d12]/55 text-[#f2f3ef] p-6 pointer-events-none backdrop-blur-[2px]">
           {state === 'paused' ? (

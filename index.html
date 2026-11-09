@@ -12,10 +12,13 @@
     <link rel="preconnect" href="https://quatlasserver.vercel.app" crossorigin />
     <link rel="preconnect" href="https://1drv.ms" />
     <title>Quatlas Aeromodelling | Ramaiah Institute of Technology</title>
-    <!-- Analytics queues from the start; its 1 s of script loads on first interaction, or 6 s after load. -->
+    <!-- Analytics queues from the start. Its script takes a phone's main thread for about a second, so it
+         loads when the reader pauses (1.5 s with no scroll, tap or key), never mid-scroll: by 6 s after load
+         for someone who just reads, or at the first pause after they start moving. -->
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-MJXQ6FWLK9");
-(function(){var done=false,ev=["pointerdown","keydown","scroll","touchstart"];function go(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,go)});var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id=G-MJXQ6FWLK9";document.head.appendChild(s)}
-ev.forEach(function(e){addEventListener(e,go,{once:true,passive:true})});addEventListener("load",function(){setTimeout(go,6000)})})();</script>
+(function(){var done=false,t=0,ev=["pointerdown","keydown","scroll","wheel","touchstart"];function go(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,poke)});var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id=G-MJXQ6FWLK9";document.head.appendChild(s)}
+function poke(){clearTimeout(t);t=setTimeout(go,1500)}
+ev.forEach(function(e){addEventListener(e,poke,{passive:true})});addEventListener("load",function(){setTimeout(poke,4500)})})();</script>
   </head>
   <body>
     <div id="root"><!--app-html--></div>

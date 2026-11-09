@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import { Toaster } from './lib/toast';
+import { afterLoad } from './lib/idle';
 
 // Home ships in the entry chunk; everything else loads with its route, so visitors never download admin code.
 // Once the first page is idle, the public pages' chunks are fetched ahead, so moving between pages
@@ -22,10 +23,18 @@ const Auth = lazy(() => import('./pages/Auth'));
 function usePrefetch() {
   useEffect(() => {
     if (navigator.connection?.saveData) return;
-    let id;
-    const go = () => { id = (window.requestIdleCallback ?? setTimeout)(() => Object.values(PAGES).forEach((load) => load().catch(() => {})), { timeout: 4000 }); };
-    document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
-    return () => { removeEventListener('load', go); (window.cancelIdleCallback ?? clearTimeout)(id); };
+    let done = false;
+    const fetchAll = () => { if (done) return; done = true; Object.values(PAGES).forEach((load) => load().catch(() => {})); };
+    // An animated page (the home page's plane) leaves little idle time, so a hand on a link fetches them at once.
+    const intent = (e) => { if (e.target.closest?.('a[href^="/"]')) fetchAll(); };
+    const ev = ['pointerover', 'touchstart', 'focusin'];
+    ev.forEach((t) => addEventListener(t, intent, { passive: true }));
+    // Otherwise a few seconds after the page has loaded, so they never compete with its first paint.
+    const cancel = afterLoad(fetchAll, 3000);
+    return () => {
+      cancel();
+      ev.forEach((t) => removeEventListener(t, intent));
+    };
   }, []);
 }
 

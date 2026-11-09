@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { splitStat } from '../lib/roll';
 import { motionAllowed } from '../lib/motion';
 
-const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+// One text node per column (0 to 9, a line each) rather than ten elements: the odometers are all over the site.
+const DIGITS = '0\n1\n2\n3\n4\n5\n6\n7\n8\n9';
 
 // An odometer number: each digit rolls up into place the first time it's seen.
 // Server HTML (and reduced motion) shows the final value; screen readers get the plain text.
@@ -29,7 +30,7 @@ export default function Roll({ value, suffix = '', className = '' }) {
       <span className="sr-only">{`${value}${suffix}`}</span>
       <span ref={ref} aria-hidden="true" className="roll">
         {splitStat(value).map((p, i) => 'digit' in p
-          ? <span key={i} className="roll-col"><span data-d={p.digit} style={{ transform: `translateY(-${p.digit}em)` }}>{DIGITS.map((d) => <span key={d}>{d}</span>)}</span></span>
+          ? <span key={i} className="roll-col"><span data-d={p.digit} style={{ transform: `translateY(-${p.digit}em)` }}>{DIGITS}</span></span>
           : <span key={i}>{p.text}</span>)}
         {suffix && <span className="whitespace-pre">{suffix}</span>}
       </span>

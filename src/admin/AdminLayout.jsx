@@ -22,6 +22,8 @@ export default function AdminLayout() {
   const link = ({ isActive }) => `block px-3 py-2 no-underline text-[0.9375rem] ${isActive ? 'bg-ink text-paper' : 'hover:bg-rule/40'}`;
   return (
     <div className="min-h-dvh flex flex-col">
+      <title>Dashboard | Quatlas Aeromodelling</title>
+      <meta name="robots" content="noindex" />
       <header className="border-b border-ink bg-sheet">
         <div className="wrap flex items-center justify-between gap-4 h-14">
           <p className="wide">Quatlas Dashboard</p>

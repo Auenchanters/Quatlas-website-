@@ -7,6 +7,6 @@ test('reduced motion: no motion', () => assert.equal(motionAllowed(() => ({ matc
 test('default: motion', () => assert.equal(motionAllowed(() => ({ matches: false })), true));
 
 import { playsEntrance } from './motion.js';
-test('entrance plays when motion arrives quickly', () => assert.equal(playsEntrance(120, false), true));
-test('no entrance when motion arrives late (content already read)', () => assert.equal(playsEntrance(900, false), false));
-test('no entrance once the reader has scrolled', () => assert.equal(playsEntrance(50, true), false));
+test('first load: no entrance (the prerendered page is already on screen)', () => assert.equal(playsEntrance(true, false), false));
+test('a move within the site: the new page animates in', () => assert.equal(playsEntrance(false, false), true));
+test('no entrance once the reader has scrolled', () => assert.equal(playsEntrance(false, true), false));

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Img } from './Img';
+import { speedColour } from './speed-colour';
 
 // The picture on each team tile, gently animated, all original and drawn in code (except the Social
 // Media globe video and the Pilots photo of the aircraft in flight). Animations run only while a tile is on
@@ -7,47 +8,42 @@ import { Img } from './Img';
 
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// A canvas filling its tile, redrawn by draw(ctx, w, h, seconds) while visible (one frame if motion is reduced).
-function useCanvas(draw, fps = 60) {
+// A canvas filling its tile, redrawn by draw(ctx, w, h, seconds, redraw) while visible; with reduced motion, one
+// frame at stillAt seconds. A drawing still waiting on an image calls redraw once it has it.
+function useCanvas(draw, fps = 60, stillAt = 3) {
   const ref = useRef(null);
   useEffect(() => {
     const c = ref.current, ctx = c.getContext('2d');
     let raf = 0, on = false, last = 0, w = 0, h = 0;
     const t0 = performance.now(), gap = 1000 / fps;
+    const redraw = () => { if (w && h && (!on || still())) draw(ctx, w, h, still() ? stillAt : (performance.now() - t0) / 1000, redraw); };
     const size = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
       w = c.clientWidth; h = c.clientHeight;
       if (!w || !h) return; // not laid out yet (hidden): drawing at zero size throws
       c.width = w * dpr; c.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (!on || still()) draw(ctx, w, h, still() ? 3 : (performance.now() - t0) / 1000);
+      redraw();
     };
     const frame = (now) => {
       raf = on ? requestAnimationFrame(frame) : 0;
       if (now - last < gap - 1 || !w || !h) return;
-      last = now; draw(ctx, w, h, (now - t0) / 1000);
+      last = now; draw(ctx, w, h, (now - t0) / 1000, redraw);
     };
     const io = new IntersectionObserver(([e]) => {
       on = e.isIntersecting && !still();
       if (on && !raf) raf = requestAnimationFrame(frame);
     });
-    const ro = new ResizeObserver(size);
-    ro.observe(c); io.observe(c); size();
-    return () => { on = false; cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
-  }, [draw, fps]);
+    // Each tile sets up and draws in its own task (the observer reports all six tiles in one callback).
+    let pending = 0;
+    const ro = new ResizeObserver(() => { clearTimeout(pending); pending = setTimeout(size); });
+    ro.observe(c); io.observe(c);
+    return () => { on = false; clearTimeout(pending); cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
+  }, [draw, fps, stillAt]);
   return <canvas ref={ref} aria-hidden="true" className="absolute inset-0 size-full" />;
 }
 
 // --- Aerodynamics: CFD-style streamlines flowing past the 012, coloured by speed, over a deep blue field.
-const SPEED = [[0, '#1d4fd8'], [0.25, '#18b8e6'], [0.5, '#29d17a'], [0.72, '#f3e64a'], [1, '#ff3b2f']];
-export const speedColour = (v) => {
-  const i = SPEED.findIndex(([s]) => s >= v);
-  if (i <= 0) return SPEED[0][1];
-  const [a, ca] = SPEED[i - 1], [b, cb] = SPEED[i], t = (v - a) / (b - a);
-  const p = (c) => [1, 3, 5].map((k) => parseInt(c.slice(k, k + 2), 16));
-  const [x, y] = [p(ca), p(cb)];
-  return `rgb(${x.map((n, k) => Math.round(n + (y[k] - n) * t)).join(',')})`;
-};
 let planeSprite = null; // the meshed planform, drawn once
 function planform(w, h) {
   const c = document.createElement('canvas'), dpr = Math.min(devicePixelRatio || 1, 2);
@@ -216,10 +212,10 @@ function loadSource() {
   asciiSource = { img, cells: null, key: '' };
   return asciiSource;
 }
-function drawAscii(ctx, w, h, t) {
+function drawAscii(ctx, w, h, t, redraw) {
   const src = loadSource(), { img } = src;
   ctx.fillStyle = '#07090c'; ctx.fillRect(0, 0, w, h);
-  if (!img.complete || !img.naturalWidth) return;
+  if (!img.complete || !img.naturalWidth) { if (!src.waiting) { src.waiting = true; img.addEventListener('load', redraw, { once: true }); } return; }
   const cw = 7, ch = 10, cols = Math.ceil(w / cw), rows = Math.ceil(h / ch);
   // Sample the photo (cover-fit) once per size: one colour and brightness per cell.
   const key = `${cols}x${rows}`;
@@ -255,7 +251,8 @@ function drawAscii(ctx, w, h, t) {
     ctx.fillText(g, x, y);
   }
 }
-function Web() { return useCanvas(drawAscii, 30); }
+// Still (reduced motion): the code phase, not the decoded photo (which would repeat the Pilots tile).
+function Web() { return useCanvas(drawAscii, 30, 8.5); }
 
 // --- Social Media: the spinning globe, as a silent loop, playing only while on screen; reduced motion
 // keeps its still (the poster).

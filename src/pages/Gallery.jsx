@@ -90,6 +90,16 @@ export default function Gallery() {
   const view = params.get('view') === 'people' ? 'people' : 'aircraft';
   const sets = useMemo(() => (data ? splitGallery([...REPO_PHOTOS, ...data]) : null), [data]);
   const items = sets?.[view] ?? [];
+  // Photos flow down each column in turn and the columns are balanced by height, so the first screen shows the
+  // photos that start each column: found from the photos' shapes, they load at once.
+  const first = useMemo(() => {
+    const tall = items.map((g) => { const [w, h] = dims(g.img) ?? [3, 2]; return h / w; });
+    // Phone layout (two columns) only: more eager photos would share a slow connection with the one that matters.
+    const total = tall.reduce((a, b) => a + b, 0), out = new Set([0, 1]);
+    let sum = 0, found = false;
+    tall.forEach((t, i) => { if (!found && sum >= total / 2) { out.add(i - 1); out.add(i); out.add(i + 1); found = true; } sum += t; });
+    return out;
+  }, [items]);
   const [open, setOpen] = useState(null);
   const move = (d) => setOpen((i) => (i + d + items.length) % items.length);
 
@@ -109,7 +119,7 @@ export default function Gallery() {
       <SheetHead title="Gallery"><p>The aircraft we’ve built and flown, and the people who built them.</p></SheetHead>
       <section className="wrap section pt-12 grid gap-10">
         <Tabs view={view} counts={{ aircraft: sets?.aircraft.length ?? 0, people: sets?.people.length ?? 0 }} onChange={show} />
-        {loading && (
+        {loading && !sets && ( // only before the first photos: a refresh keeps the ones on screen
           <ul role="status" aria-label="Loading photos" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
             {Array.from({ length: 12 }, (_, i) => <li key={i} className="aspect-[4/3] border border-rule bg-rule/30 animate-pulse" />)}
           </ul>
@@ -128,7 +138,7 @@ export default function Gallery() {
                     <button type="button" data-photo={g._id} onClick={(e) => openAt(i, e.currentTarget)} style={{ aspectRatio: `${w} / ${h}` }}
                       className="press block w-full overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet hover:border-signal focus-visible:border-signal"
                       aria-label={`Open photo ${i + 1} of ${items.length}`}>
-                      <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={i < 4} className="size-full object-cover" />
+                      <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={first.has(i)} className="size-full object-cover" />
                     </button>
                   </li>
                 );

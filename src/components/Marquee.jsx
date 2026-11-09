@@ -19,7 +19,8 @@ export default function Marquee({ children, label, reverse = false, speed = 40, 
       setSet(w);
       setCopies(Math.max(2, Math.ceil((2 * innerWidth) / w)));
     };
-    fit();
+    // The observer reports the first size by itself, after the browser's own layout (measuring here, while
+    // the page hydrates, would force an extra layout of the whole page).
     const ro = new ResizeObserver(fit);
     ro.observe(first);
     return () => ro.disconnect();
@@ -30,7 +31,7 @@ export default function Marquee({ children, label, reverse = false, speed = 40, 
     }
   });
   return (
-    <div className="marquee" role={decorative ? undefined : 'region'} aria-label={decorative ? undefined : label}>
+    <div className="marquee" role={decorative ? undefined : 'region'} aria-label={decorative ? undefined : label} data-decorative={decorative || undefined}>
       <div ref={ref} className="marquee-track" data-reverse={reverse || undefined}
         style={set ? { '--set-w': `${set}px`, '--marquee-dur': `${set / speed}s` } : undefined}>
         {Array.from({ length: copies }, (_, i) => (
