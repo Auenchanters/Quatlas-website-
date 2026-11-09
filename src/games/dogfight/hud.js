@@ -11,7 +11,7 @@ export function drawHud(ctx, w, h, d) {
   ctx.lineWidth = 1.5; ctx.textBaseline = 'middle';
   const k = Math.max(0.75, Math.min(1.2, w / 1100));
   // Extreme: inside a cloud the view whites out (the HUD stays readable on top).
-  if (d.whiteout) { ctx.fillStyle = `rgba(232,237,242,${d.whiteout})`; ctx.fillRect(0, 0, w, h); }
+  if (d.whiteout) { ctx.fillStyle = `rgba(${d.whiteoutRGB ?? '232,237,242'},${d.whiteout})`; ctx.fillRect(0, 0, w, h); }
   // Extreme's sky is bright: a soft dark edge keeps the HUD readable over it.
   ctx.shadowColor = d.wave ? 'rgba(0,0,0,0.6)' : 'transparent'; ctx.shadowBlur = d.wave ? 4 : 0;
 
@@ -82,6 +82,8 @@ export function drawHud(ctx, w, h, d) {
   ctx.fillStyle = d.hp < 0.3 ? RED : d.hp < 0.6 ? AMBER : GREEN; ctx.fillRect(bx, by, bw * Math.max(0, d.hp), 8);
   text(ctx, `GUN ${d.ammo}`, bx, by - 12, { size: 11 * k });
   text(ctx, `MSL ${'▮'.repeat(d.missiles)}${'▯'.repeat(4 - d.missiles)}`, bx + bw, by - 12, { size: 11 * k, align: 'right' });
+  if (d.flares != null) text(ctx, `FLR ${d.flares}`, bx + bw / 2, by - 12, { size: 11 * k, align: 'center', color: d.flares ? WHITE : RED });
+  if (d.notice?.a > 0) { ctx.globalAlpha = d.notice.a; text(ctx, d.notice.text, w / 2, by - 40, { size: 14 * k, align: 'center', color: AMBER, weight: 700 }); ctx.globalAlpha = 1; }
 
   // Radar, bottom left (top left on a touch screen, clear of the stick): you at the centre, nose up.
   const R = 62 * k, rx = 24 + R, ry = d.touch ? 24 + R : h - 24 - R;

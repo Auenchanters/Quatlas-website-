@@ -1,13 +1,13 @@
 import * as THREE from 'three/webgpu';
-import { texture, uv, time, vec2, vec3, normalMap, instancedDynamicBufferAttribute, instancedBufferAttribute, uniform } from 'three/tsl';
+import { texture, uv, time, vec2, vec3, normalMap, instancedDynamicBufferAttribute, instancedBufferAttribute, uniform, attribute, cameraPosition, mod, min, vec4 } from 'three/tsl';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
-import { heightAt, ARENA } from '../logic.js';
+import { heightAt, groundAt, ARENA } from '../logic.js';
 
 // Dogfight Extreme's look, rendered with WebGPU and made entirely in code: every texture is painted
 // here on a canvas. A physical sky, textured islands, a moving sea, clouds you can fly into, and
 // detailed original jets with painted panels, lit by the sun and reflecting the sky.
 
-export const SUN = new THREE.Vector3(0.55, 0.3, 0.78).normalize();
+export const SUN = new THREE.Vector3(0.45, 0.55, 0.7).normalize(); // high enough to stay out of the usual view
 const FOG = '#b4c3d1';
 
 // --- Procedural textures ----------------------------------------------------------------------------
@@ -132,7 +132,11 @@ export function createWorld(clouds, { reduced }) {
   // The sky box rides with the camera and draws first (it writes no depth), so distant land shows over it.
   const sky = new SkyMesh();
   sky.scale.setScalar(10000); sky.renderOrder = -1; sky.frustumCulled = false;
-  sky.turbidity.value = 3.5; sky.rayleigh.value = 1.4; sky.mieCoefficient.value = 0.004; sky.mieDirectionalG.value = 0.82;
+  // A softer sun: a dimmed disc and a tighter, weaker halo, so looking toward it doesn't blind you.
+  sky.turbidity.value = 2; sky.rayleigh.value = 1.1; sky.mieCoefficient.value = 0.0015; sky.mieDirectionalG.value = 0.76;
+  sky.showSunDisc.value = 0.2;
+  // A deeper sky, kept under the bloom threshold: the sun stays bright but never blooms into a white-out.
+  sky.material.colorNode = min(sky.material.colorNode.mul(0.6), vec4(0.92, 0.92, 0.92, 1));
   sky.cloudCoverage.value = 0.22; sky.cloudDensity.value = 0.3;
   sky.sunPosition.value.copy(SUN).multiplyScalar(400000);
   sky.material.fog = false;
@@ -153,7 +157,8 @@ export function createWorld(clouds, { reduced }) {
   const ripples = keep(waterNormals()), drift = reduced ? vec2(0, 0) : vec2(time.mul(0.004), time.mul(0.0025));
   // Two scales of ripple, crossing, so no tile repeats visibly from altitude.
   const ripple = texture(ripples, uv().mul(210).add(drift)).add(texture(ripples, uv().mul(67).sub(drift.mul(0.7)).yx)).mul(0.5);
-  smat.normalNode = normalMap(ripple, vec2(0.18, 0.18));
+  const seaWaves = uniform(0.18); // rougher in rain and storms
+  smat.normalNode = normalMap(ripple, vec2(seaWaves, seaWaves));
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000).rotateX(-Math.PI / 2), smat);
   scene.add(sea);
 
@@ -163,19 +168,127 @@ export function createWorld(clouds, { reduced }) {
   sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 500 });
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
-  scene.add(sun, sun.target, new THREE.HemisphereLight('#cfe0f5', '#46523f', 0.55));
+  const hemi = new THREE.HemisphereLight('#cfe0f5', '#46523f', 0.55);
+  // Lightning's light, from high above; always in the scene (at 0) so a strike never recompiles shaders.
+  const flashLight = new THREE.DirectionalLight('#dfe6ff', 0);
+  flashLight.position.set(0.2, 1, 0.1);
+  scene.add(sun, sun.target, hemi, flashLight);
 
-  scene.add(createClouds(clouds, keep));
+  const cloudTint = uniform(1);
+  scene.add(createClouds(clouds, keep, cloudTint));
+  const stars = createStars(), rain = createRain(), bolt = createBolt();
+  scene.add(stars, rain.mesh, bolt.line);
+
+  let a = null, flash = 0, flashLen = 1;
+  const bg = new THREE.Color(), lit = new THREE.Color('#c9d2e2');
+  const apply = () => {
+    const k = flash * (reduced ? 0.3 : 1); // gentler flashes with reduced motion
+    bg.set(a.background).lerp(lit, k * 0.55);
+    scene.background = a.sky && !k ? null : bg;
+    sky.visible = a.sky && !k;
+    scene.fog.color.copy(bg);
+    hemi.intensity = a.hemi + k * 1.6;
+    flashLight.intensity = k * 5;
+  };
   return {
     scene, sun,
+    // Time of day and weather (see atmosphere.js): sky, fog, light, clouds, stars, sea and rain.
+    setAtmosphere(next) {
+      a = next;
+      scene.fog.near = a.fog[0]; scene.fog.far = a.fog[1];
+      sun.intensity = a.sun; sun.color.set(a.sunColor);
+      scene.environmentIntensity = a.env;
+      cloudTint.value = a.clouds; seaWaves.value = a.waves; smat.roughness = a.weather === 'clear' ? 0.22 : 0.5;
+      stars.visible = a.stars;
+      rain.set(a.rain, a.time === 'night');
+      apply();
+    },
+    // Lightning somewhere 1.5–4.5 km from p; returns how far away it struck.
+    strike(p) {
+      const ang = Math.random() * Math.PI * 2, d = 1500 + Math.random() * 3000;
+      const x = p.x + Math.sin(ang) * d, z = p.z + Math.cos(ang) * d;
+      bolt.draw(x, z);
+      flash = 1; flashLen = 0.45;
+      return Math.hypot(x - p.x, z - p.z);
+    },
+    update(dt, cam, vel) {
+      rain.update(dt, vel);
+      stars.position.copy(cam);
+      if (flash > 0) {
+        flash = Math.max(0, flash - dt / flashLen);
+        // A strike flickers: bright, dim, bright again, then gone (one smooth fade with reduced motion).
+        const t = 1 - flash, k = reduced ? flash : flash * (t < 0.15 || (t > 0.3 && t < 0.5) ? 1 : 0.25);
+        bolt.line.visible = flash > 0.35;
+        const keep = flash; flash = k; apply(); flash = keep;
+        if (!flash) apply();
+      }
+    },
     follow(p, cam) { sun.position.copy(p).addScaledVector(SUN, 250); sun.target.position.copy(p); sky.position.copy(cam); },
     dispose() { owned.forEach((t) => t.dispose()); },
   };
 }
 
+// Stars for clear nights: 1-pixel points on a dome that rides with the camera.
+function createStars() {
+  const n = 2200, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const y = Math.random() * 0.98 + 0.02, r = Math.sqrt(1 - y * y), a = Math.random() * Math.PI * 2, b = 0.3 + Math.random() ** 3 * 0.7;
+    pos.set([Math.cos(a) * r * 8000, y * 8000, Math.sin(a) * r * 8000], i * 3); col.set([b, b, b * 1.05], i * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const p = new THREE.Points(g, new THREE.PointsNodeMaterial({ vertexColors: true, fog: false, depthWrite: false }));
+  p.frustumCulled = false; p.visible = false; p.renderOrder = -1;
+  return p;
+}
+
+// Rain: streaks fixed in the world, falling, wrapped in a box round the camera on the GPU. Each
+// streak points along the rain's motion relative to the jet, so at speed it comes at you.
+function createRain() {
+  const n = 2600, box = 240, seed = new Float32Array(n * 6), tip = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) { const s = [Math.random(), Math.random(), Math.random()]; seed.set([...s, ...s], i * 6); tip[i * 2 + 1] = 1; }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 6), 3));
+  g.setAttribute('seed', new THREE.BufferAttribute(seed, 3)); g.setAttribute('tip', new THREE.BufferAttribute(tip, 1));
+  const fall = uniform(0), streak = uniform(new THREE.Vector3()), shade = uniform(new THREE.Color('#c4ccd6'));
+  const m = new THREE.LineBasicNodeMaterial({ transparent: true, depthWrite: false, fog: false, opacity: 0.22 });
+  const rel = mod(attribute('seed', 'vec3').mul(box).sub(vec3(0, fall, 0)).sub(cameraPosition), box).sub(box / 2);
+  m.positionNode = cameraPosition.add(rel).add(streak.mul(attribute('tip', 'float')));
+  m.colorNode = shade;
+  const mesh = new THREE.LineSegments(g, m);
+  mesh.frustumCulled = false; mesh.visible = false; mesh.renderOrder = 3;
+  const wind = new THREE.Vector3(9, -32, 4), v = new THREE.Vector3();
+  return {
+    mesh,
+    set(amount, night) { mesh.visible = amount > 0; g.setDrawRange(0, Math.round(n * amount) * 2); shade.value.set(night ? '#4a5260' : '#c4ccd6'); },
+    update(dt, vel) { fall.value = (fall.value + 32 * dt) % box; streak.value.copy(v.copy(wind).sub(vel).multiplyScalar(0.02)); },
+  };
+}
+
+// A lightning bolt: a jagged line from the cloud base to the ground, bright enough to bloom.
+function createBolt() {
+  const N = 28, pos = new Float32Array(N * 3), g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const line = new THREE.Line(g, new THREE.LineBasicNodeMaterial({ color: new THREE.Color('#e8eeff').multiplyScalar(6), fog: false }));
+  line.frustumCulled = false; line.visible = false;
+  return {
+    line,
+    draw(x, z) {
+      const top = 1500, bottom = groundAt(x, z);
+      let ox = 0, oz = 0;
+      for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        ox += (Math.random() - 0.5) * 90; oz += (Math.random() - 0.5) * 90;
+        pos.set([x + ox * t, top + (bottom - top) * t, z + oz * t], i * 3);
+      }
+      g.attributes.position.needsUpdate = true;
+    },
+  };
+}
+
 // Clouds: each a cluster of lit puffs, all drawn as one instanced sprite batch. Puffs facing the sun
 // are bright and warm; undersides are cool grey.
-function createClouds(clouds, keep) {
+function createClouds(clouds, keep, tint) {
   const per = 24, n = clouds.length * per, off = new Float32Array(n * 3), size = new Float32Array(n), shade = new Float32Array(n * 3), rot = new Float32Array(n);
   let k = 0, s = 11;
   const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
@@ -194,7 +307,7 @@ function createClouds(clouds, keep) {
   m.positionNode = instancedBufferAttribute(new THREE.InstancedBufferAttribute(off, 3));
   m.scaleNode = instancedBufferAttribute(new THREE.InstancedBufferAttribute(size, 1));
   m.rotationNode = instancedBufferAttribute(new THREE.InstancedBufferAttribute(rot, 1));
-  m.colorNode = instancedBufferAttribute(new THREE.InstancedBufferAttribute(shade, 3));
+  m.colorNode = instancedBufferAttribute(new THREE.InstancedBufferAttribute(shade, 3)).mul(tint);
   m.opacityNode = texture(puff).a;
   const sprite = new THREE.Sprite(m);
   sprite.count = n; sprite.frustumCulled = false; sprite.renderOrder = 1;
@@ -306,10 +419,10 @@ function pool(scene, { max, additive, map }) {
   scene.add(sprite);
   const ps = [], tc = new THREE.Color();
   return {
-    emit(p, v, life, color, sz) { if (ps.length < max) ps.push({ p: [...p], v, life, max: life, c: tc.set(color).toArray(), sz }); },
+    emit(p, v, life, color, sz, fall = 0) { if (ps.length < max) ps.push({ p: [...p], v, life, max: life, c: tc.set(color).toArray(), sz, fall }); },
     step(dt) {
       let n = 0;
-      for (let i = ps.length - 1; i >= 0; i--) { const q = ps[i]; q.life -= dt; if (q.life <= 0) { ps[i] = ps[ps.length - 1]; ps.pop(); continue; } for (let k = 0; k < 3; k++) { q.p[k] += q.v[k] * dt; q.v[k] *= 1 - dt * 0.8; } }
+      for (let i = ps.length - 1; i >= 0; i--) { const q = ps[i]; q.life -= dt; if (q.life <= 0) { ps[i] = ps[ps.length - 1]; ps.pop(); continue; } q.v[1] -= q.fall * dt; for (let k = 0; k < 3; k++) { q.p[k] += q.v[k] * dt; q.v[k] *= 1 - dt * 0.8; } }
       for (const q of ps) {
         const t = q.life / q.max;
         pos.array.set(q.p, n * 3);
@@ -333,6 +446,14 @@ export function createEffects(scene, map) {
     spark(p) { for (let i = 0; i < 8; i++) fire.emit(p, rnd(90), 0.25, '#ffe9a8', 4); },
     trail(p, dark) { smoke.emit(p, rnd(6), dark ? 2.4 : 1.3, dark ? '#2e2f33' : '#e2e6eb', dark ? 14 : 7); },
     flame(p) { fire.emit(p, rnd(12), 0.4, '#ff7a30', 8); },
+    // A flare salvo: six white-hot pellets thrown out behind and down, falling, each trailing smoke.
+    flares(p, v) {
+      for (let i = 0; i < 6; i++) {
+        const side = (i % 2 ? 1 : -1) * (20 + i * 6), d = [v[0] * 0.3 - v[2] * side / 140, v[1] * 0.3 - 25, v[2] * 0.3 + v[0] * side / 140];
+        fire.emit(p, d, 2.6, '#fff1c9', 9, 30);
+        for (let k = 0; k < 4; k++) smoke.emit(p, d.map((c) => c * (0.2 + k * 0.2)), 2.2, '#e8e3da', 8);
+      }
+    },
     step(dt) { fire.step(dt); smoke.step(dt); },
   };
 }

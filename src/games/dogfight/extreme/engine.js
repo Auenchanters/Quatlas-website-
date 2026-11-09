@@ -7,7 +7,8 @@ import { createControls } from '../controls';
 import { drawHud } from '../hud';
 import { leadPoint, groundAt } from '../logic';
 import { cloudField, waveNews, BANNER } from './waves';
-import { createWorld, jetKit, buildJet, buildMissileMesh, createTracers, createEffects, puffTexture } from './world';
+import { atmosphere, nextStrike, thunderDelay } from './atmosphere';
+import { createWorld, jetKit, buildJet, buildMissileMesh, createTracers, createEffects, puffTexture, SUN } from './world';
 import { PS, MS } from './core';
 
 // Dogfight Extreme on the main thread: input, camera, WebGPU drawing, sound and the HUD. The
@@ -17,7 +18,7 @@ export const bestExtreme = () => { try { return +localStorage.getItem(KEY) || 0;
 const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 const MAX_ENEMIES = 10;
 
-export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResult, api }) {
+export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResult, api, atmos: initial = { time: 'day', weather: 'clear' } }) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = Object.assign(document.createElement('canvas'), { className: 'absolute inset-0 size-full' });
   canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', 'Dogfight Extreme, a 3D air combat game in waves');
@@ -26,16 +27,19 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
   if (!renderer.backend.isWebGPUBackend) { renderer.dispose(); throw new Error('no WebGPU'); }
   el.prepend(canvas);
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.9;
+  const EXPOSURE = 0.9;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = EXPOSURE;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 
   const clouds = cloudField();
   const world = createWorld(clouds, { reduced }), { scene } = world;
+  let atm = atmosphere(initial.time, initial.weather);
+  world.setAtmosphere(atm);
   const camera = new THREE.PerspectiveCamera(68, 16 / 9, 1, 12000);
-  // Bloom on the bright parts: flames, tracers, the sun's glints.
+  // Bloom on the brightest parts only (flames, tracers, flares, lightning), not the sky.
   const post = new THREE.RenderPipeline(renderer);
   const scenePass = pass(scene, camera);
-  post.outputNode = scenePass.add(bloom(scenePass, 0.35, 0.35, 0.82));
+  post.outputNode = scenePass.add(bloom(scenePass, 0.3, 0.35, 0.95));
 
   const smokeMap = puffTexture();
   const effects = createEffects(scene, smokeMap);
@@ -44,14 +48,17 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
   const jets = [buildJet(kits.player), ...Array.from({ length: MAX_ENEMIES }, () => buildJet(kits.enemy))];
   jets.forEach((j, i) => { j.visible = !i; if (i) j.userData.pylons.slice(2).forEach((m) => (m.visible = false)); scene.add(j); });
   const missileMeshes = [];
+  // Flares light up what's near them (it matters at night); one light, always present, so it never recompiles.
+  const flareLight = new THREE.PointLight('#ffc27a', 0, 700, 2), flareVel = new THREE.Vector3();
+  scene.add(flareLight);
   const hud = hudCanvas.getContext('2d');
 
   // The state last received from the worker; before the first sortie, a parked jet for the menu.
   const parked = new Float32Array(PS); parked.set([0, 900, -2600, 0, 0, 0, 1], 0); parked[14] = 100; parked[15] = 1;
   let view = { np: 1, planes: parked, nb: 0, bullets: new Float32Array(0), nm: 0, missiles: new Float32Array(0), hud: null };
-  let worker = null, pending = false, acc = 0, throttle = 0.7, hurt = 0, banner = null, over = false;
-  let audio = null, motor = null, stopMusic = null, raf = 0, last = performance.now();
-  const controls = createControls(el, phaseRef, api), { input, aimDir, clearInput } = controls;
+  let worker = null, pending = false, acc = 0, throttle = 0.7, hurt = 0, banner = null, notice = null, over = false, strikeT = 2, glare = 0;
+  let audio = null, motor = null, rainSound = null, stopMusic = null, raf = 0, last = performance.now(), gone = false;
+  const controls = createControls(el, phaseRef, api, { flares: true }), { input, aimDir, clearInput } = controls;
 
   const at = (i, out = new THREE.Vector3()) => out.fromArray(view.planes, i * PS);
   const quat = (i, out = new THREE.Quaternion()) => out.fromArray(view.planes, i * PS + 3);
@@ -79,6 +86,11 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
     else if (e.type === 'wave') banner = { title: `WAVE ${e.n}`, sub: waveNews(e.n), t: 0 };
     else if (e.type === 'cleared') { banner = { title: `WAVE ${e.n} CLEARED`, sub: 'Rearmed and patched up', t: 0 }; audio?.win(); }
     else if (e.type === 'over') end(e.result);
+    else if (e.type === 'flare') {
+      effects.flares(e.pos, e.vel); audio?.flare();
+      flareLight.position.fromArray(e.pos); flareVel.fromArray(e.vel).multiplyScalar(0.3); flareLight.intensity = 9000;
+      notice = { text: e.fooled ? `${e.fooled > 1 ? `${e.fooled} MISSILES` : 'MISSILE'} DECOYED` : 'FLARES', t: 1.6 };
+    }
   };
 
   const end = (r) => {
@@ -119,8 +131,8 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
       acc = Math.min(0.1, acc + dt);
       if (!pending) {
         aimDir(aim);
-        worker.postMessage({ type: 'step', dt: acc, input: { aim: [aim.x, aim.y, aim.z], roll: input.roll, throttle, fire: input.fire, missile: input.missile } });
-        input.missile = false; pending = true; acc = 0;
+        worker.postMessage({ type: 'step', dt: acc, input: { aim: [aim.x, aim.y, aim.z], roll: input.roll, throttle, fire: input.fire, missile: input.missile, flare: input.flare } });
+        input.missile = input.flare = false; pending = true; acc = 0;
       }
     }
     const pl = view.planes, alive = (i) => pl[i * PS + 15] > 0.5;
@@ -162,7 +174,21 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
     }
     for (let k = view.nm; k < missileMeshes.length; k++) missileMeshes[k].visible = false;
     tracers[0](view.bullets, view.nb, 0); tracers[1](view.bullets, view.nb, 1);
-    effects.step(ph === 'paused' ? 0 : dt);
+    const live = ph === 'paused' ? 0 : dt;
+    effects.step(live);
+    world.update(live, camera.position, tmp2.fromArray(pl, 7));
+    // Lightning in a storm, with thunder arriving at the speed of sound.
+    if (atm.lightning && live && (strikeT -= live) <= 0) {
+      const d = world.strike(P); strikeT = nextStrike(Math.random());
+      setTimeout(() => { if (!gone) audio?.thunder(Math.max(0.25, 1 - d / 6000)); }, thunderDelay(d) * 1000);
+    }
+    if (flareLight.intensity > 0) { flareLight.intensity = Math.max(0, flareLight.intensity - 3600 * live); flareVel.y -= 30 * live; flareLight.position.addScaledVector(flareVel, live); }
+    // Looking toward the sun, the exposure eases down a little, as eyes do; elsewhere it stays bright.
+    camera.getWorldDirection(fwd);
+    const toward = atm.sky ? THREE.MathUtils.smoothstep(fwd.dot(SUN), 0.7, 0.98) : 0;
+    glare += (toward - glare) * Math.min(1, dt * 3);
+    renderer.toneMappingExposure = EXPOSURE * (1 - 0.4 * glare);
+    rainSound?.set(ph === 'playing' ? atm.rain : 0);
     post.render();
 
     // The HUD.
@@ -178,6 +204,7 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
       if (H.incoming) warnings.push(H.incoming > 1 ? `MISSILES  ×${H.incoming}` : 'MISSILE');
       if (H.outT > 0) warnings.push(`RETURN TO THE COMBAT AREA  ${Math.ceil(12 - H.outT)}`);
       if (pl[14] < 30) warnings.push('HEAVY DAMAGE');
+      if (notice) { notice.t -= dt; if (notice.t <= 0) notice = null; }
       const coarse = matchMedia('(pointer: coarse)').matches;
       if (banner && ph === 'playing') banner.t += dt;
       const bAlpha = banner ? Math.max(0, Math.min(1, banner.t * 3, (BANNER + 0.5 - banner.t) * 2)) : 0;
@@ -190,11 +217,13 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
         lead: near && near.pos.distanceTo(P) < 1100 ? (() => { const s = project(leadPoint(P, near.pos, near.vel)); return s.on ? s : null; })() : null,
         lock: H.lock > 0 ? { ...project(at(H.lock)), p: H.lockT, locked: H.lockT > 1 } : null,
         kills: H.kills, time: mmss(H.t), speed: Math.hypot(pl[7], pl[8], pl[9]), alt: P.y, throttle,
-        hp: pl[14] / 100, ammo: H.ammo, missiles: H.msl,
+        hp: pl[14] / 100, ammo: H.ammo, missiles: H.msl, flares: H.flares,
+        notice: notice && { text: notice.text, a: Math.min(1, notice.t * 2) },
         radar: seen.map((e) => { const l = e.pos.clone().sub(P).applyQuaternion(inv); return { x: -l.x, y: l.z }; }),
         warnings, blink: now / 1000, hurt, touch: coarse,
         wave: { n: H.wave, left: H.left, hidden: H.hidden.length },
         banner: banner && { ...banner, a: bAlpha, slide: reduced ? 0 : (1 - bAlpha) * 12 },
+        whiteoutRGB: atm.inside,
         whiteout: inside ? Math.min(0.75, (1 - camera.position.distanceTo(tmp2.set(inside.x, inside.y, inside.z)) / (inside.r * 0.85)) * 2.2) : 0,
       });
     } else hud.clearRect(0, 0, w, h);
@@ -206,12 +235,12 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
   api.current = {
     input,
     start() {
-      if (!audio) { audio = createAudio({ limiter: true }); motor = audio.engine({ base: 70, kind: 'jet' }); }
+      if (!audio) { audio = createAudio({ limiter: true }); motor = audio.engine({ base: 70, kind: 'jet' }); rainSound = audio.rain(); }
       audio.resume();
       enterFull(el, { lock: true });
-      startWorker(); worker.postMessage({ type: 'start', seed: (Math.random() * 2 ** 32) >>> 0 });
+      startWorker(); worker.postMessage({ type: 'start', seed: (Math.random() * 2 ** 32) >>> 0, atmos: { time: atm.time, weather: atm.weather } });
       view = { ...view, np: 1, planes: parked, nb: 0, nm: 0, hud: null };
-      pending = false; acc = 0; throttle = 0.7; over = false; banner = null; hurt = 0;
+      pending = false; acc = 0; throttle = 0.7; over = false; banner = null; notice = null; hurt = 0;
       clearInput(); input.yaw = 0; input.pitch = 0; // the jet starts heading +Z, level
       camera.position.set(0, 909, -2630);
       stopMusic?.(); stopMusic = audio.music();
@@ -219,16 +248,22 @@ export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResul
     },
     pause() { clearInput(); motor?.set(0, false); stopMusic?.(); stopMusic = null; setPhase('paused'); },
     resume() { enterFull(el, { lock: true }); audio?.resume(); if (!over) stopMusic = audio?.music(); last = performance.now(); setPhase('playing'); },
+    // Time and weather change live, mid-sortie too.
+    setAtmosphere(time, weather) {
+      atm = atmosphere(time, weather); world.setAtmosphere(atm);
+      worker?.postMessage({ type: 'atmos', atmos: { time, weather } });
+    },
     leave() { exitFull(); clearInput(); motor?.set(0, false); stopMusic?.(); stopMusic = null; worker?.terminate(); worker = null; view = { ...view, np: 1, planes: parked, nb: 0, nm: 0, hud: null }; setResult(null); setPhase('menu'); },
   };
   // The benchmark (eval/suites/games.mjs) reads the wave and skips through waves; only with ?bench in the URL.
-  if (new URLSearchParams(location.search).has('bench')) window.__extreme = { hud: () => view.hud, clearWave: () => worker?.postMessage({ type: 'clear' }) };
+  if (new URLSearchParams(location.search).has('bench')) window.__extreme = { hud: () => view.hud, atmos: () => `${atm.time} ${atm.weather}`, clearWave: () => worker?.postMessage({ type: 'clear' }) };
 
   return () => {
     cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
     controls.unbind(); exitFull();
     worker?.terminate();
-    stopMusic?.(); motor?.stop(); audio?.close();
+    gone = true;
+    stopMusic?.(); motor?.stop(); rainSound?.stop(); audio?.close();
     // Free the GPU now: dispose everything, then the renderer, which destroys its WebGPU device.
     scene.traverse((o) => { o.geometry?.dispose(); [].concat(o.material ?? []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
     world.dispose(); kits.player.dispose(); kits.enemy.dispose(); smokeMap.dispose(); post.dispose?.();

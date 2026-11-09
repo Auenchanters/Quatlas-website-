@@ -133,5 +133,19 @@ export function createAudio({ limiter: limited = false } = {}) {
     struck: limit(() => { burst({ d: 0.12, peak: 0.3, freq: 900, sweep: 200 }); tone(240, { type: 'triangle', d: 0.08, peak: 0.08, to: 140 }); }, 90),
     tick: () => tone(1320, { d: 0.05, peak: 0.035 }),
     alarm: () => { tone(740, { type: 'triangle', d: 0.14, peak: 0.09 }); tone(554, { type: 'triangle', at: 0.18, d: 0.14, peak: 0.09 }); },
+    // Dogfight Extreme's weather and flares.
+    flare: () => { tone(300, { type: 'triangle', d: 0.06, peak: 0.12, to: 120 }); burst({ d: 0.5, peak: 0.22, freq: 2600, sweep: 700, type: 'bandpass', q: 0.9 }); },
+    thunder: (k = 1) => { burst({ d: 3, peak: 0.55 * k, freq: 380, sweep: 50 }); burst({ at: 0.12, d: 1.4, peak: 0.35 * k, freq: 1100, sweep: 140 }); tone(42, { d: 2.4, peak: 0.35 * k, to: 28 }); },
+    // Rain on the canopy: a steady high hiss; set(level 0..1), stop().
+    rain() {
+      const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = noise; s.loop = true; f.type = 'highpass'; f.frequency.value = 2200; g.gain.value = 0;
+      s.connect(f).connect(g).connect(master); s.start();
+      let last = -1;
+      return {
+        set(level) { if (Math.abs(level - last) < 0.01) return; last = level; g.gain.setTargetAtTime(level * 0.09, now(), 0.4); },
+        stop() { try { s.stop(); } catch { /* already stopped */ } },
+      };
+    },
   };
 }

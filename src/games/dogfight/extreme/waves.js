@@ -17,7 +17,7 @@ export function waveSpec(n) {
 }
 
 // The banner's second line: what's new this wave.
-export const waveNews = (n) => ['Guns only', 'They carry homing missiles', 'More of them', 'They hide in the clouds'][n - 1] ?? `${waveSpec(n).count} bandits, sharper pilots`;
+export const waveNews = (n) => ['Guns only', 'Homing missiles inbound: F or scroll for flares', 'More of them', 'They hide in the clouds'][n - 1] ?? `${waveSpec(n).count} bandits, sharper pilots`;
 
 // Between waves: a banner and a breather, then the next wave spawns.
 export const BANNER = 3, BREATHER = 2.5;
@@ -66,13 +66,21 @@ export const HIDE_TIME = 6, HIDE_COOLDOWN = 9;
 // An enemy launches when it has missiles, the player is ahead and in range, it can see them,
 // its launcher has cooled, and not too many missiles are already chasing the player.
 export const ENEMY_MSL = { minRange: 350, maxRange: 1700, cone: 0.4, cooldown: 7, inFlight: 2 };
-export function canLaunch(spec, { left, dist, angle, sight, cooldown, chasing }) {
-  return spec.missiles > 0 && left > 0 && dist > ENEMY_MSL.minRange && dist < ENEMY_MSL.maxRange
+// range: how far the seeker sees (less in rain and storm, see atmosphere.js).
+export function canLaunch(spec, { left, dist, angle, sight, cooldown, chasing, range = ENEMY_MSL.maxRange }) {
+  return spec.missiles > 0 && left > 0 && dist > ENEMY_MSL.minRange && dist < Math.min(range, ENEMY_MSL.maxRange)
     && angle < ENEMY_MSL.cone && sight && cooldown <= 0 && chasing < ENEMY_MSL.inFlight;
 }
 
 // Each cleared wave tops you up a little.
 export const REFIT = { hp: 30, ammo: 600, missiles: 4 };
+
+// Flares: armed from wave 2, when the enemy missiles arrive; refilled with each refit. One press
+// drops a salvo. Each missile chasing you is fooled with a chance that falls off when it is very
+// close (too late) or too far to see the salvo.
+export const FLARES = { count: 12, cooldown: 0.8, fromWave: 2, reach: 2500 };
+export const flaresFor = (wave) => (wave >= FLARES.fromWave ? FLARES.count : 0);
+export const decoyChance = (dist) => (dist > FLARES.reach ? 0 : dist < 120 ? 0.25 : 0.85);
 
 export function extremeScore({ kills, waves, shots, hits, hp }) {
   const accuracy = shots ? hits / shots : 0;

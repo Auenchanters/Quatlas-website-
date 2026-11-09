@@ -4,10 +4,11 @@ import { onDropOut } from '../fullscreen';
 
 // Dogfight's controls, shared by Base and Extreme: mouse aim, keys, the touch stick (written by the
 // page into input.stick), pausing on Esc, on a hidden tab or on dropping out of full screen.
-export function createControls(el, phaseRef, api) {
+// flares: Extreme's F and scroll wheel drop flares (R launches a missile there); in Base, F launches.
+export function createControls(el, phaseRef, api, { flares = false } = {}) {
   // Mouse aim, as in War Thunder: the mouse turns a world direction (yaw, pitch) that the camera looks
   // along, and the jet flies toward it. The aim stays put when the mouse does, so the jet settles on it.
-  const input = { yaw: 0, pitch: 0, turn: 0, climb: 0, edge: 0, fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null };
+  const input = { yaw: 0, pitch: 0, turn: 0, climb: 0, edge: 0, fire: false, missile: false, flare: false, roll: 0, throttle: 0, look: false, stick: null };
   const aimDir = (out = new Vector3()) => out.set(Math.sin(input.yaw) * Math.cos(input.pitch), Math.sin(input.pitch), Math.cos(input.yaw) * Math.cos(input.pitch));
   const aimFrom = (p) => { const f = forwardOf(p, new Vector3()); input.yaw = Math.atan2(f.x, f.z); input.pitch = Math.asin(Math.max(-1, Math.min(1, f.y))); };
   // The touch stick turns the aim at a rate; the mouse turns it directly (onMove).
@@ -39,23 +40,26 @@ export function createControls(el, phaseRef, api) {
     if (phaseRef.current !== 'playing') return; // the menu's buttons resume: browsers won't re-enter fullscreen from Esc
     if (KEYS[e.code]) { const [k, v] = KEYS[e.code]; input[k] = down ? v : (k === 'look' ? false : 0); e.preventDefault(); }
     if (e.code === 'Space') { input.fire = down; e.preventDefault(); }
-    if (e.code === 'KeyF' && down && !e.repeat) input.missile = true;
+    if (e.code === 'KeyF' && down && !e.repeat) input[flares ? 'flare' : 'missile'] = true;
+    if (e.code === 'KeyR' && down && !e.repeat && flares) input.missile = true;
     if (e.code === 'Escape' && down) api.current.pause();
   };
   const kd = onKey(true), ku = onKey(false);
-  const clearInput = () => Object.assign(input, { fire: false, missile: false, roll: 0, throttle: 0, turn: 0, climb: 0, edge: 0, look: false, stick: null });
+  const clearInput = () => Object.assign(input, { fire: false, missile: false, flare: false, roll: 0, throttle: 0, turn: 0, climb: 0, edge: 0, look: false, stick: null });
   const onHide = () => { if (document.hidden && phaseRef.current === 'playing') api.current.pause(); };
   // Esc in fullscreen (or with the mouse locked) never reaches the page: dropping out is the pause.
   const stopDropOut = onDropOut(() => { if (phaseRef.current === 'playing') api.current.pause(); });
   const onBlur = () => clearInput();
   const onUp = (e) => { if (e.pointerType === 'mouse') input.fire = false; }; // even when released outside the game
+  const onWheel = (e) => { if (phaseRef.current === 'playing') { e.preventDefault(); input.flare = true; } };
+  if (flares) el.addEventListener('wheel', onWheel, { passive: false });
   el.addEventListener('pointermove', onMove);
   addEventListener('keydown', kd); addEventListener('keyup', ku);
   document.addEventListener('visibilitychange', onHide);
   addEventListener('blur', onBlur); addEventListener('pointerup', onUp);
 
   const unbind = () => {
-    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointermove', onMove); el.removeEventListener('wheel', onWheel);
     removeEventListener('keydown', kd); removeEventListener('keyup', ku);
     document.removeEventListener('visibilitychange', onHide);
     removeEventListener('blur', onBlur); removeEventListener('pointerup', onUp);

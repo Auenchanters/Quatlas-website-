@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { waveSpec, waveNews, stepWaves, firstWave, BANNER, BREATHER, cloudField, inside, hideSpot, shouldHide, canLaunch, extremeScore } from './waves.js';
+import { flaresFor, decoyChance, waveSpec, waveNews, stepWaves, firstWave, BANNER, BREATHER, cloudField, inside, hideSpot, shouldHide, canLaunch, extremeScore } from './waves.js';
 
 test('the ladder: guns only, then missiles, then more jets, then clouds', () => {
   const [w1, w2, w3, w4, w5] = [1, 2, 3, 4, 5].map(waveSpec);
@@ -59,4 +59,16 @@ test('score rewards kills, waves and accuracy', () => {
   assert.ok(extremeScore({ ...base, waves: 2 }) > extremeScore(base));
   assert.ok(extremeScore({ ...base, hits: 40 }) > extremeScore(base));
   assert.equal(extremeScore({ kills: 0, waves: 0, shots: 0, hits: 0, hp: -5 }), 0);
+});
+test('flares: none in wave 1, a full load from wave 2, and they fool missiles that are in reach but not too close', () => {
+  assert.equal(flaresFor(1), 0);
+  assert.ok(flaresFor(2) > 0 && flaresFor(9) === flaresFor(2));
+  assert.equal(decoyChance(4000), 0);
+  assert.ok(decoyChance(800) > 0.7);
+  assert.ok(decoyChance(60) < decoyChance(800));
+});
+test('a seeker sees less far in the rain: enemies launch only within the weather range', () => {
+  const ok = { left: 1, dist: 1500, angle: 0.1, sight: true, cooldown: 0, chasing: 0 };
+  assert.ok(canLaunch(waveSpec(2), ok));
+  assert.ok(!canLaunch(waveSpec(2), { ...ok, range: 1000 }));
 });

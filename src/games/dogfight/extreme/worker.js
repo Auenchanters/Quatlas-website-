@@ -4,11 +4,12 @@
 // that comes back; nothing here touches the DOM.
 import wasmUrl from './core.wasm?url';
 import { loadCore, PS, BS, MS } from './core.js';
-import { waveSpec, stepWaves, firstWave, cloudField, hideSpot, shouldHide, canLaunch, HIDE_TIME, HIDE_COOLDOWN, REFIT, extremeScore } from './waves.js';
+import { waveSpec, stepWaves, firstWave, cloudField, hideSpot, shouldHide, canLaunch, HIDE_TIME, HIDE_COOLDOWN, REFIT, extremeScore, FLARES, flaresFor, decoyChance } from './waves.js';
+import { atmosphere, turbulence } from './atmosphere.js';
 
 const ARENA = 4000, CEILING = 3000, AMMO = 600, MISSILES = 4, FIRE_RATE = 1 / 14;
 const clouds = cloudField(), NC = clouds.length;
-let core, x, P, g;
+let core, x, P, g, atmos = atmosphere();
 
 const ready = fetch(wasmUrl).then((r) => r.arrayBuffer()).then(loadCore).then((c) => {
   core = c; x = c.x; P = c.P;
@@ -32,7 +33,7 @@ function place(i, p, facing, { speed, min, max, agility, hp, team }) {
 }
 
 function newGame() {
-  g = { np: 1, nb: 0, nm: 0, t: 0, waves: firstWave(), cleared: 0, kills: 0, shots: 0, hits: 0, ammo: AMMO, msl: MISSILES, cool: 0, lock: -1, lockT: 0, beep: 0, outT: 0, warnT: 0, over: false, brains: [{}], events: [] };
+  g = { np: 1, nb: 0, nm: 0, t: 0, waves: firstWave(), cleared: 0, kills: 0, shots: 0, hits: 0, ammo: AMMO, msl: MISSILES, flares: flaresFor(1), flareCool: 0, cool: 0, lock: -1, lockT: 0, beep: 0, outT: 0, warnT: 0, over: false, brains: [{}], events: [] };
   place(0, [0, 900, -2600], [0, 0, 1], { speed: 140, min: 60, max: 190, agility: 1, hp: 100, team: 0 });
   g.events.push({ type: 'wave', n: 1 });
 }
@@ -97,14 +98,28 @@ function pilot(i, spec, dt) {
     // Homing missiles from wave 2.
     b.mslCool -= dt;
     const chasing = countChasing();
-    if (canLaunch(spec, { left: b.msl, dist, angle: angle(f, toP), sight, cooldown: b.mslCool, chasing })) {
+    if (canLaunch(spec, { left: b.msl, dist, angle: angle(f, toP), sight, cooldown: b.mslCool, chasing, range: atmos.lockRange + 100 })) {
       g.nm = x.launch(i, 0, 1.5, g.nm); b.msl--; b.mslCool = 7; g.events.push({ type: 'enemyMissile' });
     }
   }
   x.steer(i, ...aim);
-  x.fly(i, core.OUT[0], core.OUT[1], core.OUT[2], throttle, dt);
+  const bump = turbulence(now, i, atmos.turbulence);
+  x.fly(i, core.OUT[0] + bump.pitch, core.OUT[1] + bump.roll, core.OUT[2], throttle, dt);
   b.gunCool -= dt;
   if (fire && alive(0) && b.gunCool <= 0) { g.nb = x.fire(i, 0.03 - spec.skill * 0.015, g.nb); b.gunCool = 0.11; }
+}
+// A flare salvo behind the jet: each missile chasing the player may turn for it instead, losing the player.
+function dropFlares() {
+  g.flares--; g.flareCool = FLARES.cooldown;
+  const me = pos(0), v = [P[7], P[8], P[9]], at = [me[0] - v[0] * 0.4, me[1] - v[1] * 0.4 - 10, me[2] - v[2] * 0.4];
+  let fooled = 0;
+  for (let k = 0; k < g.nm; k++) {
+    const o = k * MS;
+    if (core.M[o + 9] !== 0 || core.M[o + 10] !== 1) continue;
+    const m = [core.M[o], core.M[o + 1], core.M[o + 2]];
+    if (Math.random() < decoyChance(len(sub(me, m)))) { core.M[o + 9] = -1; core.M.set(norm(sub(at, m)), o + 3); fooled++; }
+  }
+  g.events.push({ type: 'flare', pos: me, vel: v, fooled });
 }
 function countChasing() { let n = 0; for (let k = 0; k < g.nm; k++) if (core.M[k * MS + 9] === 0 && core.M[k * MS + 10] === 1) n++; return n; }
 
@@ -114,15 +129,18 @@ function step(dt, input) {
   // The player: fly toward the aim, as in the base game.
   if (alive(0)) {
     x.steer(0, ...input.aim);
-    x.fly(0, core.OUT[0], input.roll || core.OUT[1], core.OUT[2], input.throttle, dt);
+    const bump = turbulence(g.t, 0, atmos.turbulence); // storms throw the jet about
+    x.fly(0, core.OUT[0] + bump.pitch, (input.roll || core.OUT[1]) + bump.roll, core.OUT[2], input.throttle, dt);
   }
   g.cool -= dt;
   if (input.fire && alive(0) && g.ammo > 0 && g.cool <= 0) { g.nb = x.fire(0, 0.004, g.nb); g.ammo--; g.shots++; g.cool = FIRE_RATE; g.events.push({ type: 'cannon' }); }
-  // Lock: inside the cone, in range, and not hidden by cloud.
-  const cand = alive(0) ? x.lockable(0, g.np, NC, 0.35, 1600) : -1;
+  // Lock: inside the cone, in range (shorter in rain), and not hidden by cloud.
+  const cand = alive(0) ? x.lockable(0, g.np, NC, 0.35, atmos.lockRange) : -1;
   g.lockT = cand >= 0 && cand === g.lock ? g.lockT + dt : 0; g.lock = cand;
   if (cand >= 0 && (g.beep -= dt) <= 0) { g.events.push({ type: 'tick' }); g.beep = g.lockT > 1 ? 0.12 : 0.35; }
   if (input.missile && alive(0) && g.msl > 0) { g.nm = x.launch(0, cand, 2.4, g.nm); g.msl--; g.events.push({ type: 'missile' }); }
+  g.flareCool -= dt;
+  if (input.flare && alive(0) && g.flares > 0 && g.flareCool <= 0) dropFlares();
 
   for (let i = 1; i < g.np; i++) if (alive(i)) { pilot(i, spec, dt); if (P[i * PS + 1] < x.ground(P[i * PS], P[i * PS + 2]) + 3) destroy(i); }
 
@@ -157,7 +175,7 @@ function step(dt, input) {
     if (event === 'spawn') spawn();
     if (event === 'cleared') {
       g.cleared++;
-      P[14] = Math.min(100, P[14] + REFIT.hp); g.ammo = REFIT.ammo; g.msl = REFIT.missiles;
+      P[14] = Math.min(100, P[14] + REFIT.hp); g.ammo = REFIT.ammo; g.msl = REFIT.missiles; g.flares = flaresFor(g.waves.wave + 1);
       g.events.push({ type: 'cleared', n: g.waves.wave });
     }
     if (state.wave !== g.waves.wave) g.events.push({ type: 'wave', n: state.wave });
@@ -171,7 +189,7 @@ function snapshot() {
   const planes = P.slice(0, g.np * PS), bullets = core.B.slice(0, g.nb * BS), missiles = core.M.slice(0, g.nm * MS);
   const msg = {
     type: 'state', np: g.np, planes, nb: g.nb, bullets, nm: g.nm, missiles, events: g.events,
-    hud: { wave: g.waves.wave, maxHp: waveSpec(g.waves.wave).hp, phase: g.waves.phase, phaseT: g.waves.t, kills: g.kills, left, t: g.t, ammo: g.ammo, msl: g.msl, lock: g.lock, lockT: g.lockT, outT: g.outT, hidden, incoming: countChasing(), inCloud: x.cloudAt(0, NC) >= 0, over: g.over },
+    hud: { wave: g.waves.wave, maxHp: waveSpec(g.waves.wave).hp, phase: g.waves.phase, phaseT: g.waves.t, kills: g.kills, left, t: g.t, ammo: g.ammo, msl: g.msl, flares: g.waves.wave >= FLARES.fromWave ? g.flares : null, lock: g.lock, lockT: g.lockT, outT: g.outT, hidden, incoming: countChasing(), inCloud: x.cloudAt(0, NC) >= 0, over: g.over },
   };
   g.events = [];
   postMessage(msg, [planes.buffer, bullets.buffer, missiles.buffer]);
@@ -179,11 +197,12 @@ function snapshot() {
 
 onmessage = async ({ data }) => {
   await ready;
+  if (data.atmos) atmos = atmosphere(data.atmos.time, data.atmos.weather);
   if (data.type === 'start') { x.seedRandom(data.seed >>> 0); newGame(); snapshot(); }
   else if (data.type === 'step' && g) {
     // Fixed steps of at most 1/60 s, so a slow frame never tunnels a bullet through a plane.
     const n = Math.max(1, Math.ceil(data.dt * 60 - 1e-6)), dt = data.dt / n;
-    for (let k = 0; k < n; k++) step(dt, k ? { ...data.input, missile: false } : data.input);
+    for (let k = 0; k < n; k++) step(dt, k ? { ...data.input, missile: false, flare: false } : data.input);
     snapshot();
   } else if (data.type === 'clear' && g) { for (let i = 1; i < g.np; i++) if (alive(i)) { P[i * PS + 14] = 0; destroy(i); } } // the benchmark's shortcut through a wave
 };

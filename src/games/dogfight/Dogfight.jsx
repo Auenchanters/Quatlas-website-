@@ -13,7 +13,22 @@ import { FULL, enterFull, exitFull } from '../fullscreen';
 
 const focusOnMount = (el) => el?.focus({ preventScroll: true });
 
-const KEY = 'dogfight-best', GFX = 'dogfight-graphics';
+const KEY = 'dogfight-best', GFX = 'dogfight-graphics', TIME = 'dogfight-time', SKY = 'dogfight-weather';
+const stored = (key, allowed) => { try { const v = localStorage.getItem(key); return allowed.includes(v) ? v : allowed[0]; } catch { return allowed[0]; } };
+const store = (key, v) => { try { localStorage.setItem(key, v); } catch { /* private mode */ } };
+
+// A row of toggle buttons for one setting (Graphics, Time, Weather).
+function Choice({ label, value, options, onPick }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center justify-center gap-2">
+      <span className="data text-[#c9ced6]">{label}</span>
+      {options.map(([v, text]) => (
+        <button key={v} type="button" aria-pressed={value === v} onClick={() => value !== v && onPick(v)}
+          className={`btn btn-sm ${value === v ? 'bg-white text-[#0b0d12] border-white' : 'border-white/60 text-white hover:bg-white hover:text-[#0b0d12]'}`}>{text}</button>
+      ))}
+    </div>
+  );
+}
 const best = () => { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } };
 const AMMO = 600, MISSILES = 4, FIRE_RATE = 1 / 14;
 const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
@@ -38,6 +53,10 @@ export default function Dogfight() {
   // Graphics: Base (this file's WebGL game) or Extreme (extreme/, WebGPU + a worker + WASM, in waves).
   const [graphics, setGraphics] = useState(() => { try { return localStorage.getItem(GFX) === 'extreme' ? 'extreme' : 'base'; } catch { return 'base'; } });
   const [ready, setReady] = useState(false), [note, setNote] = useState('');
+  // Extreme's time of day and weather: remembered, and changed live (no restart).
+  const [time, setTime] = useState(() => stored(TIME, ['day', 'night'])), [weather, setWeather] = useState(() => stored(SKY, ['clear', 'rain', 'storm']));
+  const atmosRef = useRef({ time, weather }); atmosRef.current = { time, weather };
+  const sky = (t, w) => { store(TIME, t); store(SKY, w); setTime(t); setWeather(w); api.current.setAtmosphere?.(t, w); };
   const choose = (v) => {
     try { localStorage.setItem(GFX, v); } catch { /* private mode */ }
     setNote(''); setResult(null); setPhase('menu'); setGraphics(v);
@@ -53,7 +72,7 @@ export default function Dogfight() {
         if (!(await navigator.gpu?.requestAdapter())) throw new Error('no WebGPU');
         const { mountExtreme } = await import('./extreme/engine');
         if (dead) return;
-        const d = await mountExtreme({ el: wrap.current, hudCanvas: hudCanvas.current, phaseRef, setPhase, setResult, api });
+        const d = await mountExtreme({ el: wrap.current, hudCanvas: hudCanvas.current, phaseRef, setPhase, setResult, api, atmos: atmosRef.current });
         if (dead) d(); else { dispose = d; setReady(true); }
       } catch (e) {
         if (dead) return;
@@ -312,8 +331,10 @@ export default function Dogfight() {
           {/* Touch controls (shown on touch screens only). */}
           <div className="hidden pointer-coarse:block absolute left-4 bottom-4 size-32 rounded-full border-2 border-white/40 bg-white/10"
             onPointerDown={stick} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => { i().stick = null; }} onPointerCancel={() => { i().stick = null; }} aria-hidden="true" />
-          <div className="hidden pointer-coarse:flex absolute right-4 bottom-4 gap-3">
-            <button type="button" className="size-16 rounded-full bg-white/15 border-2 border-white/50 data text-white" onPointerDown={() => (i().missile = true)}>MSL</button>
+          {/* Extreme adds FLR: its two small buttons shrink a little so all three fit beside the stick on a 360 px phone. */}
+          <div className={`hidden pointer-coarse:flex absolute right-4 bottom-4 ${graphics === 'extreme' ? 'gap-2' : 'gap-3'}`}>
+            {graphics === 'extreme' && <button type="button" className="size-14 rounded-full bg-white/15 border-2 border-white/50 data text-white" onPointerDown={() => (i().flare = true)}>FLR</button>}
+            <button type="button" className={`${graphics === 'extreme' ? 'size-14' : 'size-16'} rounded-full bg-white/15 border-2 border-white/50 data text-white`} onPointerDown={() => (i().missile = true)}>MSL</button>
             <button type="button" className="size-20 rounded-full bg-[#c41e2c]/80 border-2 border-white/60 data text-white" onPointerDown={fire(true)} onPointerUp={fire(false)} onPointerCancel={fire(false)}>FIRE</button>
           </div>
           <div className="absolute right-3 top-3 flex gap-2">
@@ -323,13 +344,13 @@ export default function Dogfight() {
       )}
 
       {phase !== 'playing' && (
-        <div className="absolute inset-0 grid place-content-center justify-items-center gap-4 text-center bg-[#0b0d12]/55 backdrop-blur-[2px] p-6">
+        <div className="absolute inset-0 grid [place-content:safe_center] overflow-y-auto justify-items-center gap-4 text-center bg-[#0b0d12]/55 backdrop-blur-[2px] p-6">
           {phase === 'menu' && (
             <>
               <p className="data text-[#ff8790]">{graphics === 'extreme' ? 'Wave after wave inbound' : 'Four bandits inbound'}</p>
               <p className="display text-[clamp(2.25rem,5vw,4rem)]">Dogfight</p>
               <p className="max-w-md text-[#c9ced6]">Move the mouse to aim: the jet flies to the circle. A / D or the arrow keys turn too. Click or Space to fire; right-click or F launches a missile, which homes best once the lock ring closes. W / S throttle, Q / E roll, C to look back. Plays full screen; Esc for the menu.</p>
-              {graphics === 'extreme' && <p className="max-w-md text-[#ffcf6b]">Each wave is harder: guns, then homing missiles, then more jets, then they hide in clouds.</p>}
+              {graphics === 'extreme' && <p className="max-w-md text-[#ffcf6b]">Each wave is harder: guns, then homing missiles, then more jets, then they hide in clouds. Here F or the scroll wheel drops flares to shake missiles (from wave 2); right-click or R launches a missile.</p>}
             </>
           )}
           {phase === 'paused' && <p className="display text-[clamp(2rem,4vw,3.5rem)]">Paused</p>}
@@ -352,13 +373,13 @@ export default function Dogfight() {
               {phase === 'menu' ? 'Take off' : phase === 'paused' ? 'Resume' : 'Fly again'}
             </button>}
           {phase !== 'menu' && <button type="button" className="btn btn-sm border-white/60 text-white hover:bg-white hover:text-[#0b0d12]" onClick={() => api.current.leave()}>Leave the game</button>}
-          <div role="group" aria-label="Graphics" className="flex flex-wrap items-center justify-center gap-2">
-            <span className="data text-[#c9ced6]">Graphics</span>
-            {[['base', 'Base'], ['extreme', 'Extreme']].map(([v, label]) => (
-              <button key={v} type="button" aria-pressed={graphics === v} onClick={() => graphics !== v && choose(v)}
-                className={`btn btn-sm ${graphics === v ? 'bg-white text-[#0b0d12] border-white' : 'border-white/60 text-white hover:bg-white hover:text-[#0b0d12]'}`}>{label}</button>
-            ))}
-          </div>
+          <Choice label="Graphics" value={graphics} options={[['base', 'Base'], ['extreme', 'Extreme']]} onPick={choose} />
+          {graphics === 'extreme' && (
+            <>
+              <Choice label="Time" value={time} options={[['day', 'Day'], ['night', 'Night']]} onPick={(t) => sky(t, weather)} />
+              <Choice label="Weather" value={weather} options={[['clear', 'Clear'], ['rain', 'Rain'], ['storm', 'Storm']]} onPick={(w) => sky(time, w)} />
+            </>
+          )}
           {phase === 'paused' && <p className="text-sm text-[#c9ced6]">Switching graphics starts a new sortie.</p>}
           {note && <p className="max-w-sm text-sm text-[#ffcf6b]" role="status">{note}</p>}
         </div>

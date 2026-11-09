@@ -33,8 +33,9 @@ async function screenPrint(page) {
     const t = document.createElement('canvas'); t.width = 64; t.height = 36;
     const x = t.getContext('2d'); x.drawImage(img, 0, 0, 64, 36);
     const d = x.getImageData(0, 0, 64, 36).data; let sum = 0; const seen = new Set();
-    for (let i = 0; i < d.length; i += 4) { sum += d[i] * 3 + d[i + 1] * 5 + d[i + 2] * 7 + i; seen.add((d[i] >> 4) * 256 + (d[i + 1] >> 4) * 16 + (d[i + 2] >> 4)); }
-    return { sum, colours: seen.size };
+    let light = 0;
+    for (let i = 0; i < d.length; i += 4) { sum += d[i] * 3 + d[i + 1] * 5 + d[i + 2] * 7 + i; light += d[i] + d[i + 1] + d[i + 2]; seen.add((d[i] >> 4) * 256 + (d[i + 1] >> 4) * 16 + (d[i + 2] >> 4)); }
+    return { sum, colours: seen.size, mean: Math.round(light / (d.length / 4) / 3) };
   }, b64);
 }
 
@@ -229,10 +230,26 @@ async function extreme({ check, base, launch, shot }) {
     const four = await until(page, async () => { const h = await hud(page); return h?.wave === 4 && h.phase === 'fight' && h; }, 12000);
     check('games', 'Extreme: waves advance (1 → 4) with more jets', !!four && four.left > 3, `${seen.join(' ')}${four ? ` 4:${four.left}` : ' (stuck)'}`, 'reaches wave 4');
     await shot(page, 'extreme-wave4');
+    // Flares (armed since wave 2): F drops a salvo, so does the scroll wheel (after the 0.8 s cooldown).
+    const f0 = (await hud(page))?.flares;
+    await page.keyboard.press('KeyF'); await sleep(1000);
+    const f1 = (await hud(page))?.flares;
+    await page.mouse.move(683, 384); await page.mouse.wheel({ deltaY: 120 }); await sleep(1000);
+    const f2 = (await hud(page))?.flares;
+    check('games', 'Extreme: flares armed, dropped with F and the scroll wheel', f0 > 0 && f1 === f0 - 1 && f2 === f1 - 1, `${f0} → ${f1} → ${f2}`, 'n → n−1 → n−2');
+    const day = await screenPrint(page);
     await page.keyboard.press('Escape'); await sleep(400);
-    const paused = /Paused/.test(await page.evaluate(text)) && (await has(page, 'Base')) && (await has(page, 'Extreme'));
-    check('games', 'Extreme: Esc pauses, with the Graphics setting', paused, paused ? 'paused' : 'no', 'paused');
-    await click(page, 'Resume'); await sleep(400);
+    const paused = /Paused/.test(await page.evaluate(text)) && (await has(page, 'Base')) && (await has(page, 'Extreme')) && (await has(page, 'Night')) && (await has(page, 'Storm'));
+    check('games', 'Extreme: Esc pauses, with Graphics, Time and Weather settings', paused, paused ? 'paused' : 'no', 'paused');
+    // Night and a storm, set live from the pause menu: the view goes dark, and it still holds frame rate.
+    await click(page, 'Night'); await click(page, 'Storm'); await sleep(300);
+    await click(page, 'Resume'); await sleep(1500);
+    const atm = await page.evaluate(() => window.__extreme?.atmos());
+    const dark = await screenPrint(page);
+    const fn = await fps(page, 3000);
+    await shot(page, 'extreme-night-storm');
+    check('games', 'Extreme: Night + Storm apply live and the view goes dark', atm === 'night storm' && dark.mean < day.mean * 0.5, `${atm}, brightness ${day.mean} → ${dark.mean}`, 'night storm, under half');
+    check('games', `Extreme: ≥ ${MOTION.fps} fps at night in a storm`, fn.median >= MOTION.fps && fn.p5 >= MOTION.fpsP5, `${fn.median}/${fn.p5}`, `${MOTION.fps}/${MOTION.fpsP5}`);
     await click(page, 'Pause'); await sleep(200);
     await click(page, 'Leave the game'); await sleep(400);
     check('games', 'Extreme: Leave returns to the menu', await has(page, 'Take off'), 'menu', 'menu');
@@ -259,9 +276,11 @@ async function extreme({ check, base, launch, shot }) {
     await until(phone, () => phone.evaluate(() => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Take off') && (document.querySelector('canvas[role="img"]')?.getAttribute('aria-label') ?? '').includes('Extreme')), 25000);
     const take = await phone.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Take off'));
     await take.tap(); await sleep(1500);
-    const ctl = await phone.evaluate(() => [...document.querySelectorAll('button, [aria-hidden="true"].rounded-full')].filter((e) => /^(FIRE|MSL)$/.test(e.textContent.trim()) || e.matches('.rounded-full.size-32'))
-      .map((e) => { const r = e.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }));
-    check('games', 'Extreme (phone): stick, FIRE and MSL shown, on screen, ≥ 44 px', ctl.length === 3 && ctl.every(Boolean), `${ctl.filter(Boolean).length}/3`, '3 ok');
+    const ctl = await phone.evaluate(() => [...document.querySelectorAll('button, [aria-hidden="true"].rounded-full')].filter((e) => /^(FIRE|MSL|FLR)$/.test(e.textContent.trim()) || e.matches('.rounded-full.size-32'))
+      .map((e) => e.getBoundingClientRect().toJSON()));
+    const fits = ctl.filter((r) => r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= 390 && r.bottom <= 844).length;
+    const overlaps = ctl.filter((r, i) => ctl.some((o, j) => j > i && r.left < o.right && o.left < r.right && r.top < o.bottom && o.top < r.bottom)).length;
+    check('games', 'Extreme (phone): stick, FIRE, MSL and FLR shown, on screen, ≥ 44 px, not overlapping', ctl.length === 4 && fits === 4 && !overlaps, `${fits}/4 fit, ${overlaps} overlapping`, '4 fit, 0 overlapping');
     await shot(phone, 'extreme-phone');
     check('games', 'Extreme (phone): no errors', !plog.errors.length, plog.errors.length, 0, plog.errors.slice(0, 3).join(' | '));
     await phone.close();
