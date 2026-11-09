@@ -9,4 +9,5 @@ test('splits by tag, keeps order', () => {
   assert.deepEqual(r.people.map((x) => x._id), ['p1']);
 });
 test('unknown ids go to people', () => assert.deepEqual(splitGallery([{ _id: 'new' }], A).people.length, 1));
+test('hidden ids are dropped', () => assert.deepEqual(splitGallery([{ _id: 'a1' }, { _id: 'h' }], A, new Set(['h'])), { aircraft: [{ _id: 'a1' }], people: [] }));
 test('empty input', () => assert.deepEqual(splitGallery([], A), { aircraft: [], people: [] }));

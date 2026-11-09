@@ -2,7 +2,7 @@ import { useLayoutEffect, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useSearchParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
-import { RemoteImg, dims, remoteSrc } from '../components/RemoteImg';
+import { RemoteImg, remoteSrc } from '../components/RemoteImg';
 import { Failed } from '../components/ui';
 import { Chevron, Close } from '../components/icons';
 import { useApi } from '../lib/api';
@@ -90,16 +90,6 @@ export default function Gallery() {
   const view = params.get('view') === 'people' ? 'people' : 'aircraft';
   const sets = useMemo(() => (data ? splitGallery([...REPO_PHOTOS, ...data]) : null), [data]);
   const items = sets?.[view] ?? [];
-  // Photos flow down each column in turn and the columns are balanced by height, so the first screen shows the
-  // photos that start each column: found from the photos' shapes, they load at once.
-  const first = useMemo(() => {
-    const tall = items.map((g) => { const [w, h] = dims(g.img) ?? [3, 2]; return h / w; });
-    // Phone layout (two columns) only: more eager photos would share a slow connection with the one that matters.
-    const total = tall.reduce((a, b) => a + b, 0), out = new Set([0, 1]);
-    let sum = 0, found = false;
-    tall.forEach((t, i) => { if (!found && sum >= total / 2) { out.add(i - 1); out.add(i); out.add(i + 1); found = true; } sum += t; });
-    return out;
-  }, [items]);
   const [open, setOpen] = useState(null);
   const move = (d) => setOpen((i) => (i + d + items.length) % items.length);
 
@@ -128,21 +118,19 @@ export default function Gallery() {
         {sets && (
           <div id="gallery-panel" role="tabpanel" aria-labelledby={`tab-${view}`}>
             {!items.length && <p className="text-ink-2 border border-dashed border-rule p-6">No photos here yet.</p>}
-            {/* Columns keep every photo at its own shape, nothing cropped. Sizes come from the local copies,
-                so the layout is fixed before a photo arrives; a photo newer than the copy assumes 3:2. */}
-            <ul key={view} data-reveal="stagger" className="columns-2 md:columns-3 xl:columns-4 gap-3">
-              {items.map((g, i) => {
-                const [w, h] = dims(g.img) ?? [3, 2];
-                return (
-                  <li key={g._id} className="mb-3 break-inside-avoid">
-                    <button type="button" data-photo={g._id} onClick={(e) => openAt(i, e.currentTarget)} style={{ aspectRatio: `${w} / ${h}` }}
-                      className="press block w-full overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet hover:border-signal focus-visible:border-signal"
-                      aria-label={`Open photo ${i + 1} of ${items.length}`}>
-                      <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={first.has(i)} className="size-full object-cover" />
-                    </button>
-                  </li>
-                );
-              })}
+            {/* Even rows of 4:3 tiles, all one height; the last row's tiles widen to fill it, so no gap is left.
+                A photo that would sit alone in the last row takes the one before it along, so it ends in a pair.
+                The viewer shows each photo uncropped. */}
+            <ul key={view} data-reveal="stagger" className="@container flex flex-wrap gap-3">
+              {items.map((g, i) => (
+                <li key={g._id} className="grow basis-[calc(50%-0.375rem)] md:basis-[calc(33.333%-0.5rem)] xl:basis-[calc(25%-0.5625rem)] h-[calc((100cqw-0.75rem)/2*0.75)] md:h-[calc((100cqw-1.5rem)/3*0.75)] xl:h-[calc((100cqw-2.25rem)/4*0.75)] md:max-xl:[&:nth-last-child(2):nth-child(3n)]:basis-[40%] md:max-xl:[&:nth-child(3n+1):last-child]:basis-[40%] xl:[&:nth-last-child(2):nth-child(4n)]:basis-[40%] xl:[&:nth-child(4n+1):last-child]:basis-[40%]">
+                  <button type="button" data-photo={g._id} onClick={(e) => openAt(i, e.currentTarget)}
+                    className="press block size-full overflow-hidden rounded-[var(--radius-photo)] border border-ink bg-sheet hover:border-signal focus-visible:border-signal"
+                    aria-label={`Open photo ${i + 1} of ${items.length}`}>
+                    <RemoteImg src={g.img} width={600} sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" alt="" eager={i < 4} className="size-full object-cover" />
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
         )}
