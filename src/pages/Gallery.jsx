@@ -1,16 +1,13 @@
 import { useLayoutEffect, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { useSearchParams } from 'react-router';
 import { SheetHead } from '../components/Layout';
 import { RemoteImg, remoteSrc } from '../components/RemoteImg';
 import { Failed } from '../components/ui';
 import { Chevron, Close } from '../components/icons';
 import { useApi } from '../lib/api';
 import { motionAllowed } from '../lib/motion';
-import { REPO_PHOTOS, splitGallery } from '../content/gallery-tags';
+import { REPO_PHOTOS, visible } from '../content/gallery-tags';
 import snapshot from '../content/snapshot.json';
-
-const TABS = [['aircraft', 'Aircraft'], ['people', 'People']];
 
 // Runs a DOM change as a view transition where the browser has them (and motion is allowed).
 function transition(change, cls) {
@@ -49,51 +46,13 @@ function Viewer({ items, index, onClose, onMove }) {
   );
 }
 
-// Aircraft / People tabs with an underline that slides (and stretches a little while it travels).
-function Tabs({ view, counts, onChange }) {
-  const list = useRef(null);
-  const bar = useRef(null);
-  const [pos, setPos] = useState(null);
-  useLayoutEffect(() => {
-    const tab = list.current?.querySelector('[aria-selected="true"]');
-    if (!tab) return;
-    setPos((old) => {
-      if (old && motionAllowed()) bar.current?.animate([{ scale: '1 1' }, { scale: '1.12 1' }, { scale: '1 1' }], { duration: 280, easing: 'ease-in-out' });
-      return { x: tab.offsetLeft, w: tab.offsetWidth };
-    });
-  }, [view]);
-  const key = (e) => {
-    const i = TABS.findIndex(([v]) => v === view);
-    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (!d) return;
-    const next = TABS[(i + d + TABS.length) % TABS.length][0];
-    onChange(next);
-    list.current.querySelector(`#tab-${next}`)?.focus();
-  };
-  return (
-    <div ref={list} role="tablist" aria-label="Gallery sections" onKeyDown={key} className="relative flex gap-8 border-b border-rule">
-      {TABS.map(([v, label]) => (
-        <button key={v} id={`tab-${v}`} role="tab" type="button" aria-selected={v === view} aria-controls="gallery-panel" tabIndex={v === view ? 0 : -1}
-          onClick={() => onChange(v)} className={`wide text-xl md:text-2xl py-4 inline-flex items-baseline gap-2 ${v === view ? '' : 'text-ink-2 hover:text-ink'}`}>
-          {label}<span className="data text-ink-2">{counts[v]}</span>
-        </button>
-      ))}
-      <span ref={bar} aria-hidden="true" className="absolute -bottom-px left-0 h-0.5 bg-signal transition-[translate,width] duration-[280ms] ease-in-out"
-        style={pos ? { translate: `${pos.x}px 0`, width: pos.w } : { width: 0 }} />
-    </div>
-  );
-}
-
 export default function Gallery() {
   const { data, error, loading, reload } = useApi('/gallery/images', { initial: snapshot.gallery, map: (d) => [...d].reverse() });
-  const [params, setParams] = useSearchParams();
-  const view = params.get('view') === 'people' ? 'people' : 'aircraft';
-  const sets = useMemo(() => (data ? splitGallery([...REPO_PHOTOS, ...data]) : null), [data]);
-  const items = sets?.[view] ?? [];
+  const all = useMemo(() => (data ? visible([...REPO_PHOTOS, ...data]) : null), [data]);
+  const items = all ?? [];
   const [open, setOpen] = useState(null);
   const move = (d) => setOpen((i) => (i + d + items.length) % items.length);
 
-  const show = (v) => v !== view && setParams(v === 'aircraft' ? {} : { view: v }, { replace: true, preventScrollReset: true });
   const openAt = (i, el) => {
     el.style.viewTransitionName = 'photo';
     transition(() => { el.style.viewTransitionName = ''; setOpen(i); });
@@ -108,20 +67,19 @@ export default function Gallery() {
     <>
       <SheetHead title="Gallery"><p>The aircraft we’ve built and flown, and the people who built them.</p></SheetHead>
       <section className="wrap section pt-12 grid gap-10">
-        <Tabs view={view} counts={{ aircraft: sets?.aircraft.length ?? 0, people: sets?.people.length ?? 0 }} onChange={show} />
-        {loading && !sets && ( // only before the first photos: a refresh keeps the ones on screen
+        {loading && !all && ( // only before the first photos: a refresh keeps the ones on screen
           <ul role="status" aria-label="Loading photos" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
             {Array.from({ length: 12 }, (_, i) => <li key={i} className="aspect-[4/3] border border-rule bg-rule/30 animate-pulse" />)}
           </ul>
         )}
         {error && <Failed error={error} retry={reload} />}
-        {sets && (
-          <div id="gallery-panel" role="tabpanel" aria-labelledby={`tab-${view}`}>
+        {all && (
+          <div id="gallery-panel">
             {!items.length && <p className="text-ink-2 border border-dashed border-rule p-6">No photos here yet.</p>}
             {/* Even rows of 4:3 tiles, all one height; the last row's tiles widen to fill it, so no gap is left.
                 A photo that would sit alone in the last row takes the one before it along, so it ends in a pair.
                 The viewer shows each photo uncropped. */}
-            <ul key={view} data-reveal="stagger" className="@container flex flex-wrap gap-3">
+            <ul data-reveal="stagger" className="@container flex flex-wrap gap-3">
               {items.map((g, i) => (
                 <li key={g._id} className="grow basis-[calc(50%-0.375rem)] md:basis-[calc(33.333%-0.5rem)] xl:basis-[calc(25%-0.5625rem)] h-[calc((100cqw-0.75rem)/2*0.75)] md:h-[calc((100cqw-1.5rem)/3*0.75)] xl:h-[calc((100cqw-2.25rem)/4*0.75)] md:max-xl:[&:nth-last-child(2):nth-child(3n)]:basis-[40%] md:max-xl:[&:nth-child(3n+1):last-child]:basis-[40%] xl:[&:nth-last-child(2):nth-child(4n)]:basis-[40%] xl:[&:nth-child(4n+1):last-child]:basis-[40%]">
                   <button type="button" data-photo={g._id} onClick={(e) => openAt(i, e.currentTarget)}
