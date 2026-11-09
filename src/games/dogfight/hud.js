@@ -10,6 +10,10 @@ export function drawHud(ctx, w, h, d) {
   ctx.clearRect(0, 0, w, h);
   ctx.lineWidth = 1.5; ctx.textBaseline = 'middle';
   const k = Math.max(0.75, Math.min(1.2, w / 1100));
+  // Extreme: inside a cloud the view whites out (the HUD stays readable on top).
+  if (d.whiteout) { ctx.fillStyle = `rgba(232,237,242,${d.whiteout})`; ctx.fillRect(0, 0, w, h); }
+  // Extreme's sky is bright: a soft dark edge keeps the HUD readable over it.
+  ctx.shadowColor = d.wave ? 'rgba(0,0,0,0.6)' : 'transparent'; ctx.shadowBlur = d.wave ? 4 : 0;
 
   // Where the guns point, and where the mouse is asking the plane to go.
   if (d.boresight) {
@@ -49,9 +53,20 @@ export function drawHud(ctx, w, h, d) {
     if (locked) text(ctx, 'LOCK', x, y + s + 12, { size: 12 * k, color: AMBER, align: 'center', weight: 700 });
   }
 
-  // Top: kills and time.
-  text(ctx, `${d.kills} / 4  DOWN`, w / 2, 26, { size: 15 * k, align: 'center', weight: 700 });
-  text(ctx, d.time, w / 2, 46, { size: 11 * k, align: 'center', color: 'rgba(255,255,255,0.7)' });
+  // Top: kills and time (Extreme: the wave, who's left, and how many are hiding).
+  if (d.wave) {
+    text(ctx, `WAVE ${d.wave.n}`, w / 2, 26, { size: 15 * k, align: 'center', weight: 700 });
+    text(ctx, `${d.wave.left} LEFT${d.wave.hidden ? `  ·  ${d.wave.hidden} HIDDEN` : ''}  ·  ${d.kills} DOWN  ·  ${d.time}`, w / 2, 46, { size: 11 * k, align: 'center', color: 'rgba(255,255,255,0.75)' });
+  } else {
+    text(ctx, `${d.kills} / 4  DOWN`, w / 2, 26, { size: 15 * k, align: 'center', weight: 700 });
+    text(ctx, d.time, w / 2, 46, { size: 11 * k, align: 'center', color: 'rgba(255,255,255,0.7)' });
+  }
+  if (d.banner?.a > 0) {
+    ctx.globalAlpha = d.banner.a;
+    text(ctx, d.banner.title, w / 2, h * 0.22 + d.banner.slide, { size: 34 * k, align: 'center', weight: 700 });
+    text(ctx, d.banner.sub, w / 2, h * 0.22 + 34 * k + d.banner.slide, { size: 14 * k, align: 'center', color: AMBER });
+    ctx.globalAlpha = 1;
+  }
 
   // Sides: speed and altitude.
   for (const [x, label, v, align] of [[30, 'SPD', `${Math.round(d.speed * 3.6)} km/h`, 'left'], [w - 30, 'ALT', `${Math.round(d.alt)} m`, 'right']]) {

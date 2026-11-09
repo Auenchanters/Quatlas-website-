@@ -23,6 +23,20 @@ function canvasPrint() {
   return { sum, colours: seen.size };
 }
 const text = () => document.querySelector('section')?.innerText ?? '';
+// The same fingerprint from a screenshot of the canvas's box: a WebGPU canvas reads back blank after it is shown.
+async function screenPrint(page) {
+  const box = await (await page.$('canvas[role="img"]'))?.boundingBox();
+  if (!box) return null;
+  const b64 = await page.screenshot({ clip: box, type: 'jpeg', quality: 70, encoding: 'base64' });
+  return page.evaluate(async (b64) => {
+    const img = new Image(); img.src = 'data:image/jpeg;base64,' + b64; await img.decode();
+    const t = document.createElement('canvas'); t.width = 64; t.height = 36;
+    const x = t.getContext('2d'); x.drawImage(img, 0, 0, 64, 36);
+    const d = x.getImageData(0, 0, 64, 36).data; let sum = 0; const seen = new Set();
+    for (let i = 0; i < d.length; i += 4) { sum += d[i] * 3 + d[i + 1] * 5 + d[i + 2] * 7 + i; seen.add((d[i] >> 4) * 256 + (d[i + 1] >> 4) * 16 + (d[i + 2] >> 4)); }
+    return { sum, colours: seen.size };
+  }, b64);
+}
 
 export async function run({ check, base, launch, here }) {
   const shot = (page, name) => page.screenshot({ path: path.join(here, 'reports', 'shots', `game-${name}.jpg`), type: 'jpeg', quality: 70 });
@@ -155,6 +169,102 @@ export async function run({ check, base, launch, here }) {
       check('games', 'Dogfight (phone): no errors', !log.errors.length, log.errors.length, 0, log.errors.slice(0, 3).join(' | '));
       await page.close();
     }
+  } finally {
+    await browser.close();
+  }
+  await extreme({ check, base, launch, shot: (page, name) => page.screenshot({ path: path.join(here, 'reports', 'shots', `game-${name}.jpg`), type: 'jpeg', quality: 70 }) });
+}
+
+// Dogfight Extreme (WebGPU, a worker and WASM, in waves), chosen from the Graphics setting. Played
+// where this Chrome offers WebGPU; elsewhere it must fall back to Base with a note. ?bench lets the
+// script read the wave and skip through waves (window.__extreme), since a script can't win dogfights.
+async function extreme({ check, base, launch, shot }) {
+  const browser = await launch({ args: ['--enable-unsafe-webgpu'] });
+  const click = (page, label) => page.evaluate((l) => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === l)?.click(), label);
+  const has = (page, label) => page.evaluate((l) => !![...document.querySelectorAll('button')].find((b) => b.textContent.trim() === l), label);
+  const hud = (page) => page.evaluate(() => window.__extreme?.hud() ?? null);
+  const until = async (page, fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await sleep(250); } return null; };
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1366, height: 768 });
+    await page.evaluateOnNewDocument(KEEP_PIXELS);
+    const log = watch(page, base);
+    await go(page, base + '/hangar/dogfight?bench');
+    await page.waitForSelector('canvas[role="img"]', { timeout: 20000 });
+    const gpu = await page.evaluate(async () => !!(await navigator.gpu?.requestAdapter()));
+    await click(page, 'Extreme');
+    const loaded = await until(page, () => page.evaluate(() => (document.querySelector('canvas[role="img"]')?.getAttribute('aria-label') ?? '').includes('Extreme') && [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Take off')), 25000);
+    const pressed = await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Extreme')?.getAttribute('aria-pressed'));
+    if (!gpu) {
+      const note = /needs WebGPU/.test(await page.evaluate(text));
+      check('games', 'Extreme: without WebGPU, falls back to Base with a note', note && !loaded, note ? 'note' : 'no note', 'note');
+      return;
+    }
+    check('games', 'Extreme: the Graphics setting loads it (WebGPU)', !!loaded && pressed === 'true', loaded ? 'loaded' : 'not loaded', 'loaded');
+    if (!loaded) return;
+    await sleep(1500);
+    const a = await screenPrint(page);
+    check('games', 'Extreme: menu draws the 3D scene', a?.colours > 20, a?.colours, '>20 colours');
+    await click(page, 'Take off');
+    const first = await until(page, () => hud(page), 8000);
+    check('games', 'Extreme: Take off starts wave 1 (the worker and WASM run)', first?.wave === 1 && (await has(page, 'Pause')), first ? `wave ${first.wave}` : 'no state', 'wave 1');
+    const f = await fps(page, 3000);
+    await shot(page, 'extreme-desktop');
+    check('games', `Extreme: ≥ ${MOTION.fps} fps in flight`, f.median >= MOTION.fps && f.p5 >= MOTION.fpsP5, `${f.median}/${f.p5}`, `${MOTION.fps}/${MOTION.fpsP5}`);
+    await page.keyboard.down('KeyW'); await page.keyboard.down('KeyA'); await page.keyboard.down('Space');
+    await sleep(1500);
+    await page.keyboard.press('KeyF');
+    await page.keyboard.up('KeyA'); await page.keyboard.up('KeyW'); await page.keyboard.up('Space');
+    await sleep(500);
+    const b = await screenPrint(page);
+    check('games', 'Extreme: the view moves in flight', b && a && b.sum !== a.sum, 'changed', 'changed');
+    // Skip through waves 1–3 (the enemies die by the normal rules); wave 4 must arrive and fight.
+    const seen = [];
+    for (let n = 1; n <= 3; n++) {
+      const fighting = await until(page, async () => { const h = await hud(page); return h?.wave === n && h.phase === 'fight' && h.left > 0 && h; }, 9000);
+      if (!fighting) break;
+      seen.push(`${n}:${fighting.left}`);
+      await page.evaluate(() => window.__extreme.clearWave());
+    }
+    const four = await until(page, async () => { const h = await hud(page); return h?.wave === 4 && h.phase === 'fight' && h; }, 12000);
+    check('games', 'Extreme: waves advance (1 → 4) with more jets', !!four && four.left > 3, `${seen.join(' ')}${four ? ` 4:${four.left}` : ' (stuck)'}`, 'reaches wave 4');
+    await shot(page, 'extreme-wave4');
+    await page.keyboard.press('Escape'); await sleep(400);
+    const paused = /Paused/.test(await page.evaluate(text)) && (await has(page, 'Base')) && (await has(page, 'Extreme'));
+    check('games', 'Extreme: Esc pauses, with the Graphics setting', paused, paused ? 'paused' : 'no', 'paused');
+    await click(page, 'Resume'); await sleep(400);
+    await click(page, 'Pause'); await sleep(200);
+    await click(page, 'Leave the game'); await sleep(400);
+    check('games', 'Extreme: Leave returns to the menu', await has(page, 'Take off'), 'menu', 'menu');
+    // The choice is remembered; leaving frees the GPU device and the worker, ten times over.
+    for (let i = 0; i < 10; i++) {
+      await page.evaluate(() => document.querySelector('a[href="/hangar"]')?.click()); await sleep(300);
+      await page.evaluate(() => document.querySelector('a[href="/hangar/dogfight"]')?.click()); await sleep(1200);
+    }
+    const again = await until(page, () => page.evaluate(() => (document.querySelector('canvas[role="img"]')?.getAttribute('aria-label') ?? '').includes('Extreme') && [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Take off')), 15000);
+    const lost = log.errors.filter((e) => /context|WebGL|WebGPU|device/i.test(e));
+    check('games', 'Extreme: remembered, and 10 visits in a row keep the GPU healthy', !!again && !lost.length, `${again ? 'extreme' : 'not restored'}, ${lost.length} GPU errors`, 'extreme, 0', lost.slice(0, 2).join(' | '));
+    await click(page, 'Base');
+    const backToBase = await until(page, () => page.evaluate(() => document.querySelector('canvas[role="img"]')?.getAttribute('aria-label') === 'Dogfight, a 3D air combat game' && [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Take off')), 10000);
+    check('games', 'Extreme: switching back gives Base', !!backToBase, backToBase ? 'base' : 'no', 'base');
+    check('games', 'Extreme: no errors', !log.errors.length, log.errors.length, 0, log.errors.slice(0, 3).join(' | '));
+    await page.close();
+
+    // On a phone: the touch controls show and fit.
+    const phone = await browser.newPage();
+    await phone.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    await phone.evaluateOnNewDocument(() => { try { localStorage.setItem('dogfight-graphics', 'extreme'); } catch { /* */ } });
+    const plog = watch(phone, base);
+    await go(phone, base + '/hangar/dogfight?bench');
+    await until(phone, () => phone.evaluate(() => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Take off') && (document.querySelector('canvas[role="img"]')?.getAttribute('aria-label') ?? '').includes('Extreme')), 25000);
+    const take = await phone.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Take off'));
+    await take.tap(); await sleep(1500);
+    const ctl = await phone.evaluate(() => [...document.querySelectorAll('button, [aria-hidden="true"].rounded-full')].filter((e) => /^(FIRE|MSL)$/.test(e.textContent.trim()) || e.matches('.rounded-full.size-32'))
+      .map((e) => { const r = e.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }));
+    check('games', 'Extreme (phone): stick, FIRE and MSL shown, on screen, ≥ 44 px', ctl.length === 3 && ctl.every(Boolean), `${ctl.filter(Boolean).length}/3`, '3 ok');
+    await shot(phone, 'extreme-phone');
+    check('games', 'Extreme (phone): no errors', !plog.errors.length, plog.errors.length, 0, plog.errors.slice(0, 3).join(' | '));
+    await phone.close();
   } finally {
     await browser.close();
   }

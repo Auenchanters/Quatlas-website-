@@ -8,11 +8,12 @@ import {
 } from './logic';
 import { createWorld, buildJet, createTracers, createEffects, buildMissile } from './scene';
 import { drawHud } from './hud';
-import { FULL, enterFull, exitFull, onDropOut } from '../fullscreen';
+import { createControls } from './controls';
+import { FULL, enterFull, exitFull } from '../fullscreen';
 
 const focusOnMount = (el) => el?.focus({ preventScroll: true });
 
-const KEY = 'dogfight-best';
+const KEY = 'dogfight-best', GFX = 'dogfight-graphics';
 const best = () => { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } };
 const AMMO = 600, MISSILES = 4, FIRE_RATE = 1 / 14;
 const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
@@ -34,8 +35,38 @@ export default function Dogfight() {
   const [result, setResult] = useState(null);
   const phaseRef = useRef(phase); phaseRef.current = phase;
   const api = useRef({});
+  // Graphics: Base (this file's WebGL game) or Extreme (extreme/, WebGPU + a worker + WASM, in waves).
+  const [graphics, setGraphics] = useState(() => { try { return localStorage.getItem(GFX) === 'extreme' ? 'extreme' : 'base'; } catch { return 'base'; } });
+  const [ready, setReady] = useState(false), [note, setNote] = useState('');
+  const choose = (v) => {
+    try { localStorage.setItem(GFX, v); } catch { /* private mode */ }
+    setNote(''); setResult(null); setPhase('menu'); setGraphics(v);
+  };
+
+  // Extreme: only where WebGPU works; its chunk, worker and WASM load only when it is chosen.
+  useEffect(() => {
+    if (graphics !== 'extreme') return;
+    let dispose = null, dead = false;
+    setReady(false);
+    (async () => {
+      try {
+        if (!(await navigator.gpu?.requestAdapter())) throw new Error('no WebGPU');
+        const { mountExtreme } = await import('./extreme/engine');
+        if (dead) return;
+        const d = await mountExtreme({ el: wrap.current, hudCanvas: hudCanvas.current, phaseRef, setPhase, setResult, api });
+        if (dead) d(); else { dispose = d; setReady(true); }
+      } catch (e) {
+        if (dead) return;
+        if (e.message !== 'no WebGPU') console.error(e);
+        choose('base');
+        setNote('Extreme needs WebGPU, which this browser doesn’t offer, so you’re flying Base.');
+      }
+    })();
+    return () => { dead = true; dispose?.(); };
+  }, [graphics]);
 
   useEffect(() => {
+    if (graphics !== 'base') return;
     const el = wrap.current;
     // A fresh canvas per mount: the old one's context is released on cleanup, so it can't be reused.
     const canvas = Object.assign(document.createElement('canvas'), { className: 'absolute inset-0 size-full' });
@@ -49,11 +80,7 @@ export default function Dogfight() {
     const hud = hudCanvas.current.getContext('2d');
     let g = newSortie(), audio = null, motor = null, stopMusic = null, raf = 0, last = performance.now();
     let jets = [], missileMeshes = new Map();
-    // Mouse aim, as in War Thunder: the mouse turns a world direction (yaw, pitch) that the camera looks
-    // along, and the jet flies toward it. The aim stays put when the mouse does, so the jet settles on it.
-    const input = { yaw: 0, pitch: 0, turn: 0, climb: 0, edge: 0, fire: false, missile: false, roll: 0, throttle: 0, look: false, stick: null };
-    const aimDir = (out = new THREE.Vector3()) => out.set(Math.sin(input.yaw) * Math.cos(input.pitch), Math.sin(input.pitch), Math.cos(input.yaw) * Math.cos(input.pitch));
-    const aimFrom = (p) => { const f = forwardOf(p, new THREE.Vector3()); input.yaw = Math.atan2(f.x, f.z); input.pitch = Math.asin(Math.max(-1, Math.min(1, f.y))); };
+    const controls = createControls(el, phaseRef, api), { input, aimDir, aimFrom, clearInput } = controls;
 
     const placeJets = () => {
       const free = (o) => { scene.remove(o); o.traverse((c) => { c.geometry?.dispose(); [].concat(c.material ?? []).forEach((m) => m.dispose()); }); };
@@ -103,11 +130,7 @@ export default function Dogfight() {
       g.t += dt;
       // Throttle from W/S (sticky); aim from the pointer (or the touch stick).
       g.throttle = Math.max(0, Math.min(1, g.throttle + input.throttle * dt * 0.7));
-      // The touch stick turns the aim at a rate; the mouse turns it directly (onMove).
-      if (input.stick) { input.yaw -= input.stick.x * 1.5 * dt; input.pitch += input.stick.y * 1.1 * dt; }
-      // Keys (A / D, arrows) and a cursor held at the side of the screen turn the aim at a steady rate.
-      input.yaw += (input.turn * 1.3 + input.edge * 1.5) * dt; input.pitch += input.climb * 0.9 * dt;
-      input.pitch = Math.max(-1.35, Math.min(1.35, input.pitch));
+      controls.update(dt);
       const ctl = steerToward(P, aimDir(aim));
       if (input.roll) ctl.roll = input.roll;
       if (P.alive) fly(P, { ...ctl, throttle: g.throttle }, dt);
@@ -233,43 +256,6 @@ export default function Dogfight() {
     };
     raf = requestAnimationFrame(frame);
 
-    // Input.
-    // Mouse only: touch drags on the stick and FIRE button must not move the aim point.
-    const onMove = (e) => {
-      if (e.pointerType !== 'mouse' || phaseRef.current !== 'playing') return;
-      // Without pointer lock the cursor stops at the screen's edge; holding it there keeps turning.
-      const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
-      input.edge = document.pointerLockElement ? 0 : x < 0.06 ? 1 : x > 0.94 ? -1 : 0;
-      const k = 0.0022; // radians of aim per pixel of mouse travel
-      input.yaw -= e.movementX * k; input.pitch = Math.max(-1.35, Math.min(1.35, input.pitch - e.movementY * k));
-    };
-    // A / D and the arrows move the aim (so the jet turns and stays turned); Q / E roll by hand.
-    const KEYS = {
-      KeyW: ['throttle', 1], KeyS: ['throttle', -1], KeyA: ['turn', 1], KeyD: ['turn', -1], ArrowLeft: ['turn', 1], ArrowRight: ['turn', -1],
-      ArrowUp: ['climb', 1], ArrowDown: ['climb', -1], KeyQ: ['roll', -1], KeyE: ['roll', 1], KeyC: ['look', true],
-    };
-    const onKey = (down) => (e) => {
-      // Releases always count, so nothing stays held across a pause.
-      if (!down && KEYS[e.code]) { const [k] = KEYS[e.code]; input[k] = k === 'look' ? false : 0; }
-      if (!down && e.code === 'Space') input.fire = false;
-      if (phaseRef.current !== 'playing') return; // the menu's buttons resume: browsers won't re-enter fullscreen from Esc
-      if (KEYS[e.code]) { const [k, v] = KEYS[e.code]; input[k] = down ? v : (k === 'look' ? false : 0); e.preventDefault(); }
-      if (e.code === 'Space') { input.fire = down; e.preventDefault(); }
-      if (e.code === 'KeyF' && down && !e.repeat) input.missile = true;
-      if (e.code === 'Escape' && down) api.current.pause();
-    };
-    const kd = onKey(true), ku = onKey(false);
-    const clearInput = () => Object.assign(input, { fire: false, missile: false, roll: 0, throttle: 0, turn: 0, climb: 0, edge: 0, look: false, stick: null });
-    const onHide = () => { if (document.hidden && phaseRef.current === 'playing') api.current.pause(); };
-    // Esc in fullscreen (or with the mouse locked) never reaches the page: dropping out is the pause.
-    const stopDropOut = onDropOut(() => { if (phaseRef.current === 'playing') api.current.pause(); });
-    const onBlur = () => clearInput();
-    const onUp = (e) => { if (e.pointerType === 'mouse') input.fire = false; }; // even when released outside the game
-    el.addEventListener('pointermove', onMove);
-    addEventListener('keydown', kd); addEventListener('keyup', ku);
-    document.addEventListener('visibilitychange', onHide);
-    addEventListener('blur', onBlur); addEventListener('pointerup', onUp);
-
     api.current = {
       input,
       start() {
@@ -288,17 +274,13 @@ export default function Dogfight() {
 
     return () => {
       cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
-      el.removeEventListener('pointermove', onMove);
-      removeEventListener('keydown', kd); removeEventListener('keyup', ku);
-      document.removeEventListener('visibilitychange', onHide);
-      removeEventListener('blur', onBlur); removeEventListener('pointerup', onUp);
-      stopDropOut(); exitFull();
+      controls.unbind(); exitFull();
       stopMusic?.(); motor?.stop(); audio?.close();
       // Free the GPU memory now: browsers cap live WebGL contexts, and each visit would otherwise keep one.
       scene.traverse((o) => { o.geometry?.dispose(); [].concat(o.material ?? []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
       renderer.dispose(); renderer.forceContextLoss(); canvas.remove();
     };
-  }, []);
+  }, [graphics]);
 
   const i = () => api.current.input;
   const fire = (on) => (e) => { e.preventDefault(); if (phase === 'playing') i().fire = on; };
@@ -344,9 +326,10 @@ export default function Dogfight() {
         <div className="absolute inset-0 grid place-content-center justify-items-center gap-4 text-center bg-[#0b0d12]/55 backdrop-blur-[2px] p-6">
           {phase === 'menu' && (
             <>
-              <p className="data text-[#ff8790]">Four bandits inbound</p>
+              <p className="data text-[#ff8790]">{graphics === 'extreme' ? 'Wave after wave inbound' : 'Four bandits inbound'}</p>
               <p className="display text-[clamp(2.25rem,5vw,4rem)]">Dogfight</p>
               <p className="max-w-md text-[#c9ced6]">Move the mouse to aim: the jet flies to the circle. A / D or the arrow keys turn too. Click or Space to fire; right-click or F launches a missile, which homes best once the lock ring closes. W / S throttle, Q / E roll, C to look back. Plays full screen; Esc for the menu.</p>
+              {graphics === 'extreme' && <p className="max-w-md text-[#ffcf6b]">Each wave is harder: guns, then homing missiles, then more jets, then they hide in clouds.</p>}
             </>
           )}
           {phase === 'paused' && <p className="display text-[clamp(2rem,4vw,3.5rem)]">Paused</p>}
@@ -355,17 +338,29 @@ export default function Dogfight() {
               <p className={`data ${result.won ? 'text-[#8dffb4]' : 'text-[#ff8790]'}`}>{result.why}</p>
               <p className="display text-6xl md:text-7xl"><Roll value={result.score} /></p>
               <dl className="flex flex-wrap justify-center gap-6 text-[#c9ced6]">
-                <div><dt className="text-sm">Down</dt><dd className="text-white">{result.kills} / 4</dd></div>
+                {result.extreme && <div><dt className="text-sm">Wave</dt><dd className="text-white">{result.wave}</dd></div>}
+                <div><dt className="text-sm">Down</dt><dd className="text-white">{result.extreme ? result.kills : `${result.kills} / 4`}</dd></div>
                 <div><dt className="text-sm">Time</dt><dd className="text-white">{result.time}</dd></div>
                 <div><dt className="text-sm">Accuracy</dt><dd className="text-white">{result.accuracy}%</dd></div>
-                <div><dt className="text-sm">Best</dt><dd className="text-white">{best()}</dd></div>
+                <div><dt className="text-sm">Best</dt><dd className="text-white">{result.extreme ? result.best : best()}</dd></div>
               </dl>
             </>
           )}
-          <button type="button" ref={phase === 'menu' ? undefined : focusOnMount} className="btn btn-signal" onClick={() => (phase === 'paused' ? api.current.resume() : api.current.start())}>
-            {phase === 'menu' ? 'Take off' : phase === 'paused' ? 'Resume' : 'Fly again'}
-          </button>
+          {graphics === 'extreme' && !ready
+            ? <p className="data text-[#c9ced6]" role="status">Loading Extreme…</p>
+            : <button type="button" ref={phase === 'menu' ? undefined : focusOnMount} className="btn btn-signal" onClick={() => (phase === 'paused' ? api.current.resume() : api.current.start())}>
+              {phase === 'menu' ? 'Take off' : phase === 'paused' ? 'Resume' : 'Fly again'}
+            </button>}
           {phase !== 'menu' && <button type="button" className="btn btn-sm border-white/60 text-white hover:bg-white hover:text-[#0b0d12]" onClick={() => api.current.leave()}>Leave the game</button>}
+          <div role="group" aria-label="Graphics" className="flex flex-wrap items-center justify-center gap-2">
+            <span className="data text-[#c9ced6]">Graphics</span>
+            {[['base', 'Base'], ['extreme', 'Extreme']].map(([v, label]) => (
+              <button key={v} type="button" aria-pressed={graphics === v} onClick={() => graphics !== v && choose(v)}
+                className={`btn btn-sm ${graphics === v ? 'bg-white text-[#0b0d12] border-white' : 'border-white/60 text-white hover:bg-white hover:text-[#0b0d12]'}`}>{label}</button>
+            ))}
+          </div>
+          {phase === 'paused' && <p className="text-sm text-[#c9ced6]">Switching graphics starts a new sortie.</p>}
+          {note && <p className="max-w-sm text-sm text-[#ffcf6b]" role="status">{note}</p>}
         </div>
       )}
     </div>
