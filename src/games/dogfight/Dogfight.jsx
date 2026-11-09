@@ -17,15 +17,17 @@ const KEY = 'dogfight-best', GFX = 'dogfight-graphics', TIME = 'dogfight-time', 
 const stored = (key, allowed) => { try { const v = localStorage.getItem(key); return allowed.includes(v) ? v : allowed[0]; } catch { return allowed[0]; } };
 const store = (key, v) => { try { localStorage.setItem(key, v); } catch { /* private mode */ } };
 
-// A row of toggle buttons for one setting (Graphics, Time, Weather).
+// One setting (Graphics, Time, Weather) as a compact segmented control, its label above.
 function Choice({ label, value, options, onPick }) {
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap items-center justify-center gap-2">
-      <span className="data text-[#c9ced6]">{label}</span>
-      {options.map(([v, text]) => (
-        <button key={v} type="button" aria-pressed={value === v} onClick={() => value !== v && onPick(v)}
-          className={`btn btn-sm ${value === v ? 'bg-white text-[#0b0d12] border-white' : 'border-white/60 text-white hover:bg-white hover:text-[#0b0d12]'}`}>{text}</button>
-      ))}
+    <div role="group" aria-label={label} className="grid justify-items-center gap-1">
+      <span aria-hidden="true" className="data text-[0.68rem] text-[#c9ced6]">{label}</span>
+      <div className="flex divide-x divide-white/40 border border-white/50">
+        {options.map(([v, text]) => (
+          <button key={v} type="button" aria-pressed={value === v} onClick={() => value !== v && onPick(v)}
+            className={`h-9 px-3 text-sm font-semibold ${value === v ? 'bg-white text-[#0b0d12]' : 'text-white hover:bg-white/15'}`}>{text}</button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -344,13 +346,16 @@ export default function Dogfight() {
       )}
 
       {phase !== 'playing' && (
-        <div className="absolute inset-0 grid [place-content:safe_center] overflow-y-auto justify-items-center gap-4 text-center bg-[#0b0d12]/55 backdrop-blur-[2px] p-6">
+        <div className="absolute inset-0 grid [place-content:safe_center] overflow-y-auto justify-items-center gap-3 md:gap-4 text-center bg-[#0b0d12]/55 backdrop-blur-[2px] p-4 md:p-6">
           {phase === 'menu' && (
             <>
               <p className="data text-[#ff8790]">{graphics === 'extreme' ? 'Wave after wave inbound' : 'Four bandits inbound'}</p>
               <p className="display text-[clamp(2.25rem,5vw,4rem)]">Dogfight</p>
-              <p className="max-w-md text-[#c9ced6]">Move the mouse to aim: the jet flies to the circle. A / D or the arrow keys turn too. Click or Space to fire; right-click or F launches a missile, which homes best once the lock ring closes. W / S throttle, Q / E roll, C to look back. Plays full screen; Esc for the menu.</p>
-              {graphics === 'extreme' && <p className="max-w-md text-[#ffcf6b]">Each wave is harder: guns, then homing missiles, then more jets, then they hide in clouds. Here F or the scroll wheel drops flares to shake missiles (from wave 2); right-click or R launches a missile.</p>}
+              <p className="max-w-md text-[#c9ced6] pointer-coarse:hidden">{graphics === 'extreme'
+                ? 'Move the mouse to aim: the jet flies to the circle. Click or Space fires; right-click or R launches a missile; F or the scroll wheel drops flares (from wave 2). W / S throttle, Q / E roll, C to look back. Esc for the menu.'
+                : 'Move the mouse to aim: the jet flies to the circle. A / D or the arrow keys turn too. Click or Space to fire; right-click or F launches a missile, which homes best once the lock ring closes. W / S throttle, Q / E roll, C to look back. Plays full screen; Esc for the menu.'}</p>
+              <p className="hidden pointer-coarse:block max-w-xs text-sm text-[#c9ced6]">Drag in the circle to steer. FIRE shoots, MSL launches a missile{graphics === 'extreme' ? ', FLR drops flares (from wave 2)' : ''}.</p>
+              {graphics === 'extreme' && <p className="max-w-md text-sm text-[#ffcf6b]">Each wave is harder: guns, homing missiles, more jets, then they hide in clouds.</p>}
             </>
           )}
           {phase === 'paused' && <p className="display text-[clamp(2rem,4vw,3.5rem)]">Paused</p>}
@@ -373,14 +378,16 @@ export default function Dogfight() {
               {phase === 'menu' ? 'Take off' : phase === 'paused' ? 'Resume' : 'Fly again'}
             </button>}
           {phase !== 'menu' && <button type="button" className="btn btn-sm border-white/60 text-white hover:bg-white hover:text-[#0b0d12]" onClick={() => api.current.leave()}>Leave the game</button>}
-          <Choice label="Graphics" value={graphics} options={[['base', 'Base'], ['extreme', 'Extreme']]} onPick={choose} />
-          {graphics === 'extreme' && (
-            <>
-              <Choice label="Time" value={time} options={[['day', 'Day'], ['night', 'Night']]} onPick={(t) => sky(t, weather)} />
-              <Choice label="Weather" value={weather} options={[['clear', 'Clear'], ['rain', 'Rain'], ['storm', 'Storm']]} onPick={(w) => sky(time, w)} />
-            </>
-          )}
-          {phase === 'paused' && <p className="text-sm text-[#c9ced6]">Switching graphics starts a new sortie.</p>}
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            <Choice label="Graphics" value={graphics} options={[['base', 'Base'], ['extreme', 'Extreme']]} onPick={choose} />
+            {graphics === 'extreme' && (
+              <>
+                <Choice label="Time" value={time} options={[['day', 'Day'], ['night', 'Night']]} onPick={(t) => sky(t, weather)} />
+                <Choice label="Weather" value={weather} options={[['clear', 'Clear'], ['rain', 'Rain'], ['storm', 'Storm']]} onPick={(w) => sky(time, w)} />
+              </>
+            )}
+          </div>
+          {phase === 'paused' && <p className="text-xs text-[#c9ced6]">Switching graphics starts a new sortie.</p>}
           {note && <p className="max-w-sm text-sm text-[#ffcf6b]" role="status">{note}</p>}
         </div>
       )}
