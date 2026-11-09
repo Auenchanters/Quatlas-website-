@@ -35,7 +35,8 @@ export function createScene(canvas, { w, h, dpr = 1, still = false, zoom = 1, fl
     (anchors[p.userData.part] ??= []).push({ p, c });
   }
 
-  const state = { active: null, exploded: false, e: 0, yaw: 0, lean: new THREE.Vector2(), aim: new THREE.Vector2() };
+  // auto: parts come apart and back together on their own as it turns, until someone clicks the model.
+  const state = { active: null, exploded: false, auto: true, e: 0, yaw: 0, lean: new THREE.Vector2(), aim: new THREE.Vector2() };
   let introStart = still || flown ? -Infinity : null; // set on the first frame drawn
   const tint = new THREE.Color('#c41e2c'), none = new THREE.Color(0);
   const highlight = () => parts.forEach((p) => p.traverse((o) => o.material?.emissive?.copy(p.userData.part === state.active ? tint : none).multiplyScalar(0.22)));
@@ -71,7 +72,9 @@ export function createScene(canvas, { w, h, dpr = 1, still = false, zoom = 1, fl
     const fly = Math.min(1, (now - introStart) / 2400), rest = (1 - fly) ** 3;
     plane.position.set(-6 * rest, 1.4 * rest * rest, -1.2 * rest);
     plane.rotation.set(-1.1 * rest, 0, 0.35 * rest);
-    const goal = fly < 1 ? 0 : state.exploded ? 1 : 0;
+    // Auto cycle, 9 s: 3 s together, then 6 s apart with the labels, starting once it has flown in.
+    const cycle = !still && state.auto ? ((now - introStart - 2400) % 9000) > 3000 : state.exploded;
+    const goal = fly < 1 ? 0 : cycle ? 1 : 0;
     state.e += (goal - state.e) * (still ? 1 : 1 - Math.exp(-dt * 4));
     const ease = state.e * state.e * (3 - 2 * state.e);
     // Pull back so the parts stay in frame when apart (less on a tall panel, which has the height already).
@@ -111,11 +114,12 @@ export function createScene(canvas, { w, h, dpr = 1, still = false, zoom = 1, fl
       else if (m.type === 'visible') { visible = m.on; kick(); }
       else if (m.type === 'pointer') {
         if (m.kind === 'leave') { state.aim.set(0, 0); return; }
-        post({ type: 'pick', id: pick(m.x, m.y) ?? null, click: m.kind === 'click', mouse: m.mouse, exploded: state.exploded });
+        post({ type: 'pick', id: pick(m.x, m.y) ?? null, click: m.kind === 'click', mouse: m.mouse, exploded: state.auto ? state.e > 0.5 : state.exploded });
       } else if (m.type === 'set') {
         // The legend starts on a part; the model only tints a part once someone points at one.
         if (m.active !== undefined && m.active !== state.active) { const first = state.active === null; state.active = m.active; if (!first) highlight(); }
         if (m.exploded !== undefined) state.exploded = m.exploded;
+        if (m.auto !== undefined) state.auto = m.auto;
         kick();
       } else if (m.type === 'destroy') {
         dead = true; unraf(loop);

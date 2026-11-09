@@ -43,7 +43,7 @@ export function mountPlane(el, { names, onPick, onToggle, onReady, onFail, zoom 
     else if (m.type === 'fail') onFail?.();
     else if (m.type === 'pick') {
       // Clicking the model labels its parts (toggles); clicking beside it while apart puts it back together.
-      if (m.click) { if (m.id) onPick(m.id); if (m.id || m.exploded) onToggle?.(m.id); }
+      if (m.click) { if (m.id) onPick(m.id); if (m.id || m.exploded) onToggle?.(m.id, m.exploded); }
       else { if (m.id && m.mouse) onPick(m.id); el.style.cursor = m.id ? 'pointer' : ''; }
     }
   };

@@ -85,6 +85,9 @@ function Face({ f, on }) {
 export default function Aircraft({ hero = false, children }) {
   const [active, setActive] = useState('wing');
   const [exploded, setExploded] = useState(false);
+  // The 3D model takes itself apart and back together on a loop until the first click hands it over.
+  const [auto, setAuto] = useState(true);
+  const toggle = () => { setAuto(false); setExploded((e) => !e); };
   const [theta, setTheta] = useState(0.5);
   const spin = useRef(0);
   const stage = useRef(null);
@@ -109,7 +112,7 @@ export default function Aircraft({ hero = false, children }) {
         view.current = mountPlane(stage.current, {
           names: Object.fromEntries(Object.entries(PARTS).map(([id, p]) => [id, p.name])),
           onPick: setActive,
-          onToggle: (id) => setExploded((e) => (id ? !e : false)),
+          onToggle: (id, was) => { setAuto(false); setExploded(id ? !was : false); }, // from what's on screen
           onFail: () => { if (!dead) { view.current?.destroy(); view.current = null; fail(); } },
           zoom: hero ? 1.3 : 1,
         });
@@ -119,7 +122,7 @@ export default function Aircraft({ hero = false, children }) {
     document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
     return () => { dead = true; removeEventListener('load', go); view.current?.destroy(); view.current = null; };
   }, []);
-  useEffect(() => { view.current?.set({ active, exploded }); }, [active, exploded]);
+  useEffect(() => { view.current?.set({ active, exploded, auto }); }, [active, exploded, auto]);
 
   // The propeller turns only while the motor is the selected part.
   useEffect(() => {
@@ -150,7 +153,7 @@ export default function Aircraft({ hero = false, children }) {
             const faces = geo[0] === 'prop' ? propBlades(theta) : geo.flat();
             const hidden = id === 'payload' && !exploded && active !== 'payload';
             return (
-              <g key={i} className="fig-part" onPointerEnter={() => setActive(id)} onClick={() => { setActive(id); setExploded((e) => !e); }}
+              <g key={i} className="fig-part" onPointerEnter={() => setActive(id)} onClick={() => { setActive(id); toggle(); }}
                 style={{ transform: `translate(${d[0]}px, ${d[1]}px)`, transition: 'transform 900ms var(--ease-out-expo), opacity 400ms', opacity: live || hidden ? 0 : 1, cursor: 'pointer' }}>
                 {faces.map((f, j) => <Face key={j} f={f} on={id === active} />)}
               </g>
@@ -159,8 +162,8 @@ export default function Aircraft({ hero = false, children }) {
         </svg>
         <div ref={stage} className="absolute inset-0 overflow-hidden" />
         {/* Clicking the aircraft does the same; this is the way in for keyboards. */}
-        <button type="button" aria-pressed={exploded} onClick={() => setExploded((e) => !e)} className="data absolute left-3 top-3 max-w-[calc(100%-5rem)] text-left text-ink-2 hover:text-signal">
-          {exploded ? 'Click to put it back together' : 'Click the aircraft to label its parts'}
+        <button type="button" aria-pressed={exploded} onClick={toggle} className="data absolute left-3 top-3 max-w-[calc(100%-5rem)] text-left text-ink-2 hover:text-signal">
+          {auto && live && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Click the aircraft to take over' : exploded ? 'Click to put it back together' : 'Click the aircraft to label its parts'}
         </button>
         {/* Straight to the hidden hangar's games, without scrolling to the footer's link. */}
         <Link to="/hangar" className={`btn btn-signal absolute bottom-3 justify-center text-base whitespace-nowrap ${hero ? 'left-1/2 -translate-x-1/2 px-10' : 'inset-x-3'}`}>Take flight</Link>
