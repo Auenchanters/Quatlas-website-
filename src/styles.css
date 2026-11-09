@@ -64,6 +64,8 @@
   color-scheme: dark;
 }
 :root[data-theme="dark"] .logo { background: var(--color-plate); padding: 0.4rem; filter: none; }
+/* Supporter logos with navy or grey lettering vanish on the night sky: they flip their lightness (colours stay). */
+:root[data-theme="dark"] .logo-tile .logo-dark { filter: invert(1) hue-rotate(180deg); }
 :root[data-theme="dark"] .brand-logo { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
 
 /* Route changes cross-fade; the theme flip instead grows a circle from the pull cord (lib/theme.js). */
@@ -211,15 +213,21 @@ html.lenis, html.lenis body { height: auto; }
 
   /* Sponsor logos arrive as artwork for dark and light grounds alike; a hairline outline keeps white lettering legible on white. */
   .logo { filter: drop-shadow(0 0 0.6px var(--logo-edge)) drop-shadow(0 0 0.6px var(--logo-edge-soft)); }
-  /* Supporter logos sit on a shaded silver tile (lit from the top, darker toward the bottom), not a flat
-     white box; dark lettering and colour artwork both read on it, in either theme. */
+  /* Supporter logos sit straight on the page, no box. On hover a faint light follows the cursor across the
+     tile (glow() in ui.jsx sets --gx/--gy); it sits under the logo and never takes the click. */
   .logo-tile {
-    border-radius: var(--radius-photo); border: 1px solid rgb(255 255 255 / 0.12);
-    background: radial-gradient(130% 150% at 50% 0%, #eceef2 0%, #c6cbd4 55%, #9aa1ad 100%);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 -12px 24px rgb(20 24 32 / 0.16), 0 10px 26px rgb(0 0 0 / 0.32);
-    transition: transform 300ms var(--ease-out-expo), box-shadow 300ms;
+    position: relative; isolation: isolate;
+    border-radius: var(--radius-photo); border: 1px solid transparent;
+    transition: transform 300ms var(--ease-out-expo), border-color 300ms;
   }
-  a.logo-tile:hover { transform: translateY(-3px); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 -12px 24px rgb(20 24 32 / 0.16), 0 16px 32px rgb(0 0 0 / 0.4); }
+  .logo-tile::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(9rem circle at var(--gx, 50%) var(--gy, 50%), color-mix(in srgb, var(--color-ink) 11%, transparent), transparent 70%);
+    opacity: 0; transition: opacity 300ms;
+  }
+  .logo-tile:hover::before { opacity: 1; }
+  .logo-tile:hover { border-color: color-mix(in srgb, var(--color-ink) 12%, transparent); }
+  a.logo-tile:hover { transform: translateY(-3px); }
   .logo-tile .logo { background: none !important; padding: 0 !important; }
   /* Team tile art (components/TeamArt.jsx). */
   .av-sweep { animation: av-spin 3.2s linear infinite; }

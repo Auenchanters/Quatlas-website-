@@ -24,12 +24,13 @@ export const PATHS = [
   ['/support#crowdfunding', 'Crowdfunding', 'Chip in any amount over UPI. It goes into materials, parts and travel to competitions.'],
 ];
 
-// Logos in the Home supporters strip: [image name in assets-src, alt text].
+// Logos in the Home supporters strip: [image name in assets-src, alt text, dark lettering (flipped light on
+// the dark theme)].
 export const LOGOS = [
-  ['ramaiah', 'Ramaiah Institute of Technology'],
-  ['smart', 'Smart Links Technologies'],
-  ['sps01', 'Supporter logo'],
-  ['dhd', 'Supporter logo'],
+  ['ramaiah', 'Ramaiah Institute of Technology', true],
+  ['smart', 'Smart Links Technologies', true],
+  ['sps01', 'Scorpion Precision'],
+  ['dhd', 'Dream Homes Developers', true],
 ];
 
 // The photo wall on the home page: columns drifting in opposite directions. photos: names from

@@ -10,6 +10,7 @@ import { OVERVIEW } from '../content/overview';
 import { UPCOMING, when } from '../content/events';
 import { HERO, QUOTES, PATHS, LOGOS, WALL, COUNTS, HIGHLIGHT } from '../content/home';
 import { homeStats } from '../content/stats';
+import { glow } from '../lib/glow';
 
 function Quotes() {
   const [i, setI] = useState(0);
@@ -134,9 +135,9 @@ export default function Home() {
       <section aria-label="Supporters" className="pb-[clamp(5rem,10vw,9rem)] grid gap-8">
         <p className="wrap data text-ink-2">Supported by</p>
         <Marquee label="Supporter logos">
-          {LOGOS.map(([name, alt]) => (
-            <span key={name} className="logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">
-              <Img name={name} alt={alt} sizes="200px" className="logo max-h-20 w-auto max-w-full object-contain" />
+          {LOGOS.map(([name, alt, dark]) => (
+            <span key={name} onPointerMove={glow} className="logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">
+              <Img name={name} alt={alt} sizes="200px" className={`logo max-h-20 w-auto max-w-full object-contain ${dark ? 'logo-dark' : ''}`} />
             </span>
           ))}
         </Marquee>

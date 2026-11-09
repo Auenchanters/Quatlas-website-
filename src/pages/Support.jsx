@@ -12,7 +12,8 @@ import { toast } from '../lib/toast';
 import { upiLink } from '../lib/upi';
 import sponsors from '../content/sponsors.json';
 import snapshot from '../content/snapshot.json';
-import { INTRO, CROWDFUNDING, UPI } from '../content/support';
+import { INTRO, CROWDFUNDING, UPI, DARK_LOGOS } from '../content/support';
+import { glow } from '../lib/glow';
 
 // Official supporters and crowdfunding on one sheet.
 const WAYS = sponsors.slice(2, 5);
@@ -22,11 +23,11 @@ const host = (link) => link?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/
 const rowsOf = (logos) => (logos.length < 8 ? [logos, [...logos].reverse()] : [logos.filter((_, i) => i % 2 === 0), logos.filter((_, i) => i % 2)]);
 
 function Tile({ s }) {
-  const logo = <RemoteImg src={s.img} width={320} alt={host(s.link) || 'Supporter'} className="logo max-h-20 max-w-full object-contain" />;
+  const logo = <RemoteImg src={s.img} width={320} alt={host(s.link) || 'Supporter'} className={`logo max-h-20 max-w-full object-contain ${DARK_LOGOS.has(s._id) ? 'logo-dark' : ''}`} />;
   // A supporter without a web link is a logo, not a link (an <a> with nowhere to go confuses keyboards and crawlers).
   return s.link?.startsWith('http')
-    ? <a href={s.link} target="_blank" rel="noreferrer" className="press logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">{logo}</a>
-    : <span className="logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">{logo}</span>;
+    ? <a href={s.link} target="_blank" rel="noreferrer" onPointerMove={glow} className="press logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">{logo}</a>
+    : <span onPointerMove={glow} className="logo-tile grid place-items-center h-28 w-56 shrink-0 p-5">{logo}</span>;
 }
 
 function Supporters() {
