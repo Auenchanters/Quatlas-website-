@@ -49,7 +49,7 @@ export default function Team() {
       <SheetHead title="Our team"><p>{TEAM_INTRO}</p></SheetHead>
 
       <figure data-reveal="image" className="wrap pt-12">
-        <Img name="event-team-seated" eager sizes="(min-width: 1280px) 1200px, 100vw" alt="The Quatlas team seated together in the stands at an event, wearing event lanyards." className="w-full h-auto border border-ink" />
+        <Img name="group-stage" eager sizes="(min-width: 1280px) 1200px, 100vw" alt="The Quatlas team on an auditorium stage, two members kneeling behind the aircraft." className="w-full h-auto border border-ink" />
         <figcaption className="data text-ink-2 mt-2">The team</figcaption>
       </figure>
 
