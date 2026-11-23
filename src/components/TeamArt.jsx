@@ -279,4 +279,3 @@ export default function TeamArt({ slug }) {
   const Art = ART[slug];
   return Art ? <Art /> : null;
 }
-export const hasArt = (slug) => slug in ART;

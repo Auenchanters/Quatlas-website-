@@ -30,7 +30,6 @@ Mock login and OTP are in `scripts/mock-api.mjs`. No email is sent; `http://loca
 | `src/components/backdrop-scenes.js` | the subteam pages' animated backgrounds, drawn in a worker (`backdrop.worker.js`); `TeamBackdrop.jsx` is the page side |
 | `CONTENT.md` | where every piece of copy, every number and every image lives |
 | `src/content/` | page copy and the achievements record (edit text here) |
-| `src/content/events.js` | upcoming events: add a line, set `date: 'YYYY-MM-DD'` once announced |
 | `src/content/teams.js` | the five subteams, their copy, and which dashboard team names map to each |
 | `src/pages/Hangar.jsx`, `src/games/` | the hidden hangar behind the footer's “secret” link (`/hangar`): Payload Run (2D canvas) and Dogfight (3D, three.js); game rules are in `sim.js` / `logic.js` with tests |
 | `api/img.js` | Vercel function: serves dashboard photo links as WebP so new photos show before the next build |

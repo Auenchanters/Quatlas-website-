@@ -13,7 +13,6 @@ Pages only lay content out. To update the site, edit these files. You don't need
 | `support.js` | Support intro, crowdfunding text, UPI payee | `UPI.pa` = UPI ID, `UPI.pn` = name |
 | `sponsors.json` | "Three ways to sponsor" | |
 | `teams.js` | Team intro, subteam names/descriptions, which team names map to which subteam | The members themselves (names, roles, photos, LinkedIn) are edited in the admin panel, not here. |
-| `events.js` | Events page, Home "Upcoming" | |
 | `contact.jsx` | Contact people, form request types, FAQ | FAQ answers may contain links (JSX). |
 | `recruitment.js` | Recruitment roles and selection process | Dates come from the dashboard. |
 | `overview.js`, `about.json`, `terms.json` | About, Home overview, Terms | |

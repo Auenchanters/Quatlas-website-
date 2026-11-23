@@ -54,7 +54,7 @@ export function Failed({ error, retry }) {
   );
 }
 
-const initials = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+export const initials = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
 // One member card: photo, name, role, LinkedIn. `big` for the captain's row.
 export function Person({ p, big = false, sizes, eager = false }) {

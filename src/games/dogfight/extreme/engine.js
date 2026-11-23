@@ -4,7 +4,7 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createAudio } from '../../audio';
 import { enterFull, exitFull } from '../../fullscreen';
 import { createControls } from '../controls';
-import { drawHud } from '../hud';
+import { drawHud, mmss } from '../hud';
 import { leadPoint, groundAt } from '../logic';
 import { cloudField, waveNews, BANNER } from './waves';
 import { atmosphere, nextStrike, thunderDelay } from './atmosphere';
@@ -15,7 +15,6 @@ import { PS, MS } from './core';
 // simulation runs in worker.js; each frame sends it the input and draws the state it last sent back.
 const KEY = 'dogfight-extreme-best';
 export const bestExtreme = () => { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } };
-const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 const MAX_ENEMIES = 10;
 
 export async function mountExtreme({ el, hudCanvas, phaseRef, setPhase, setResult, api, atmos: initial = { time: 'day', weather: 'clear' } }) {

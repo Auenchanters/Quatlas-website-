@@ -5,6 +5,7 @@ function text(ctx, s, x, y, { size = 13, color = WHITE, align = 'left', weight =
   ctx.font = `${weight} ${size}px "IBM Plex Mono", monospace`; ctx.textAlign = align; ctx.fillStyle = color; ctx.fillText(s, x, y);
 }
 const km = (d) => (d >= 1000 ? `${(d / 1000).toFixed(1)} km` : `${Math.round(d)} m`);
+export const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
 export function drawHud(ctx, w, h, d) {
   ctx.clearRect(0, 0, w, h);

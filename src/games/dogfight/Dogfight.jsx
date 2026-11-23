@@ -7,7 +7,7 @@ import {
   lockCandidate, leadPoint, think, crashed, outOfBounds, groundAt, finalScore,
 } from './logic';
 import { createWorld, buildJet, createTracers, createEffects, buildMissile } from './scene';
-import { drawHud } from './hud';
+import { drawHud, mmss } from './hud';
 import { createControls } from './controls';
 import { FULL, enterFull, exitFull } from '../fullscreen';
 
@@ -33,7 +33,6 @@ function Choice({ label, value, options, onPick }) {
 }
 const best = () => { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } };
 const AMMO = 600, MISSILES = 4, FIRE_RATE = 1 / 14;
-const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
 // Everything that changes during a sortie, reset on every start.
 function newSortie() {

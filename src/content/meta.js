@@ -8,7 +8,7 @@ export const META = {
   '/about': { title: 'About', description: 'Who Quatlas is: the aeromodelling team of Ramaiah Institute of Technology, designing, building and flying aircraft for SAE Aero Design.' },
   '/team': { title: 'Our team', description: 'Students from every branch at Ramaiah, organised the way an aircraft is: one core team and six subteams that each own a part of the build.' },
   '/achievements': { title: 'Achievements', description: 'Every competition Quatlas has entered since its first, with the results.' },
-  '/events': { title: 'Events', description: 'What Quatlas is building towards next, and every competition the team has already flown.' },
+  '/events': { title: 'Events', description: 'Every competition Quatlas has flown, from the first to the latest.' },
   '/gallery': { title: 'Gallery', description: 'Photos of the aircraft Quatlas has built and flown, and of the people who built them.' },
   '/support': { title: 'Support', description: 'Quatlas is built by students and paid for by people who believe in it. Sponsor the team with parts, money or services, or chip in directly.' },
   '/contact': { title: 'Contact', description: 'Get in touch with Quatlas: send a request, find the team at Ramaiah Institute of Technology, or read the FAQs.' },

@@ -7,7 +7,6 @@ import PhotoWall from '../components/PhotoWall';
 import Roll from '../components/Roll';
 import { RECORD, FIRST_YEAR, LATEST_YEAR } from '../content/achievements';
 import { OVERVIEW } from '../content/overview';
-import { UPCOMING, when } from '../content/events';
 import { HERO, QUOTES, PATHS, LOGOS, WALL, COUNTS, HIGHLIGHT } from '../content/home';
 import { homeStats } from '../content/stats';
 import { glow } from '../lib/glow';
@@ -69,22 +68,6 @@ export default function Home() {
           <p>{OVERVIEW[0]}</p>
           <p><Link to="/about">More about the club</Link></p>
         </div>
-      </section>
-
-      <section aria-labelledby="next" className="wrap pb-[clamp(5rem,10vw,9rem)] grid gap-8">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-4">
-          <h2 id="next" data-reveal="words" className="display text-[clamp(2rem,4vw,3.5rem)]">Upcoming</h2>
-          <Link to="/events" className="wide text-sm inline-flex items-center gap-2 hover:text-signal">All events</Link>
-        </div>
-        <ul data-reveal="stagger" className="grid gap-8 md:grid-cols-3">
-          {UPCOMING.map((e) => (
-            <li key={e.title} className="grid gap-1 content-start">
-              <p className="data text-signal">{when(e.date)}</p>
-              <p className="wide text-lg">{e.title}</p>
-              <p className="text-ink-2 text-[0.9375rem]">{e.place}</p>
-            </li>
-          ))}
-        </ul>
       </section>
 
       <section aria-labelledby="wall" className="wrap pb-[clamp(5rem,10vw,9rem)] grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-center">

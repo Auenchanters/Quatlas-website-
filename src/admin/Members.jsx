@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { ImgCheck, linkProblem } from './Crud';
 import { RemoteImg } from '../components/RemoteImg';
-import { Field, useSubmit } from '../components/ui';
+import { Field, initials, useSubmit } from '../components/ui';
 import { api } from '../lib/api';
 
 // The live server won't add a member without a LinkedIn link, so anyone without their own gets the club's page.
 export const CLUB_LINKEDIN = 'https://www.linkedin.com/company/quatlas-aeromodelling';
-const initials = (n = '') => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 const FIELDS = [['name', 'Name'], ['role', 'Role'], ['img', 'Photo link'], ['linkedin', 'LinkedIn link (optional)']];
 
 // One member as a card: photo, name, role, LinkedIn, with Update (edit in place) and Delete.

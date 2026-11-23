@@ -76,7 +76,7 @@ const FOOT = [
   ['Club', [['/about', 'About us'], ['/about#faculty', 'Faculty'], ['/achievements', 'Achievements']]],
   ['Team', [['/team', 'Our team'], ['/alumini', 'Alumni'], ['/recruitment', 'Join us']]],
   ['Support', [['/support', 'Supporters'], ['/support#crowdfunding', 'Crowdfunding']]],
-  ['Events', [['/events', 'Upcoming'], ['/events#past', 'Past events']]],
+  ['Events', [['/events', 'Past events']]],
   ['Help', [['/contact#faq', 'FAQs'], ['/contact', 'Send a request'], ['/terms', 'Terms of use']]],
 ];
 

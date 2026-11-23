@@ -8,8 +8,8 @@ export const RECORD = [
     caption: 'The team at the Aircraft Olympics', photos: ['event-olympics-team'],
   },
   {
-    year: '2024', event: 'Technoxian World Cup', title: 'Technoxian World Cup 2024', summary: 'Top 10 among 87 teams, cleared every round',
-    points: ['Top 10 among 87 teams.', 'Took part in the Technoxian World Cup 2024, a national competition, and cleared every round.'],
+    year: '2025', event: 'Technoxian World Cup', title: 'Technoxian World Cup 2025', summary: 'Top 10 among 87 teams, cleared every round',
+    points: ['Top 10 among 87 teams.', 'Took part in the Technoxian World Cup 2025, a national competition, and cleared every round.'],
     caption: 'The team at the Technoxian World Cup', photos: ['https://1drv.ms/i/c/4577d5d6291c48d0/IQRVvlQQrcsgQ7sWLpenFHEoAQ-DTXrLv4riXAW4ufV5hoc?width=6000&height=4000'],
   },
   {
